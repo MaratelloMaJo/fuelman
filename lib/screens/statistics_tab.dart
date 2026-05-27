@@ -1,0 +1,273 @@
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../controllers/fuel_entry_controller.dart';
+import '../controllers/vehicle_controller.dart';
+import '../database/fuel_database.dart';
+import '../theme/app_theme.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/stats_card.dart';
+
+/// Вкладка детальной статистики.
+///
+/// Содержит:
+///   — Карточки сводной статистики
+///   — BarChart расхода по месяцам
+///   — BarChart стоимости по месяцам
+class StatisticsTab extends StatelessWidget {
+  const StatisticsTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicleCtrl = Get.find<VehicleController>();
+    final entryCtrl = Get.find<FuelEntryController>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Статистика'),
+        centerTitle: true,
+      ),
+      body: Obx(() {
+        final vehicle = vehicleCtrl.selectedVehicle.value;
+        final stats = entryCtrl.stats;
+        final totalEntries = stats['total_entries']?.toInt() ?? 0;
+
+        if (vehicle == null) {
+          return const EmptyState(
+            icon: Icons.bar_chart_rounded,
+            title: 'Нет данных',
+            subtitle: 'Выберите автомобиль на главной вкладке',
+          );
+        }
+
+        if (totalEntries == 0) {
+          return const EmptyState(
+            icon: Icons.bar_chart_rounded,
+            title: 'Нет записей',
+            subtitle: 'Добавьте хотя бы 2 полных заправки\nдля расчёта статистики',
+          );
+        }
+
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: FuelDatabase.instance.getMonthlyStats(vehicle.id!),
+          builder: (context, snap) {
+            final monthly = snap.data ?? [];
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // ── Сводные карточки ──
+                Text(
+                  'Сводка: ${vehicle.name}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.6,
+                  children: [
+                    StatsCard(
+                      icon: Icons.local_gas_station_rounded,
+                      value: stats['total_volume'] != null
+                          ? '${stats['total_volume']!.toStringAsFixed(1)} л'
+                          : '—',
+                      label: 'Всего заправлено',
+                    ),
+                    StatsCard(
+                      icon: Icons.payments_rounded,
+                      value: stats['total_cost'] != null &&
+                              stats['total_cost']! > 0
+                          ? '${stats['total_cost']!.toStringAsFixed(0)} ₽'
+                          : '—',
+                      label: 'Потрачено всего',
+                    ),
+                    StatsCard(
+                      icon: Icons.show_chart_rounded,
+                      value: stats['avg_consumption'] != null
+                          ? '${stats['avg_consumption']!.toStringAsFixed(1)} л'
+                          : '—',
+                      label: 'Средний расход',
+                    ),
+                    StatsCard(
+                      icon: Icons.format_list_numbered_rounded,
+                      value: totalEntries.toString(),
+                      label: 'Всего заправок',
+                    ),
+                  ],
+                ),
+
+                // ── Monthly charts ──
+                if (monthly.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Расход по месяцам (л/100 км)',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  _MonthlyBarChart(
+                    monthly: monthly,
+                    valueKey: 'avg_consumption',
+                    color: AppTheme.chartPrimary,
+                    suffix: ' л',
+                  ),
+
+                  if (monthly.any((m) => (m['total_cost'] as num?) != null &&
+                      (m['total_cost'] as num) > 0)) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      'Расходы по месяцам (₽)',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 12),
+                    _MonthlyBarChart(
+                      monthly: monthly,
+                      valueKey: 'total_cost',
+                      color: AppTheme.efficiencyMid,
+                      suffix: ' ₽',
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 32),
+              ],
+            );
+          },
+        );
+      }),
+    );
+  }
+}
+
+// ─────────────────────────── Monthly Bar Chart ──
+
+class _MonthlyBarChart extends StatelessWidget {
+  final List<Map<String, dynamic>> monthly;
+  final String valueKey;
+  final Color color;
+  final String suffix;
+
+  const _MonthlyBarChart({
+    required this.monthly,
+    required this.valueKey,
+    required this.color,
+    required this.suffix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final values = monthly
+        .map((m) => (m[valueKey] as num?)?.toDouble() ?? 0.0)
+        .toList();
+
+    if (values.every((v) => v == 0)) {
+      return const SizedBox.shrink();
+    }
+
+    final maxY = values.reduce((a, b) => a > b ? a : b) * 1.2;
+
+    return SizedBox(
+      height: 180,
+      child: BarChart(
+        BarChartData(
+          maxY: maxY,
+          barGroups: values.asMap().entries.map((e) {
+            return BarChartGroupData(
+              x: e.key,
+              barRods: [
+                BarChartRodData(
+                  toY: e.value,
+                  color: color,
+                  width: 18,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(4),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                getTitlesWidget: (val, _) {
+                  final idx = val.toInt();
+                  if (idx < 0 || idx >= monthly.length) {
+                    return const SizedBox.shrink();
+                  }
+                  final month = monthly[idx]['month'] as String;
+                  final parts = month.split('-');
+                  if (parts.length < 2) return const SizedBox.shrink();
+                  final label =
+                      '${parts[1]}.${parts[0].substring(2)}';
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(label,
+                        style: TextStyle(
+                            fontSize: 9, color: cs.onSurfaceVariant)),
+                  );
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 48,
+                getTitlesWidget: (val, _) => Text(
+                  val.toStringAsFixed(1),
+                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
+                ),
+              ),
+            ),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (_) => FlLine(
+              color: cs.outlineVariant.withAlpha(60),
+              strokeWidth: 1,
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (_) => cs.surfaceContainerHighest,
+              getTooltipItem: (group, _, rod, __) {
+                final m = monthly[group.x]['month'] as String;
+                return BarTooltipItem(
+                  '$m\n',
+                  TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+                  children: [
+                    TextSpan(
+                      text: '${rod.toY.toStringAsFixed(1)}$suffix',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: color,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
