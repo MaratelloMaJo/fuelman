@@ -19,33 +19,64 @@ import 'services/currency_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Инициализация локализации intl (DateFormat для 'ru', 'en', 'kk').
-  await initializeDateFormatting('ru', null);
-  await initializeDateFormatting('en', null);
-  // kk использует ru-локаль для intl (нет пакета kk)
-
-  // Прогрев базы данных (инициализация соединения).
-  await FuelDatabase.instance.database;
-
-  // Сервис уведомлений.
-  await NotificationService.instance.init();
-
-  // Сервис курсов валют
-  await CurrencyService.instance.init();
-
-  // Блокировка ориентации экрана.
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // Настройка прозрачности статус-бара и навигационной панели.
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-    ),
-  );
+  // Безопасно инициализируем все службы
+  await _initServices();
 
   runApp(const FuelManApp());
+}
+
+/// Выполняет асинхронную инициализацию служб приложения.
+/// Все ошибки перехватываются, чтобы гарантировать успешную загрузку UI.
+Future<void> _initServices() async {
+  try {
+    // 1. Инициализация локализации дат (intl)
+    await initializeDateFormatting('ru', null);
+    await initializeDateFormatting('en', null);
+    await initializeDateFormatting('kk', null);
+  } catch (e, stack) {
+    debugPrint('Ошибка инициализации локализации: $e\n$stack');
+  }
+
+  try {
+    // 2. Прогрев базы данных SQLite
+    await FuelDatabase.instance.database;
+  } catch (e, stack) {
+    debugPrint('Ошибка инициализации базы данных: $e\n$stack');
+  }
+
+  try {
+    // 3. Сервис напоминаний о заправках
+    await NotificationService.instance.init();
+  } catch (e, stack) {
+    debugPrint('Ошибка инициализации сервиса уведомлений: $e\n$stack');
+  }
+
+  try {
+    // 4. Сервис валютных курсов
+    await CurrencyService.instance.init();
+  } catch (e, stack) {
+    debugPrint('Ошибка инициализации валютного сервиса: $e\n$stack');
+  }
+
+  try {
+    // 5. Фиксация портретной ориентации
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  } catch (e, stack) {
+    debugPrint('Ошибка настройки ориентации: $e\n$stack');
+  }
+
+  try {
+    // 6. Настройка статус-бара и панели навигации
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('Ошибка настройки стилей системы: $e\n$stack');
+  }
 }

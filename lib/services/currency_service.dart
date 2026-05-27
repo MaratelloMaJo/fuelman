@@ -29,7 +29,9 @@ class CurrencyService {
 
   Future<void> fetchRates() async {
     try {
-      final response = await http.get(Uri.parse('https://open.er-api.com/v6/latest/USD'));
+      final response = await http
+          .get(Uri.parse('https://open.er-api.com/v6/latest/USD'))
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _rates = data['rates'] as Map<String, dynamic>;
