@@ -43,9 +43,6 @@ abstract final class AppTheme {
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          shape: CircleBorder(),
-        ),
       );
 
   static ThemeData dark() => ThemeData(
@@ -73,9 +70,6 @@ abstract final class AppTheme {
             ),
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-        ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          shape: CircleBorder(),
         ),
       );
 }

@@ -4,10 +4,10 @@ import 'package:get/get.dart';
 
 import '../controllers/fuel_entry_controller.dart';
 import '../controllers/vehicle_controller.dart';
-import '../database/fuel_database.dart';
 import '../theme/app_theme.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/stats_card.dart';
+import '../controllers/settings_controller.dart';
 
 /// Вкладка детальной статистики.
 ///
@@ -22,10 +22,11 @@ class StatisticsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final vehicleCtrl = Get.find<VehicleController>();
     final entryCtrl = Get.find<FuelEntryController>();
+    final settingsCtrl = Get.find<SettingsController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Статистика'),
+        title: Text('statistics_title'.tr),
         centerTitle: true,
       ),
       body: Obx(() {
@@ -34,23 +35,23 @@ class StatisticsTab extends StatelessWidget {
         final totalEntries = stats['total_entries']?.toInt() ?? 0;
 
         if (vehicle == null) {
-          return const EmptyState(
+          return EmptyState(
             icon: Icons.bar_chart_rounded,
-            title: 'Нет данных',
-            subtitle: 'Выберите автомобиль на главной вкладке',
+            title: 'stats_no_data_title'.tr,
+            subtitle: 'select_vehicle_hint'.tr,
           );
         }
 
         if (totalEntries == 0) {
-          return const EmptyState(
+          return EmptyState(
             icon: Icons.bar_chart_rounded,
-            title: 'Нет записей',
-            subtitle: 'Добавьте хотя бы 2 полных заправки\nдля расчёта статистики',
+            title: 'stats_no_entries_title'.tr,
+            subtitle: 'stats_no_entries_subtitle'.tr,
           );
         }
 
         return FutureBuilder<List<Map<String, dynamic>>>(
-          future: FuelDatabase.instance.getMonthlyStats(vehicle.id!),
+          future: entryCtrl.getMonthlyStats(vehicle.id!),
           builder: (context, snap) {
             final monthly = snap.data ?? [];
 
@@ -59,7 +60,7 @@ class StatisticsTab extends StatelessWidget {
               children: [
                 // ── Сводные карточки ──
                 Text(
-                  'Сводка: ${vehicle.name}',
+                  '${'stats_summary_prefix'.tr}${vehicle.name}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -76,29 +77,29 @@ class StatisticsTab extends StatelessWidget {
                     StatsCard(
                       icon: Icons.local_gas_station_rounded,
                       value: stats['total_volume'] != null
-                          ? '${stats['total_volume']!.toStringAsFixed(1)} л'
-                          : '—',
-                      label: 'Всего заправлено',
+                          ? '${stats['total_volume']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}'
+                          : 'no_data'.tr,
+                      label: 'stats_total_volume'.tr,
                     ),
                     StatsCard(
                       icon: Icons.payments_rounded,
                       value: stats['total_cost'] != null &&
                               stats['total_cost']! > 0
-                          ? '${stats['total_cost']!.toStringAsFixed(0)} ₽'
-                          : '—',
-                      label: 'Потрачено всего',
+                          ? '${stats['total_cost']!.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}'
+                          : 'no_data'.tr,
+                      label: 'total_spent'.tr,
                     ),
                     StatsCard(
                       icon: Icons.show_chart_rounded,
                       value: stats['avg_consumption'] != null
-                          ? '${stats['avg_consumption']!.toStringAsFixed(1)} л'
-                          : '—',
-                      label: 'Средний расход',
+                          ? '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}'
+                          : 'no_data'.tr,
+                      label: 'avg_consumption'.tr,
                     ),
                     StatsCard(
                       icon: Icons.format_list_numbered_rounded,
                       value: totalEntries.toString(),
-                      label: 'Всего заправок',
+                      label: 'stats_total_entries'.tr,
                     ),
                   ],
                 ),
@@ -107,7 +108,7 @@ class StatisticsTab extends StatelessWidget {
                 if (monthly.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(
-                    'Расход по месяцам (л/100 км)',
+                    '${'stats_monthly_consumption'.tr} (${settingsCtrl.volumeUnit.value}/100)',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -117,14 +118,14 @@ class StatisticsTab extends StatelessWidget {
                     monthly: monthly,
                     valueKey: 'avg_consumption',
                     color: AppTheme.chartPrimary,
-                    suffix: ' л',
+                    suffix: ' ${settingsCtrl.volumeUnit.value}',
                   ),
 
                   if (monthly.any((m) => (m['total_cost'] as num?) != null &&
                       (m['total_cost'] as num) > 0)) ...[
                     const SizedBox(height: 24),
                     Text(
-                      'Расходы по месяцам (₽)',
+                      '${'stats_monthly_costs'.tr} (${settingsCtrl.currencySymbol})',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -134,7 +135,7 @@ class StatisticsTab extends StatelessWidget {
                       monthly: monthly,
                       valueKey: 'total_cost',
                       color: AppTheme.efficiencyMid,
-                      suffix: ' ₽',
+                      suffix: ' ${settingsCtrl.currencySymbol}',
                     ),
                   ],
                 ],
@@ -240,7 +241,7 @@ class _MonthlyBarChart extends StatelessWidget {
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (_) => FlLine(
-              color: cs.outlineVariant.withAlpha(60),
+              color: cs.outlineVariant.withValues(alpha: 0.24),
               strokeWidth: 1,
             ),
           ),

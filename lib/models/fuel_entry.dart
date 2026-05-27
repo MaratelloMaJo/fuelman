@@ -24,6 +24,15 @@ class FuelEntry {
   /// Рассчитанный расход л/100 км (null для дозаправок и первой записи).
   final double? consumption;
 
+  /// Тип записи: 'fuel' (топливо) или 'charge' (зарядка).
+  final String entryType;
+
+  /// Единица измерения объёма: 'L', 'gal', 'kWh'.
+  final String volumeUnit;
+
+  /// Валюта записи: 'RUB', 'KZT', 'USD', 'EUR'.
+  final String currency;
+
   const FuelEntry({
     this.id,
     required this.vehicleId,
@@ -33,6 +42,9 @@ class FuelEntry {
     this.isFullTank = true,
     this.pricePerLiter,
     this.consumption,
+    this.entryType = 'fuel',
+    this.volumeUnit = 'L',
+    this.currency = 'RUB',
   });
 
   /// Полная стоимость заправки.
@@ -54,6 +66,9 @@ class FuelEntry {
         'is_full_tank': isFullTank ? 1 : 0,
         'price_per_liter': pricePerLiter,
         'consumption': consumption,
+        'entry_type': entryType,
+        'volume_unit': volumeUnit,
+        'currency': currency,
       };
 
   factory FuelEntry.fromMap(Map<String, dynamic> map) => FuelEntry(
@@ -65,6 +80,9 @@ class FuelEntry {
         isFullTank: (map['is_full_tank'] as int) == 1,
         pricePerLiter: (map['price_per_liter'] as num?)?.toDouble(),
         consumption: (map['consumption'] as num?)?.toDouble(),
+        entryType: map['entry_type'] as String? ?? 'fuel',
+        volumeUnit: map['volume_unit'] as String? ?? 'L',
+        currency: map['currency'] as String? ?? 'RUB',
       );
 
   /// Создаёт копию с изменёнными полями.
@@ -80,6 +98,9 @@ class FuelEntry {
     bool clearPricePerLiter = false,
     double? consumption,
     bool clearConsumption = false,
+    String? entryType,
+    String? volumeUnit,
+    String? currency,
   }) =>
       FuelEntry(
         id: id ?? this.id,
@@ -92,5 +113,8 @@ class FuelEntry {
             clearPricePerLiter ? null : (pricePerLiter ?? this.pricePerLiter),
         consumption:
             clearConsumption ? null : (consumption ?? this.consumption),
+        entryType: entryType ?? this.entryType,
+        volumeUnit: volumeUnit ?? this.volumeUnit,
+        currency: currency ?? this.currency,
       );
 }

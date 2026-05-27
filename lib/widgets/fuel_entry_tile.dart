@@ -36,9 +36,11 @@ class FuelEntryTile extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  entry.isFullTank
-                      ? Icons.local_gas_station_rounded
-                      : Icons.ev_station_rounded,
+                  entry.entryType == 'charge'
+                      ? Icons.electrical_services_rounded
+                      : (entry.isFullTank
+                          ? Icons.local_gas_station_rounded
+                          : Icons.ev_station_rounded),
                   size: 16,
                   color: entry.isFullTank ? cs.primary : cs.secondary,
                 ),
@@ -60,7 +62,7 @@ class FuelEntryTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    entry.isFullTank ? 'Полный' : 'Дозаправка',
+                    entry.isFullTank ? 'Полный' : 'Частичный',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -91,14 +93,14 @@ class FuelEntryTile extends StatelessWidget {
                   _Divider(),
                   _Metric(
                     label: 'Объём',
-                    value: '${entry.volume.toStringAsFixed(2)} л',
-                    icon: Icons.water_drop_rounded,
+                    value: '${entry.volume.toStringAsFixed(2)} ${entry.volumeUnit}',
+                    icon: entry.entryType == 'charge' ? Icons.electrical_services_rounded : Icons.water_drop_rounded,
                   ),
                   if (entry.pricePerLiter != null) ...[
                     _Divider(),
                     _Metric(
-                      label: 'Цена/л',
-                      value: '${entry.pricePerLiter!.toStringAsFixed(1)} ₽',
+                      label: 'Цена/ед',
+                      value: '${entry.pricePerLiter!.toStringAsFixed(1)} ${entry.currency}',
                       icon: Icons.sell_rounded,
                     ),
                   ],
@@ -107,7 +109,7 @@ class FuelEntryTile extends StatelessWidget {
                     _Metric(
                       label: 'Расход',
                       value:
-                          '${entry.consumption!.toStringAsFixed(1)} л/100',
+                          '${entry.consumption!.toStringAsFixed(1)} ${entry.volumeUnit}/100',
                       icon: Icons.show_chart_rounded,
                       highlight: true,
                     ),
@@ -118,7 +120,7 @@ class FuelEntryTile extends StatelessWidget {
             if (entry.totalCost != null) ...[
               const SizedBox(height: 6),
               Text(
-                'Стоимость заправки: ${entry.totalCost!.toStringAsFixed(0)} ₽',
+                'Стоимость: ${entry.totalCost!.toStringAsFixed(0)} ${entry.currency}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: cs.onSurfaceVariant,
                     ),

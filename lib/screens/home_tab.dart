@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/fuel_entry_controller.dart';
-import '../controllers/theme_controller.dart';
+import '../controllers/settings_controller.dart';
 import '../controllers/vehicle_controller.dart';
 import '../models/vehicle.dart';
 import '../widgets/consumption_chart.dart';
@@ -28,34 +28,25 @@ class HomeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final vehicleCtrl = Get.find<VehicleController>();
     final entryCtrl = Get.find<FuelEntryController>();
-    final themeCtrl = Get.find<ThemeController>();
+    final settingsCtrl = Get.find<SettingsController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('⛽ FuelMan'),
+        title: Text('app_title'.tr),
         centerTitle: false,
-        actions: [
-          // Переключатель темы
-          Obx(() => IconButton(
-                icon: Icon(themeCtrl.isDark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded),
-                tooltip: themeCtrl.isDark
-                    ? 'Светлая тема'
-                    : 'Тёмная тема',
-                onPressed: themeCtrl.toggleTheme,
-              )),
-        ],
       ),
       floatingActionButton: Obx(() {
         if (vehicleCtrl.selectedVehicle.value == null) {
           return const SizedBox.shrink();
         }
+        // Показываем «Зарядка» для электромобилей
+        final vehicle = vehicleCtrl.selectedVehicle.value!;
+        final isElectric = vehicle.isFullyElectric;
         return FloatingActionButton.extended(
           heroTag: 'home_fab',
           onPressed: () => Get.to(() => const AddEntryScreen()),
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Заправка'),
+          icon: Icon(isElectric ? Icons.bolt_rounded : Icons.add_rounded),
+          label: Text(isElectric ? 'charge_fab'.tr : 'refuel_fab'.tr),
         );
       }),
       body: Obx(() {
@@ -65,9 +56,8 @@ class HomeTab extends StatelessWidget {
         if (vehicles.isEmpty) {
           return EmptyState(
             icon: Icons.directions_car_outlined,
-            title: 'Добавьте автомобиль',
-            subtitle:
-                'Перейдите на вкладку «Гараж» и добавьте\nсвой первый автомобиль',
+            title: 'add_vehicle_prompt'.tr,
+            subtitle: 'add_vehicle_subtitle'.tr,
             actionLabel: null,
             onAction: null,
           );
@@ -106,38 +96,39 @@ class HomeTab extends StatelessWidget {
                     crossAxisCount: 2,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
-                    childAspectRatio: 1.7,
+                    childAspectRatio: 1.3,
                     children: [
                       StatsCard(
                         icon: Icons.show_chart_rounded,
                         value: avgConsumption != null
-                            ? '${avgConsumption.toStringAsFixed(1)} л'
-                            : '—',
-                        label: 'Средний расход / 100 км',
-                      ),
-                      StatsCard(
-                        icon: Icons.trending_down_rounded,
-                        value: stats['min_consumption'] != null
-                            ? '${stats['min_consumption']!.toStringAsFixed(1)} л'
-                            : '—',
-                        label: 'Мин. расход',
-                        valueColor: Colors.green,
-                      ),
-                      StatsCard(
-                        icon: Icons.trending_up_rounded,
-                        value: stats['max_consumption'] != null
-                            ? '${stats['max_consumption']!.toStringAsFixed(1)} л'
-                            : '—',
-                        label: 'Макс. расход',
-                        valueColor: Colors.red,
+                            ? '${avgConsumption.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}'
+                            : 'no_data'.tr,
+                        label: 'avg_consumption'.tr,
                       ),
                       StatsCard(
                         icon: Icons.payments_rounded,
+                        value: stats['cost_per_km'] != null
+                            ? '${stats['cost_per_km']!.toStringAsFixed(2)} ${settingsCtrl.currencySymbol}'
+                            : 'no_data'.tr,
+                        label: 'cost_per_km'.tr,
+                        valueColor: Colors.orange,
+                      ),
+                      StatsCard(
+                        icon: Icons.directions_car_rounded,
+                        value: stats['km_per_day'] != null
+                            ? '${stats['km_per_day']!.toStringAsFixed(1)} ${'km_unit'.tr}'
+                            : 'no_data'.tr,
+                        label: 'km_per_day'.tr,
+                        valueColor: Colors.blue,
+                      ),
+                      StatsCard(
+                        icon: Icons.account_balance_wallet_rounded,
                         value: stats['total_cost'] != null &&
                                 stats['total_cost']! > 0
-                            ? '${stats['total_cost']!.toStringAsFixed(0)} ₽'
-                            : '—',
-                        label: 'Всего потрачено',
+                            ? '${stats['total_cost']!.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}'
+                            : 'no_data'.tr,
+                        label: 'total_spent'.tr,
+                        valueColor: Colors.green,
                       ),
                     ],
                   ),
@@ -170,7 +161,7 @@ class HomeTab extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                     sliver: SliverToBoxAdapter(
                       child: Text(
-                        'Последние заправки',
+                        'last_refuels'.tr,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
@@ -190,9 +181,8 @@ class HomeTab extends StatelessWidget {
                   SliverToBoxAdapter(
                     child: EmptyState(
                       icon: Icons.local_gas_station_outlined,
-                      title: 'Нет записей',
-                      subtitle:
-                          'Добавьте первую заправку, нажав кнопку «+»',
+                      title: 'no_entries'.tr,
+                      subtitle: 'no_entries_hint'.tr,
                     ),
                   ),
                 ],
@@ -258,16 +248,22 @@ class _VehicleSelector extends StatelessWidget {
 
   static IconData _iconForType(String type) {
     switch (type) {
-      case 'suv':
+      case 'hatchback':
         return Icons.directions_car_filled_rounded;
+      case 'suv':
+        return Icons.airport_shuttle_rounded;
+      case 'crossover':
+        return Icons.drive_eta_rounded;
       case 'truck':
         return Icons.local_shipping_rounded;
+      case 'van':
+        return Icons.airport_shuttle_rounded;
       case 'moto':
         return Icons.two_wheeler_rounded;
-      case 'electric':
-        return Icons.electric_car_rounded;
+      case 'other':
+        return Icons.commute_rounded;
       default:
-        return Icons.directions_car_rounded;
+        return Icons.directions_car_rounded; // sedan
     }
   }
 }

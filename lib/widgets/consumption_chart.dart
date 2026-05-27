@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../models/fuel_entry.dart';
 import '../theme/app_theme.dart';
+import 'package:get/get.dart';
+import '../controllers/settings_controller.dart';
 
 /// Переключаемый график расхода/стоимости.
 ///
@@ -238,7 +240,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                     fontWeight: FontWeight.normal),
                 children: [
                   TextSpan(
-                    text: '${s.y.toStringAsFixed(1)} л/100 км',
+                    text: '${s.y.toStringAsFixed(1)} ${Get.find<SettingsController>().volumeUnit.value}/100',
                     style: TextStyle(
                         fontSize: 12,
                         color: cs.primary,
@@ -301,7 +303,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
               showTitles: true,
               reservedSize: 50,
               getTitlesWidget: (val, meta) => Text(
-                '${val.toStringAsFixed(0)} ₽',
+                '${val.toStringAsFixed(0)} ${Get.find<SettingsController>().currencySymbol}',
                 style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
               ),
             ),
@@ -350,7 +352,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                 TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
                 children: [
                   TextSpan(
-                    text: '${rod.toY.toStringAsFixed(0)} ₽',
+                    text: '${rod.toY.toStringAsFixed(0)} ${Get.find<SettingsController>().currencySymbol}',
                     style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.chartPrimary,

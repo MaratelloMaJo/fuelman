@@ -28,7 +28,7 @@ class VehiclesTab extends StatelessWidget {
         heroTag: 'vehicles_fab',
         onPressed: () => Get.to(() => const AddVehicleScreen()),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Автомобиль'),
+        label: Text('add_vehicle_fab'.tr),
       ),
       body: Obx(() {
         final vehicles = vehicleCtrl.vehicles;
@@ -37,10 +37,8 @@ class VehiclesTab extends StatelessWidget {
         if (vehicles.isEmpty) {
           return EmptyState(
             icon: Icons.garage_rounded,
-            title: 'Гараж пуст',
-            subtitle: 'Добавьте первый автомобиль,\nчтобы начать учёт',
-            actionLabel: 'Добавить автомобиль',
-            onAction: () => Get.to(() => const AddVehicleScreen()),
+            title: 'garage_empty_title'.tr,
+            subtitle: 'garage_empty_subtitle'.tr,
           );
         }
 

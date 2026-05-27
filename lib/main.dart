@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app/app.dart';
 import 'database/fuel_database.dart';
 import 'services/notification_service.dart';
+import 'services/currency_service.dart';
 
 /// Точка входа в FuelMan.
 ///
@@ -18,14 +19,19 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Инициализация локализации intl (DateFormat для 'ru').
+  // Инициализация локализации intl (DateFormat для 'ru', 'en', 'kk').
   await initializeDateFormatting('ru', null);
+  await initializeDateFormatting('en', null);
+  // kk использует ru-локаль для intl (нет пакета kk)
 
   // Прогрев базы данных (инициализация соединения).
   await FuelDatabase.instance.database;
 
   // Сервис уведомлений.
   await NotificationService.instance.init();
+
+  // Сервис курсов валют
+  await CurrencyService.instance.init();
 
   // Блокировка ориентации экрана.
   await SystemChrome.setPreferredOrientations([

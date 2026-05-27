@@ -7,6 +7,7 @@ import '../models/fuel_entry.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/fuel_entry_tile.dart';
 import 'add_entry_screen.dart';
+import '../controllers/settings_controller.dart';
 
 /// Вкладка истории заправок.
 ///
@@ -75,7 +76,7 @@ class _HistoryTabState extends State<HistoryTab> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('История'),
+        title: Text('history_title'.tr),
         centerTitle: true,
         actions: [
           Obx(() {
@@ -89,7 +90,7 @@ class _HistoryTabState extends State<HistoryTab> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.share_rounded),
-              tooltip: 'Экспорт CSV',
+              tooltip: 'export_csv'.tr,
               onPressed: _isExporting ? null : _export,
             );
           }),
@@ -99,10 +100,14 @@ class _HistoryTabState extends State<HistoryTab> {
         if (_vehicleCtrl.selectedVehicle.value == null) {
           return const SizedBox.shrink();
         }
-        return FloatingActionButton(
+        // Показываем «Зарядка» для электромобилей
+        final vehicle = _vehicleCtrl.selectedVehicle.value!;
+        final isElectric = vehicle.isFullyElectric;
+        return FloatingActionButton.extended(
           heroTag: 'history_fab',
           onPressed: () => Get.to(() => const AddEntryScreen()),
-          child: const Icon(Icons.add_rounded),
+          icon: Icon(isElectric ? Icons.bolt_rounded : Icons.add_rounded),
+          label: Text(isElectric ? 'charge_fab'.tr : 'refuel_fab'.tr),
         );
       }),
       body: Obx(() {
@@ -111,10 +116,10 @@ class _HistoryTabState extends State<HistoryTab> {
             _entryCtrl.stats['avg_consumption'];
 
         if (vehicle == null) {
-          return const EmptyState(
+          return EmptyState(
             icon: Icons.directions_car_outlined,
-            title: 'Нет автомобиля',
-            subtitle: 'Выберите автомобиль на главной вкладке',
+            title: 'no_vehicle'.tr,
+            subtitle: 'select_vehicle_hint'.tr,
           );
         }
 
@@ -151,7 +156,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 child: Row(
                   children: [
                     Text(
-                      '${filtered.length} записей',
+                      '${filtered.length} ${'entries_count'.tr}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: cs.onSurfaceVariant,
                           ),
@@ -159,7 +164,7 @@ class _HistoryTabState extends State<HistoryTab> {
                     const Spacer(),
                     if (filtered.any((e) => e.totalCost != null))
                       Text(
-                        'Итого: ${filtered.fold<double>(0, (s, e) => s + (e.totalCost ?? 0)).toStringAsFixed(0)} ₽',
+                        '${'total_prefix'.tr}${filtered.fold<double>(0, (s, e) => s + (e.totalCost ?? 0)).toStringAsFixed(0)} ${Get.find<SettingsController>().currencySymbol}',
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
@@ -177,10 +182,10 @@ class _HistoryTabState extends State<HistoryTab> {
               child: filtered.isEmpty
                   ? EmptyState(
                       icon: Icons.history_rounded,
-                      title: 'Нет записей',
+                      title: 'no_entries'.tr,
                       subtitle: _period == _Period.all
-                          ? 'Добавьте первую заправку'
-                          : 'Нет записей за выбранный период',
+                          ? 'no_entries_hint'.tr
+                          : 'no_entries_period'.tr,
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.only(bottom: 100),

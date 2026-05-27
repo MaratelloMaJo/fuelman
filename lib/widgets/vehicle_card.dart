@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../models/vehicle.dart';
 
@@ -71,18 +72,36 @@ class VehicleCard extends StatelessWidget {
                       style:
                           Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: isSelected
-                                    ? cs.onPrimaryContainer.withAlpha(180)
+                                    ? cs.onPrimaryContainer.withValues(alpha: 0.7)
                                     : cs.onSurfaceVariant,
                               ),
                     ),
                     if (vehicle.fuelGoal != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Цель: ${vehicle.fuelGoal!.toStringAsFixed(1)} л/100 км',
+                        '${vehicle.fuelGoal!.toStringAsFixed(1)} ${'fuel_goal_suffix'.tr}',
                         style:
                             Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: cs.primary,
                                 ),
+                      ),
+                    ],
+                    if (vehicle.hybridType != null) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: cs.secondaryContainer,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'hybrid_${vehicle.hybridType}'.tr,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSecondaryContainer,
+                          ),
+                        ),
                       ),
                     ],
                     if (vehicle.reminderDays != null) ...[
@@ -93,7 +112,7 @@ class VehicleCard extends StatelessWidget {
                               size: 12, color: cs.secondary),
                           const SizedBox(width: 4),
                           Text(
-                            'Напоминание: ${vehicle.reminderDays} дн.',
+                            '${vehicle.reminderDays} ${'reminder_days_suffix'.tr}',
                             style: Theme.of(context)
                                 .textTheme
                                 .labelSmall
@@ -109,20 +128,20 @@ class VehicleCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   itemBuilder: (_) => [
                     if (onEdit != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: ListTile(
-                          leading: Icon(Icons.edit_outlined),
+                          leading: const Icon(Icons.edit_outlined),
                           title: Text('Изменить'),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     if (onDelete != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
-                          leading: Icon(Icons.delete_outline),
-                          title: Text('Удалить'),
+                          leading: const Icon(Icons.delete_outline),
+                          title: Text('delete'.tr),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -142,13 +161,19 @@ class VehicleCard extends StatelessWidget {
   static IconData _iconForType(String type) {
     switch (type) {
       case 'suv':
+        return Icons.airport_shuttle_rounded;
+      case 'hatchback':
         return Icons.directions_car_filled_rounded;
+      case 'crossover':
+        return Icons.drive_eta_rounded;
       case 'truck':
         return Icons.local_shipping_rounded;
+      case 'van':
+        return Icons.airport_shuttle_rounded;
       case 'moto':
         return Icons.two_wheeler_rounded;
-      case 'electric':
-        return Icons.electric_car_rounded;
+      case 'other':
+        return Icons.commute_rounded;
       default:
         return Icons.directions_car_rounded; // sedan
     }

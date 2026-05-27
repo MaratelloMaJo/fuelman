@@ -6,6 +6,7 @@ import 'home_tab.dart';
 import 'history_tab.dart';
 import 'statistics_tab.dart';
 import 'vehicles_tab.dart';
+import 'settings_tab.dart';
 
 /// Корневой экран с нижней навигацией Material 3.
 ///
@@ -27,6 +28,7 @@ class _MainScreenState extends State<MainScreen> {
     HistoryTab(),
     StatisticsTab(),
     VehiclesTab(),
+    SettingsTab(),
   ];
 
   @override
@@ -41,10 +43,10 @@ class _MainScreenState extends State<MainScreen> {
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            const NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Главная',
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: 'nav_home'.tr,
             ),
             NavigationDestination(
               icon: Badge(
@@ -52,12 +54,12 @@ class _MainScreenState extends State<MainScreen> {
                 child: const Icon(Icons.history_outlined),
               ),
               selectedIcon: const Icon(Icons.history_rounded),
-              label: 'История',
+              label: 'nav_history'.tr,
             ),
-            const NavigationDestination(
-              icon: Icon(Icons.bar_chart_outlined),
-              selectedIcon: Icon(Icons.bar_chart_rounded),
-              label: 'Статистика',
+            NavigationDestination(
+              icon: const Icon(Icons.bar_chart_outlined),
+              selectedIcon: const Icon(Icons.bar_chart_rounded),
+              label: 'nav_statistics'.tr,
             ),
             NavigationDestination(
               icon: Badge(
@@ -65,7 +67,12 @@ class _MainScreenState extends State<MainScreen> {
                 child: const Icon(Icons.garage_outlined),
               ),
               selectedIcon: const Icon(Icons.garage_rounded),
-              label: 'Гараж',
+              label: 'nav_garage'.tr,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings_rounded),
+              label: 'nav_settings'.tr,
             ),
           ],
         );

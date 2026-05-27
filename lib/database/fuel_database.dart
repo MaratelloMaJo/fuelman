@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../models/vehicle.dart';
 import '../models/fuel_entry.dart';
@@ -25,12 +28,13 @@ class FuelDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 3,
       onConfigure: (db) async {
         // Включаем поддержку внешних ключей (CASCADE DELETE).
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -41,7 +45,10 @@ class FuelDatabase {
         name          TEXT    NOT NULL,
         model         TEXT    NOT NULL,
         icon_type     TEXT    NOT NULL DEFAULT 'sedan',
+        engine_type   TEXT    NOT NULL DEFAULT 'gas',
+        hybrid_type   TEXT,
         fuel_goal     REAL,
+        ev_goal       REAL,
         reminder_days INTEGER
       )
     ''');
@@ -56,9 +63,25 @@ class FuelDatabase {
         is_full_tank   INTEGER NOT NULL DEFAULT 1,
         price_per_liter REAL,
         consumption    REAL,
+        entry_type     TEXT    NOT NULL DEFAULT 'fuel',
+        volume_unit    TEXT    NOT NULL DEFAULT 'L',
+        currency       TEXT    NOT NULL DEFAULT 'RUB',
         FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("ALTER TABLE vehicles ADD COLUMN engine_type TEXT NOT NULL DEFAULT 'gas'");
+      await db.execute("ALTER TABLE fuel_entries ADD COLUMN entry_type TEXT NOT NULL DEFAULT 'fuel'");
+      await db.execute("ALTER TABLE fuel_entries ADD COLUMN volume_unit TEXT NOT NULL DEFAULT 'L'");
+      await db.execute("ALTER TABLE fuel_entries ADD COLUMN currency TEXT NOT NULL DEFAULT 'RUB'");
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE vehicles ADD COLUMN hybrid_type TEXT');
+      await db.execute('ALTER TABLE vehicles ADD COLUMN ev_goal REAL');
+    }
   }
 
   // ─────────────────────────────────────────────── Vehicles ──
@@ -195,5 +218,47 @@ class FuelDatabase {
       await db.close();
       _db = null;
     }
+  }
+
+  // ─────────────────────────────────────────────── Backup ──
+
+  Future<void> exportBackup() async {
+    final dbPath = await getDatabasesPath();
+    final path = p.join(dbPath, 'fuelman.db');
+    final file = File(path);
+    if (await file.exists()) {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/octet-stream')],
+          subject: 'FuelMan_Backup.db',
+        ),
+      );
+    }
+  }
+
+  Future<bool> importBackup() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final backupFile = File(result.files.single.path!);
+        
+        await close(); // Закрываем текущее соединение
+
+        final dbPath = await getDatabasesPath();
+        final path = p.join(dbPath, 'fuelman.db');
+        
+        await backupFile.copy(path);
+        
+        // Переинициализируем соединение
+        _db = await _initDb();
+        return true;
+      }
+    } catch (e) {
+      // Игнорируем или логируем ошибку
+    }
+    return false;
   }
 }

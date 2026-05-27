@@ -22,9 +22,12 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _nameCtrl = TextEditingController();
   final _modelCtrl = TextEditingController();
   final _goalCtrl = TextEditingController();
+  final _evGoalCtrl = TextEditingController();
   final _reminderCtrl = TextEditingController();
 
-  String _iconType = 'sedan';
+  String _bodyType = 'sedan';
+  String _engineType = 'gas';
+  String? _hybridType;
   bool _isSaving = false;
   bool _reminderEnabled = false;
 
@@ -39,8 +42,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       final v = widget.editVehicle!;
       _nameCtrl.text = v.name;
       _modelCtrl.text = v.model;
-      _iconType = v.iconType;
+      _bodyType = v.bodyType;
+      _engineType = v.engineType;
+      _hybridType = v.hybridType;
       if (v.fuelGoal != null) _goalCtrl.text = v.fuelGoal!.toStringAsFixed(1);
+      if (v.evGoal != null) _evGoalCtrl.text = v.evGoal!.toStringAsFixed(1);
       if (v.reminderDays != null) {
         _reminderEnabled = true;
         _reminderCtrl.text = v.reminderDays!.toString();
@@ -53,6 +59,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     _nameCtrl.dispose();
     _modelCtrl.dispose();
     _goalCtrl.dispose();
+    _evGoalCtrl.dispose();
     _reminderCtrl.dispose();
     super.dispose();
   }
@@ -61,7 +68,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
-    // Если включили напоминания — запрашиваем разрешение.
     if (_reminderEnabled) {
       await NotificationService.instance.requestPermission();
     }
@@ -70,10 +76,15 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       id: widget.editVehicle?.id,
       name: _nameCtrl.text.trim(),
       model: _modelCtrl.text.trim(),
-      iconType: _iconType,
+      bodyType: _bodyType,
+      engineType: _engineType,
+      hybridType: _engineType == 'hybrid' ? _hybridType : null,
       fuelGoal: _goalCtrl.text.isEmpty
           ? null
           : double.tryParse(_goalCtrl.text.replaceAll(',', '.')),
+      evGoal: _evGoalCtrl.text.isEmpty
+          ? null
+          : double.tryParse(_evGoalCtrl.text.replaceAll(',', '.')),
       reminderDays: _reminderEnabled && _reminderCtrl.text.isNotEmpty
           ? int.tryParse(_reminderCtrl.text)
           : null,
@@ -89,7 +100,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     if (mounted) {
       Get.back();
       Get.snackbar(
-        _isEditing ? '✅ Автомобиль обновлён' : '✅ Автомобиль добавлен',
+        _isEditing ? 'vehicle_updated'.tr : 'vehicle_added'.tr,
         vehicle.name,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
@@ -101,7 +112,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Изменить автомобиль' : 'Новый автомобиль'),
+        title: Text(_isEditing ? 'edit_vehicle_title'.tr : 'new_vehicle_title'.tr),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -111,112 +122,171 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Иконка ──
-              Text('Тип автомобиля',
-                  style: Theme.of(context).textTheme.labelLarge),
+              // ── Тип кузова ──
+              _SectionLabel('body_type_label'.tr),
               const SizedBox(height: 10),
-              _IconPicker(
-                selected: _iconType,
-                onChanged: (t) => setState(() => _iconType = t),
+              _BodyTypePicker(
+                selected: _bodyType,
+                onChanged: (t) => setState(() => _bodyType = t),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
+
+              // ── Тип двигателя ──
+              _SectionLabel('engine_type_label'.tr),
+              const SizedBox(height: 10),
+              _EngineTypePicker(
+                selected: _engineType,
+                onChanged: (t) => setState(() {
+                  _engineType = t;
+                  // Сброс подтипа гибрида при смене двигателя
+                  if (t != 'hybrid') _hybridType = null;
+                  // Установить дефолт для гибрида
+                  if (t == 'hybrid') _hybridType ??= 'PHEV';
+                }),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Подтип гибрида ──
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 250),
+                crossFadeState: _engineType == 'hybrid'
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                firstChild: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 4),
+                    _SectionLabel('hybrid_type_label'.tr),
+                    const SizedBox(height: 10),
+                    _HybridTypePicker(
+                      selected: _hybridType ?? 'PHEV',
+                      onChanged: (t) => setState(() => _hybridType = t),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+                secondChild: const SizedBox.shrink(),
+              ),
 
               // ── Название ──
-              Text('Название (ваше)', style: Theme.of(context).textTheme.labelLarge),
+              _SectionLabel('vehicle_name_label'.tr),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.label_rounded),
-                  hintText: 'Например: Моя Vesta',
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.label_rounded),
+                  hintText: 'vehicle_name_hint'.tr,
                 ),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Введите название' : null,
+                    v == null || v.trim().isEmpty ? 'vehicle_name_required'.tr : null,
               ),
               const SizedBox(height: 20),
 
-              // ── Модель ──
-              Text('Марка и модель', style: Theme.of(context).textTheme.labelLarge),
+              // ── Марка и модель ──
+              _SectionLabel('brand_model_label'.tr),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _modelCtrl,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.directions_car_rounded),
-                  hintText: 'Например: Lada Vesta 1.6',
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.directions_car_rounded),
+                  hintText: 'brand_model_hint'.tr,
                 ),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Введите модель' : null,
+                    v == null || v.trim().isEmpty ? 'brand_model_required'.tr : null,
               ),
               const SizedBox(height: 20),
 
-              // ── Целевой расход (необязательно) ──
-              Text('Целевой расход — необязательно',
-                  style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _goalCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-                ],
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.flag_rounded),
-                  hintText: 'Например: 8.0',
-                  suffixText: 'л/100 км',
+              // ── Цели по расходу ──
+              if (_engineType != 'electric') ...[
+                _SectionLabel('fuel_goal_label'.tr),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _goalCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.local_gas_station_rounded),
+                    hintText: 'fuel_goal_hint'.tr,
+                    suffixText: 'fuel_goal_suffix'.tr,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    final val = double.tryParse(v.replaceAll(',', '.'));
+                    if (val == null || val <= 0) return 'goal_positive'.tr;
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return null;
-                  final val = double.tryParse(v.replaceAll(',', '.'));
-                  if (val == null || val <= 0) return 'Должно быть > 0';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
+              ],
 
-              // ── Напоминание (необязательно) ──
+              if (_engineType == 'electric' ||
+                  _engineType == 'hybrid' &&
+                      (_hybridType == 'PHEV' || _hybridType == 'BEV_REX')) ...[
+                _SectionLabel('ev_goal_label'.tr),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _evGoalCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.bolt_rounded),
+                    hintText: 'ev_goal_hint'.tr,
+                    suffixText: 'ev_goal_suffix'.tr,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return null;
+                    final val = double.tryParse(v.replaceAll(',', '.'));
+                    if (val == null || val <= 0) return 'goal_positive'.tr;
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // ── Напоминание ──
               Card(
                 child: Column(
                   children: [
                     SwitchListTile(
                       value: _reminderEnabled,
                       onChanged: (v) => setState(() => _reminderEnabled = v),
-                      title: const Text('Напоминание о записи'),
-                      subtitle: const Text(
-                          'Уведомить, если не было записей N дней'),
-                      secondary:
-                          const Icon(Icons.notifications_outlined),
+                      title: Text('reminder_label'.tr),
+                      subtitle: Text('reminder_subtitle'.tr),
+                      secondary: const Icon(Icons.notifications_outlined),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    if (_reminderEnabled)
-                      Padding(
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 200),
+                      crossFadeState: _reminderEnabled
+                          ? CrossFadeState.showFirst
+                          : CrossFadeState.showSecond,
+                      firstChild: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                         child: TextFormField(
                           controller: _reminderCtrl,
                           keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.timer_outlined),
-                            hintText: 'Например: 14',
-                            suffixText: 'дней',
-                            helperText:
-                                'Напоминание при открытии приложения',
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.timer_outlined),
+                            hintText: 'reminder_days_hint'.tr,
+                            suffixText: 'reminder_days_suffix'.tr,
+                            helperText: 'reminder_helper'.tr,
                           ),
                           validator: (v) {
                             if (!_reminderEnabled) return null;
-                            if (v == null || v.isEmpty) return 'Введите количество дней';
+                            if (v == null || v.isEmpty) return 'reminder_days_required'.tr;
                             final val = int.tryParse(v);
-                            if (val == null || val <= 0) return 'Должно быть > 0';
+                            if (val == null || val <= 0) return 'reminder_days_invalid'.tr;
                             return null;
                           },
                         ),
                       ),
+                      secondChild: const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),
@@ -233,8 +303,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       )
                     : const Icon(Icons.save_rounded),
                 label: Text(_isSaving
-                    ? 'Сохранение…'
-                    : (_isEditing ? 'Сохранить изменения' : 'Добавить автомобиль')),
+                    ? 'saving'.tr
+                    : (_isEditing ? 'save_vehicle_edit'.tr : 'save_vehicle'.tr)),
               ),
               const SizedBox(height: 16),
             ],
@@ -245,41 +315,66 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   }
 }
 
-// ─────────────────────────────────── Icon picker ──
+// ─────────────────────────────────── Section label ──
 
-class _IconPicker extends StatelessWidget {
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
+}
+
+// ─────────────────────────────────── Body type picker ──
+
+class _BodyTypePicker extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
 
-  const _IconPicker({required this.selected, required this.onChanged});
+  const _BodyTypePicker({required this.selected, required this.onChanged});
 
   static const _types = <String, (IconData, String)>{
-    'sedan': (Icons.directions_car_rounded, 'Легковая'),
-    'suv': (Icons.directions_car_filled_rounded, 'SUV'),
-    'truck': (Icons.local_shipping_rounded, 'Грузовик'),
-    'moto': (Icons.two_wheeler_rounded, 'Мото'),
-    'electric': (Icons.electric_car_rounded, 'Электро'),
+    'sedan': (Icons.directions_car_rounded, 'body_sedan'),
+    'hatchback': (Icons.directions_car_filled_rounded, 'body_hatchback'),
+    'suv': (Icons.airport_shuttle_rounded, 'body_suv'),
+    'crossover': (Icons.drive_eta_rounded, 'body_crossover'),
+    'truck': (Icons.local_shipping_rounded, 'body_truck'),
+    'van': (Icons.airport_shuttle_rounded, 'body_van'),
+    'moto': (Icons.two_wheeler_rounded, 'body_moto'),
+    'other': (Icons.commute_rounded, 'body_other'),
   };
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    // 4 per row
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      childAspectRatio: 1.1,
       children: _types.entries.map((e) {
         final isActive = e.key == selected;
         return GestureDetector(
           onTap: () => onChanged(e.key),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 62,
-            height: 70,
+            duration: const Duration(milliseconds: 180),
             decoration: BoxDecoration(
               color: isActive ? cs.primaryContainer : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: isActive
                   ? Border.all(color: cs.primary, width: 2)
-                  : null,
+                  : Border.all(color: Colors.transparent, width: 2),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -287,16 +382,146 @@ class _IconPicker extends StatelessWidget {
                 Icon(
                   e.value.$1,
                   color: isActive ? cs.primary : cs.onSurfaceVariant,
-                  size: 26,
+                  size: 24,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  e.value.$2,
+                  e.value.$2.tr,
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 9.5,
                     color: isActive ? cs.primary : cs.onSurfaceVariant,
-                    fontWeight:
-                        isActive ? FontWeight.w700 : FontWeight.normal,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ─────────────────────────────────── Engine type picker ──
+
+class _EngineTypePicker extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  const _EngineTypePicker({required this.selected, required this.onChanged});
+
+  static const _engines = <String, (IconData, String, Color)>{
+    'gas': (Icons.local_gas_station_rounded, 'engine_gas', Color(0xFFE53935)),
+    'diesel': (Icons.opacity_rounded, 'engine_diesel', Color(0xFF616161)),
+    'hybrid': (Icons.electric_bolt_rounded, 'engine_hybrid', Color(0xFF00897B)),
+    'electric': (Icons.ev_station_rounded, 'engine_electric', Color(0xFF1E88E5)),
+    'hydrogen': (Icons.bubble_chart_rounded, 'engine_hydrogen', Color(0xFF8E24AA)),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _engines.entries.map((e) {
+        final isActive = e.key == selected;
+        final accent = e.value.$3;
+        return GestureDetector(
+          onTap: () => onChanged(e.key),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isActive ? accent.withValues(alpha: 0.15) : cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+              border: isActive
+                  ? Border.all(color: accent, width: 2)
+                  : Border.all(color: Colors.transparent, width: 2),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(e.value.$1,
+                    size: 18,
+                    color: isActive ? accent : cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(
+                  e.value.$2.tr,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                    color: isActive ? accent : cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ─────────────────────────────────── Hybrid type picker ──
+
+class _HybridTypePicker extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  const _HybridTypePicker({required this.selected, required this.onChanged});
+
+  static const _hybrids = <String, String>{
+    'PHEV': 'hybrid_PHEV_desc',
+    'HEV': 'hybrid_HEV_desc',
+    'MHEV': 'hybrid_MHEV_desc',
+    'BEV_REX': 'hybrid_BEV_REX_desc',
+    'FCEV': 'hybrid_FCEV_desc',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _hybrids.entries.map((e) {
+        final isActive = e.key == selected;
+        return GestureDetector(
+          onTap: () => onChanged(e.key),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? cs.secondaryContainer
+                  : cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+              border: isActive
+                  ? Border.all(color: cs.secondary, width: 2)
+                  : Border.all(color: Colors.transparent, width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'hybrid_${e.key}'.tr,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isActive ? cs.secondary : cs.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  e.value.tr,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isActive
+                        ? cs.onSecondaryContainer
+                        : cs.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
                 ),
               ],
