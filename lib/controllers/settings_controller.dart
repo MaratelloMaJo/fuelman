@@ -18,8 +18,50 @@ class SettingsController extends GetxController {
 
   Future<void> _loadSettings() async {
     final p = await _prefs;
-    language.value = p.getString('language') ?? 'ru';
-    currency.value = p.getString('currency') ?? 'RUB';
+
+    // Detect system defaults
+    final locale = Get.deviceLocale;
+    String defaultLang = 'en';
+    String defaultCurr = 'USD';
+
+    if (locale != null) {
+      if (locale.languageCode == 'ru') {
+        defaultLang = 'ru';
+      } else if (locale.languageCode == 'kk') {
+        defaultLang = 'kk';
+      }
+
+      if (locale.countryCode == 'RU') {
+        defaultCurr = 'RUB';
+      } else if (locale.countryCode == 'KZ') {
+        defaultCurr = 'KZT';
+      } else if ([
+        'AT',
+        'BE',
+        'CY',
+        'EE',
+        'FI',
+        'FR',
+        'DE',
+        'GR',
+        'IE',
+        'IT',
+        'LV',
+        'LT',
+        'LU',
+        'MT',
+        'NL',
+        'PT',
+        'SK',
+        'SI',
+        'ES'
+      ].contains(locale.countryCode)) {
+        defaultCurr = 'EUR';
+      }
+    }
+
+    language.value = p.getString('language') ?? defaultLang;
+    currency.value = p.getString('currency') ?? defaultCurr;
     volumeUnit.value = p.getString('volume_unit') ?? 'L';
     distanceUnit.value = p.getString('distance_unit') ?? 'km';
   }
@@ -51,32 +93,52 @@ class SettingsController extends GetxController {
     (await _prefs).setString('distance_unit', val);
   }
 
-  String get currencySymbol {
-    switch (currency.value) {
-      case 'USD': return '\$';
-      case 'EUR': return '€';
-      case 'KZT': return '₸';
+  String get currencySymbol => getSymbolForCurrency(currency.value);
+
+  String getSymbolForCurrency(String code) {
+    switch (code) {
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'KZT':
+        return '₸';
       case 'RUB':
-      default:
         return '₽';
+      default:
+        return code;
     }
   }
 
   /// Конвертация объёма в целевую единицу
   double convertVolume(double amount, String fromUnit, String toUnit) {
-    if (fromUnit == toUnit) return amount;
-    if (fromUnit == 'kWh' || toUnit == 'kWh') return amount; // Не конвертируем электричество в литры
+    if (fromUnit == toUnit) {
+      return amount;
+    }
+    if (fromUnit == 'kWh' || toUnit == 'kWh') {
+      return amount; // Не конвертируем электричество в литры
+    }
 
-    if (fromUnit == 'L' && toUnit == 'gal') return amount * 0.264172;
-    if (fromUnit == 'gal' && toUnit == 'L') return amount / 0.264172;
+    if (fromUnit == 'L' && toUnit == 'gal') {
+      return amount * 0.264172;
+    }
+    if (fromUnit == 'gal' && toUnit == 'L') {
+      return amount / 0.264172;
+    }
     return amount;
   }
 
   /// Конвертация расстояния
   double convertDistance(double distance, String fromUnit, String toUnit) {
-    if (fromUnit == toUnit) return distance;
-    if (fromUnit == 'km' && toUnit == 'mi') return distance * 0.621371;
-    if (fromUnit == 'mi' && toUnit == 'km') return distance / 0.621371;
+    if (fromUnit == toUnit) {
+      return distance;
+    }
+    if (fromUnit == 'km' && toUnit == 'mi') {
+      return distance * 0.621371;
+    }
+    if (fromUnit == 'mi' && toUnit == 'km') {
+      return distance / 0.621371;
+    }
     return distance;
   }
 }

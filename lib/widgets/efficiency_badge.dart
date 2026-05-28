@@ -4,18 +4,21 @@ import '../theme/app_theme.dart';
 
 /// Бейдж эффективности расхода топлива.
 ///
-/// Цвет и иконка определяются относительно среднего расхода:
-///   • зелёный  — расход ниже avg на 10% и более
-///   • янтарный — расход в пределах ±10% от avg
-///   • красный  — расход выше avg на 10% и более
+/// Уровни:
+///   • зелёный  — расход ниже avg на 10% и более → «Отлично»
+///   • серый    — в пределах ±10% от avg → «Норма»
+///   • красный  — расход выше avg на 10% → «Высокий»
+///   • оранжевый ⚠ — расход аномальный (вне физических пределов) → «Аномалия»
 class EfficiencyBadge extends StatelessWidget {
-  final double consumption;  // Текущий расход (л/100 км)
-  final double? avgConsumption; // Средний расход для сравнения
+  final double consumption;
+  final double? avgConsumption;
+  final bool isAnomalous;
 
   const EfficiencyBadge({
     super.key,
     required this.consumption,
     this.avgConsumption,
+    this.isAnomalous = false,
   });
 
   @override
@@ -47,6 +50,15 @@ class EfficiencyBadge extends StatelessWidget {
   }
 
   (Color, IconData, String) _resolve() {
+    // Аномальный расход — приоритет
+    if (isAnomalous) {
+      return (
+        Colors.orange,
+        Icons.warning_amber_rounded,
+        'Аномалия',
+      );
+    }
+
     if (avgConsumption == null) {
       return (Colors.grey, Icons.remove, 'N/A');
     }

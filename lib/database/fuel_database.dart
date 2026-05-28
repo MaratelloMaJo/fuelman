@@ -28,7 +28,7 @@ class FuelDatabase {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onConfigure: (db) async {
         // Включаем поддержку внешних ключей (CASCADE DELETE).
         await db.execute('PRAGMA foreign_keys = ON');
@@ -62,6 +62,7 @@ class FuelDatabase {
         volume         REAL    NOT NULL,
         is_full_tank   INTEGER NOT NULL DEFAULT 1,
         price_per_liter REAL,
+        total_cost     REAL,
         consumption    REAL,
         entry_type     TEXT    NOT NULL DEFAULT 'fuel',
         volume_unit    TEXT    NOT NULL DEFAULT 'L',
@@ -81,6 +82,9 @@ class FuelDatabase {
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE vehicles ADD COLUMN hybrid_type TEXT');
       await db.execute('ALTER TABLE vehicles ADD COLUMN ev_goal REAL');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE fuel_entries ADD COLUMN total_cost REAL');
     }
   }
 
@@ -127,6 +131,12 @@ class FuelDatabase {
       orderBy: 'date ASC',
     );
     return rows.map(FuelEntry.fromMap).toList();
+  }
+
+  Future<int> getAllEntriesCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) FROM fuel_entries');
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   Future<FuelEntry> insertEntry(FuelEntry entry) async {

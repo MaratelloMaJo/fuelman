@@ -66,43 +66,61 @@ class StatisticsTab extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(height: 12),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.6,
-                  children: [
-                    StatsCard(
-                      icon: Icons.local_gas_station_rounded,
-                      value: stats['total_volume'] != null
-                          ? '${stats['total_volume']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}'
-                          : 'no_data'.tr,
-                      label: 'stats_total_volume'.tr,
-                    ),
-                    StatsCard(
-                      icon: Icons.payments_rounded,
-                      value: stats['total_cost'] != null &&
-                              stats['total_cost']! > 0
-                          ? '${stats['total_cost']!.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}'
-                          : 'no_data'.tr,
-                      label: 'total_spent'.tr,
-                    ),
-                    StatsCard(
-                      icon: Icons.show_chart_rounded,
-                      value: stats['avg_consumption'] != null
-                          ? '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}'
-                          : 'no_data'.tr,
-                      label: 'avg_consumption'.tr,
-                    ),
-                    StatsCard(
-                      icon: Icons.format_list_numbered_rounded,
-                      value: totalEntries.toString(),
-                      label: 'stats_total_entries'.tr,
-                    ),
-                  ],
-                ),
+                  Builder(builder: (context) {
+                    String volumeText = '';
+                    if (stats['total_volume'] != null && stats['total_volume']! > 0) {
+                      volumeText += '${stats['total_volume']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
+                    }
+                    if (stats['total_ev_volume'] != null && stats['total_ev_volume']! > 0) {
+                      if (volumeText.isNotEmpty) volumeText += '\n';
+                      volumeText += '${stats['total_ev_volume']!.toStringAsFixed(1)} kWh';
+                    }
+                    if (volumeText.isEmpty) volumeText = 'no_data'.tr;
+
+                    String avgText = '';
+                    if (stats['avg_consumption'] != null && stats['avg_consumption']! > 0) {
+                      avgText += '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
+                    }
+                    if (stats['avg_ev_consumption'] != null && stats['avg_ev_consumption']! > 0) {
+                      if (avgText.isNotEmpty) avgText += '\n';
+                      avgText += '${stats['avg_ev_consumption']!.toStringAsFixed(1)} kWh';
+                    }
+                    if (avgText.isEmpty) avgText = 'no_data'.tr;
+
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 1.15,
+                      children: [
+                        StatsCard(
+                          icon: Icons.local_gas_station_rounded,
+                          value: volumeText,
+                          label: 'stats_total_volume'.tr,
+                        ),
+                        StatsCard(
+                          icon: Icons.payments_rounded,
+                          value: stats['total_cost'] != null &&
+                                  stats['total_cost']! > 0
+                              ? '${stats['total_cost']!.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}'
+                              : 'no_data'.tr,
+                          label: 'total_spent'.tr,
+                        ),
+                        StatsCard(
+                          icon: Icons.show_chart_rounded,
+                          value: avgText,
+                          label: 'avg_consumption'.tr,
+                        ),
+                        StatsCard(
+                          icon: Icons.format_list_numbered_rounded,
+                          value: totalEntries.toString(),
+                          label: 'stats_total_entries'.tr,
+                        ),
+                      ],
+                    );
+                  }),
 
                 // ── Monthly charts ──
                 if (monthly.isNotEmpty) ...[

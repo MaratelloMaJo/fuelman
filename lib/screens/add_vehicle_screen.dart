@@ -362,7 +362,7 @@ class _BodyTypePicker extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
-      childAspectRatio: 1.1,
+      childAspectRatio: 0.95,
       children: _types.entries.map((e) {
         final isActive = e.key == selected;
         return GestureDetector(

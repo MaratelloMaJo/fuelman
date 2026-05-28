@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Контроллер темы (светлая / тёмная) с сохранением выбора.
+/// Контроллер темы с поддержкой системной темы.
 class ThemeController extends GetxController {
-  static const _prefsKey = 'isDarkMode';
+  static const _prefsKey = 'themeMode';
 
-  final _isDark = false.obs;
+  final _themeMode = ThemeMode.system.obs;
 
-  bool get isDark => _isDark.value;
+  ThemeMode get themeMode => _themeMode.value;
 
-  ThemeMode get themeMode => _isDark.value ? ThemeMode.dark : ThemeMode.light;
+  bool get isDark => _themeMode.value == ThemeMode.dark;
+  bool get isSystem => _themeMode.value == ThemeMode.system;
 
   @override
   void onInit() {
@@ -20,18 +21,32 @@ class ThemeController extends GetxController {
 
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _isDark.value = prefs.getBool(_prefsKey) ?? false;
+    final savedMode = prefs.getString(_prefsKey);
+    if (savedMode == 'dark') {
+      _themeMode.value = ThemeMode.dark;
+    } else if (savedMode == 'light') {
+      _themeMode.value = ThemeMode.light;
+    } else {
+      _themeMode.value = ThemeMode.system;
+    }
+    // Обратная совместимость
+    if (savedMode == null) {
+      final oldIsDark = prefs.getBool('isDarkMode');
+      if (oldIsDark != null) {
+        _themeMode.value = oldIsDark ? ThemeMode.dark : ThemeMode.light;
+      }
+    }
     _applyTheme();
   }
 
-  Future<void> toggleTheme() async {
-    _isDark.value = !_isDark.value;
+  Future<void> setThemeMode(ThemeMode mode) async {
+    _themeMode.value = mode;
     _applyTheme();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefsKey, _isDark.value);
+    await prefs.setString(_prefsKey, mode.name);
   }
 
   void _applyTheme() {
-    Get.changeThemeMode(_isDark.value ? ThemeMode.dark : ThemeMode.light);
+    Get.changeThemeMode(_themeMode.value);
   }
 }

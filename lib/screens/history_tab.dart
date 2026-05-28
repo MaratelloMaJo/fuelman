@@ -42,7 +42,6 @@ extension on _Period {
 
 class _HistoryTabState extends State<HistoryTab> {
   _Period _period = _Period.all;
-  bool _isExporting = false;
 
   final _entryCtrl = Get.find<FuelEntryController>();
   final _vehicleCtrl = Get.find<VehicleController>();
@@ -59,16 +58,6 @@ class _HistoryTabState extends State<HistoryTab> {
     return all.where((e) => e.date.isAfter(cutoff)).toList();
   }
 
-  Future<void> _export() async {
-    final v = _vehicleCtrl.selectedVehicle.value;
-    if (v == null) return;
-    setState(() => _isExporting = true);
-    try {
-      await _entryCtrl.exportToCsv(v.id!, v.name);
-    } finally {
-      if (mounted) setState(() => _isExporting = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,23 +67,6 @@ class _HistoryTabState extends State<HistoryTab> {
       appBar: AppBar(
         title: Text('history_title'.tr),
         centerTitle: true,
-        actions: [
-          Obx(() {
-            final v = _vehicleCtrl.selectedVehicle.value;
-            if (v == null) return const SizedBox.shrink();
-            return IconButton(
-              icon: _isExporting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.share_rounded),
-              tooltip: 'export_csv'.tr,
-              onPressed: _isExporting ? null : _export,
-            );
-          }),
-        ],
       ),
       floatingActionButton: Obx(() {
         if (_vehicleCtrl.selectedVehicle.value == null) {
@@ -192,9 +164,15 @@ class _HistoryTabState extends State<HistoryTab> {
                       itemCount: filtered.length,
                       itemBuilder: (_, i) {
                         final entry = filtered[i];
+                        // Предыдущий одометр: запись следующая в filtered (filtered DESC)
+                        final double? prevOdo = (i + 1 < filtered.length)
+                            ? filtered[i + 1].odometer
+                            : null;
                         return FuelEntryTile(
                           entry: entry,
                           avgConsumption: avgConsumption,
+                          prevOdometer: prevOdo,
+                          onTap: () => Get.to(() => AddEntryScreen(editEntry: entry)),
                           onDelete: () async {
                             await _entryCtrl.deleteEntry(
                               entry.id!,

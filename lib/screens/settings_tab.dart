@@ -45,30 +45,28 @@ class _SettingsTabState extends State<SettingsTab> {
           // ── Внешний вид ──
           _SectionHeader(title: 'settings_appearance'.tr),
           Obx(() {
-            final isDark = themeCtrl.isDark;
+            final mode = themeCtrl.themeMode;
+            final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && Theme.of(context).brightness == Brightness.dark);
             return ListTile(
-              leading: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: Icon(
-                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                  key: ValueKey(isDark),
-                  color: isDark ? Colors.amber : cs.primary,
-                ),
+              leading: Icon(
+                mode == ThemeMode.system
+                    ? Icons.brightness_auto_rounded
+                    : (mode == ThemeMode.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded),
+                color: isDark ? Colors.amber : cs.primary,
               ),
-              title: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    isDark ? 'settings_dark_theme'.tr : 'settings_light_theme'.tr,
-                    key: ValueKey(isDark),
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
+              title: Text('settings_theme'.tr, style: const TextStyle(fontWeight: FontWeight.w500)),
+              trailing: DropdownButtonHideUnderline(
+                child: DropdownButton<ThemeMode>(
+                  value: mode,
+                  items: [
+                    DropdownMenuItem(value: ThemeMode.system, child: Text('theme_system'.tr)),
+                    DropdownMenuItem(value: ThemeMode.light, child: Text('theme_light'.tr)),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text('theme_dark'.tr)),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) themeCtrl.setThemeMode(v);
+                  },
                 ),
-              ),
-              trailing: _ThemeSwitch(
-                value: isDark,
-                onChanged: (_) => themeCtrl.toggleTheme(),
               ),
             );
           }),
@@ -212,97 +210,6 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 }
 
-// ─────────────────────────────────── Theme Switch ──
-
-class _ThemeSwitch extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _ThemeSwitch({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        width: 56,
-        height: 28,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: value ? const Color(0xFF1A1A2E) : cs.primaryContainer,
-          boxShadow: [
-            BoxShadow(
-              color: value
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : cs.primary.withValues(alpha: 0.2),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            )
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Stars (dark mode)
-            AnimatedOpacity(
-              opacity: value ? 1 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: Center(
-                  child: Text('✦', style: TextStyle(fontSize: 9, color: Colors.white54)),
-                ),
-              ),
-            ),
-            // Sun (light mode)
-            AnimatedOpacity(
-              opacity: value ? 0 : 1,
-              duration: const Duration(milliseconds: 200),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Center(
-                  child: Text('☀',
-                      style: TextStyle(fontSize: 12, color: cs.primary)),
-                ),
-              ),
-            ),
-            // Thumb
-            AnimatedAlign(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                width: 24,
-                height: 24,
-                margin: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: value ? Colors.amber : Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    value ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-                    size: 14,
-                    color: value ? const Color(0xFF1A1A2E) : Colors.orange,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────── Section header ──
 

@@ -24,6 +24,9 @@ class FuelEntry {
   /// Рассчитанный расход л/100 км (null для дозаправок и первой записи).
   final double? consumption;
 
+  /// Точно введенная пользователем общая стоимость (если есть)
+  final double? storedTotalCost;
+
   /// Тип записи: 'fuel' (топливо) или 'charge' (зарядка).
   final String entryType;
 
@@ -41,6 +44,7 @@ class FuelEntry {
     required this.volume,
     this.isFullTank = true,
     this.pricePerLiter,
+    this.storedTotalCost,
     this.consumption,
     this.entryType = 'fuel',
     this.volumeUnit = 'L',
@@ -49,7 +53,7 @@ class FuelEntry {
 
   /// Полная стоимость заправки.
   double? get totalCost =>
-      pricePerLiter != null ? volume * pricePerLiter! : null;
+      storedTotalCost ?? (pricePerLiter != null ? volume * pricePerLiter! : null);
 
   /// Стоимость проезда 100 км.
   double? get costPer100km =>
@@ -65,6 +69,7 @@ class FuelEntry {
         'volume': volume,
         'is_full_tank': isFullTank ? 1 : 0,
         'price_per_liter': pricePerLiter,
+        'total_cost': storedTotalCost,
         'consumption': consumption,
         'entry_type': entryType,
         'volume_unit': volumeUnit,
@@ -79,6 +84,7 @@ class FuelEntry {
         volume: (map['volume'] as num).toDouble(),
         isFullTank: (map['is_full_tank'] as int) == 1,
         pricePerLiter: (map['price_per_liter'] as num?)?.toDouble(),
+        storedTotalCost: (map['total_cost'] as num?)?.toDouble(),
         consumption: (map['consumption'] as num?)?.toDouble(),
         entryType: map['entry_type'] as String? ?? 'fuel',
         volumeUnit: map['volume_unit'] as String? ?? 'L',
@@ -96,6 +102,8 @@ class FuelEntry {
     bool? isFullTank,
     double? pricePerLiter,
     bool clearPricePerLiter = false,
+    double? storedTotalCost,
+    bool clearStoredTotalCost = false,
     double? consumption,
     bool clearConsumption = false,
     String? entryType,
@@ -111,6 +119,8 @@ class FuelEntry {
         isFullTank: isFullTank ?? this.isFullTank,
         pricePerLiter:
             clearPricePerLiter ? null : (pricePerLiter ?? this.pricePerLiter),
+        storedTotalCost:
+            clearStoredTotalCost ? null : (storedTotalCost ?? this.storedTotalCost),
         consumption:
             clearConsumption ? null : (consumption ?? this.consumption),
         entryType: entryType ?? this.entryType,

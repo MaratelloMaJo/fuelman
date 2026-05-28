@@ -98,13 +98,23 @@ class HomeTab extends StatelessWidget {
                     crossAxisSpacing: 8,
                     childAspectRatio: 1.3,
                     children: [
-                      StatsCard(
-                        icon: Icons.show_chart_rounded,
-                        value: avgConsumption != null
-                            ? '${avgConsumption.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}'
-                            : 'no_data'.tr,
-                        label: 'avg_consumption'.tr,
-                      ),
+                      Builder(builder: (context) {
+                        String avgText = '';
+                        if (stats['avg_consumption'] != null && stats['avg_consumption']! > 0) {
+                          avgText += '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
+                        }
+                        if (stats['avg_ev_consumption'] != null && stats['avg_ev_consumption']! > 0) {
+                          if (avgText.isNotEmpty) avgText += '\n';
+                          avgText += '${stats['avg_ev_consumption']!.toStringAsFixed(1)} kWh';
+                        }
+                        if (avgText.isEmpty) avgText = 'no_data'.tr;
+
+                        return StatsCard(
+                          icon: Icons.show_chart_rounded,
+                          value: avgText,
+                          label: 'avg_consumption'.tr,
+                        );
+                      }),
                       StatsCard(
                         icon: Icons.payments_rounded,
                         value: stats['cost_per_km'] != null
@@ -114,11 +124,11 @@ class HomeTab extends StatelessWidget {
                         valueColor: Colors.orange,
                       ),
                       StatsCard(
-                        icon: Icons.directions_car_rounded,
-                        value: stats['km_per_day'] != null
-                            ? '${stats['km_per_day']!.toStringAsFixed(1)} ${'km_unit'.tr}'
+                        icon: Icons.route_rounded,
+                        value: stats['total_distance'] != null
+                            ? '${stats['total_distance']!.toStringAsFixed(0)} ${'km_unit'.tr}'
                             : 'no_data'.tr,
-                        label: 'km_per_day'.tr,
+                        label: 'total_distance'.tr,
                         valueColor: Colors.blue,
                       ),
                       StatsCard(
@@ -170,10 +180,17 @@ class HomeTab extends StatelessWidget {
                   SliverList.builder(
                     itemCount: entries.length.clamp(0, 3),
                     itemBuilder: (_, i) {
-                      final e = entries[entries.length - 1 - i]; // последние первыми
+                      final idx = entries.length - 1 - i;
+                      final e = entries[idx];
+                      final prev = idx > 0 ? entries[idx - 1].odometer : null;
                       return FuelEntryTile(
                         entry: e,
                         avgConsumption: avgConsumption,
+                        prevOdometer: prev,
+                        onTap: () => Get.to(() => AddEntryScreen(editEntry: e)),
+                        onDelete: () async {
+                          await entryCtrl.deleteEntry(e.id!, e.vehicleId);
+                        },
                       );
                     },
                   ),
