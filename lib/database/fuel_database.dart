@@ -6,10 +6,11 @@ import 'package:file_picker/file_picker.dart';
 
 import '../models/vehicle.dart';
 import '../models/fuel_entry.dart';
+import '../models/car_expense.dart';
 
 /// Singleton-обёртка над SQLite базой данных FuelMan.
 ///
-/// Содержит CRUD-методы для [Vehicle] и [FuelEntry],
+/// Содержит CRUD-методы для [Vehicle], [FuelEntry] и [CarExpense],
 /// а также агрегированные запросы статистики.
 class FuelDatabase {
   FuelDatabase._();
@@ -28,9 +29,8 @@ class FuelDatabase {
 
     return openDatabase(
       path,
-      version: 4,
+      version: 6,
       onConfigure: (db) async {
-        // Включаем поддержку внешних ключей (CASCADE DELETE).
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _onCreate,
@@ -47,26 +47,52 @@ class FuelDatabase {
         icon_type     TEXT    NOT NULL DEFAULT 'sedan',
         engine_type   TEXT    NOT NULL DEFAULT 'gas',
         hybrid_type   TEXT,
+        fuel_subtype  TEXT,
         fuel_goal     REAL,
         ev_goal       REAL,
-        reminder_days INTEGER
+        reminder_days INTEGER,
+        license_plate TEXT,
+        engine_volume REAL,
+        horse_power   INTEGER,
+        year          INTEGER
       )
     ''');
 
     await db.execute('''
       CREATE TABLE fuel_entries (
-        id             INTEGER PRIMARY KEY AUTOINCREMENT,
-        vehicle_id     INTEGER NOT NULL,
-        date           TEXT    NOT NULL,
-        odometer       REAL    NOT NULL,
-        volume         REAL    NOT NULL,
-        is_full_tank   INTEGER NOT NULL DEFAULT 1,
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        vehicle_id      INTEGER NOT NULL,
+        date            TEXT    NOT NULL,
+        odometer        REAL    NOT NULL,
+        volume          REAL    NOT NULL,
+        is_full_tank    INTEGER NOT NULL DEFAULT 1,
         price_per_liter REAL,
-        total_cost     REAL,
-        consumption    REAL,
-        entry_type     TEXT    NOT NULL DEFAULT 'fuel',
-        volume_unit    TEXT    NOT NULL DEFAULT 'L',
-        currency       TEXT    NOT NULL DEFAULT 'RUB',
+        total_cost      REAL,
+        consumption     REAL,
+        entry_type      TEXT    NOT NULL DEFAULT 'fuel',
+        volume_unit     TEXT    NOT NULL DEFAULT 'L',
+        currency        TEXT    NOT NULL DEFAULT 'RUB',
+        latitude        REAL,
+        longitude       REAL,
+        station_name    TEXT,
+        FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE car_expenses (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        vehicle_id INTEGER NOT NULL,
+        date       TEXT    NOT NULL,
+        category   TEXT    NOT NULL,
+        title      TEXT    NOT NULL,
+        amount     REAL    NOT NULL,
+        currency   TEXT    NOT NULL DEFAULT 'RUB',
+        odometer   REAL,
+        latitude   REAL,
+        longitude  REAL,
+        place_name TEXT,
+        notes      TEXT,
         FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
       )
     ''');
@@ -85,6 +111,40 @@ class FuelDatabase {
     }
     if (oldVersion < 4) {
       await db.execute('ALTER TABLE fuel_entries ADD COLUMN total_cost REAL');
+    }
+    if (oldVersion < 5) {
+      // Новые поля автомобиля
+      await db.execute('ALTER TABLE vehicles ADD COLUMN license_plate TEXT');
+      await db.execute('ALTER TABLE vehicles ADD COLUMN engine_volume REAL');
+      await db.execute('ALTER TABLE vehicles ADD COLUMN horse_power INTEGER');
+      await db.execute('ALTER TABLE vehicles ADD COLUMN year INTEGER');
+
+      // GPS + название станции для заправок/зарядок
+      await db.execute('ALTER TABLE fuel_entries ADD COLUMN latitude REAL');
+      await db.execute('ALTER TABLE fuel_entries ADD COLUMN longitude REAL');
+      await db.execute('ALTER TABLE fuel_entries ADD COLUMN station_name TEXT');
+
+      // Новая таблица расходов на уход
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS car_expenses (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          vehicle_id INTEGER NOT NULL,
+          date       TEXT    NOT NULL,
+          category   TEXT    NOT NULL,
+          title      TEXT    NOT NULL,
+          amount     REAL    NOT NULL,
+          currency   TEXT    NOT NULL DEFAULT 'RUB',
+          odometer   REAL,
+          latitude   REAL,
+          longitude  REAL,
+          place_name TEXT,
+          notes      TEXT,
+          FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+        )
+      ''');
+    }
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE vehicles ADD COLUMN fuel_subtype TEXT');
     }
   }
 
@@ -120,8 +180,7 @@ class FuelDatabase {
 
   // ─────────────────────────────────────────── Fuel Entries ──
 
-  /// Возвращает все записи для автомобиля, отсортированные по дате ASC
-  /// (нужно для корректного алгоритма Full-to-Full).
+  /// Возвращает все записи для автомобиля, отсортированные по дате ASC.
   Future<List<FuelEntry>> getEntries(int vehicleId) async {
     final db = await database;
     final rows = await db.query(
@@ -161,11 +220,76 @@ class FuelDatabase {
     await db.delete('fuel_entries', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ──────────────────────────────────────────── Car Expenses ──
+
+  Future<List<CarExpense>> getExpenses(int vehicleId) async {
+    final db = await database;
+    final rows = await db.query(
+      'car_expenses',
+      where: 'vehicle_id = ?',
+      whereArgs: [vehicleId],
+      orderBy: 'date DESC',
+    );
+    return rows.map(CarExpense.fromMap).toList();
+  }
+
+  Future<CarExpense> insertExpense(CarExpense expense) async {
+    final db = await database;
+    final map = Map<String, dynamic>.from(expense.toMap())..remove('id');
+    final id = await db.insert('car_expenses', map);
+    return expense.copyWith(id: id);
+  }
+
+  Future<void> updateExpense(CarExpense expense) async {
+    final db = await database;
+    await db.update(
+      'car_expenses',
+      expense.toMap(),
+      where: 'id = ?',
+      whereArgs: [expense.id],
+    );
+  }
+
+  Future<void> deleteExpense(int id) async {
+    final db = await database;
+    await db.delete('car_expenses', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Статистика расходов на уход по категориям.
+  Future<Map<String, double>> getExpenseStatsByCategory(int vehicleId) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT category, SUM(amount) as total
+      FROM car_expenses
+      WHERE vehicle_id = ?
+      GROUP BY category
+    ''', [vehicleId]);
+
+    final Map<String, double> stats = {};
+    for (final row in result) {
+      stats[row['category'] as String] = (row['total'] as num).toDouble();
+    }
+    return stats;
+  }
+
+  /// Суммарные расходы на уход по месяцам.
+  Future<List<Map<String, dynamic>>> getMonthlyExpenses(int vehicleId) async {
+    final db = await database;
+    return db.rawQuery('''
+      SELECT
+        strftime('%Y-%m', date) AS month,
+        SUM(amount)             AS total_amount,
+        COUNT(*)                AS total_count
+      FROM car_expenses
+      WHERE vehicle_id = ?
+      GROUP BY strftime('%Y-%m', date)
+      ORDER BY month ASC
+    ''', [vehicleId]);
+  }
+
   // ──────────────────────────────────────────────── Stats ────
 
   /// Агрегированная статистика расхода и стоимости для автомобиля.
-  ///
-  /// Учитываются только записи с рассчитанным расходом (isFullTank + Full-to-Full).
   Future<Map<String, double?>> getStats(int vehicleId) async {
     final db = await database;
 
@@ -195,7 +319,7 @@ class FuelDatabase {
     };
   }
 
-  /// Статистика расхода по месяцам (для графика на экране статистики).
+  /// Статистика расхода по месяцам.
   Future<List<Map<String, dynamic>>> getMonthlyStats(int vehicleId) async {
     final db = await database;
     return db.rawQuery('''
@@ -211,7 +335,7 @@ class FuelDatabase {
     ''', [vehicleId]);
   }
 
-  /// Дата последней записи для автомобиля (для проверки напоминаний).
+  /// Дата последней записи для автомобиля.
   Future<DateTime?> getLastEntryDate(int vehicleId) async {
     final db = await database;
     final result = await db.rawQuery(
@@ -254,20 +378,19 @@ class FuelDatabase {
 
       if (result != null && result.files.single.path != null) {
         final backupFile = File(result.files.single.path!);
-        
-        await close(); // Закрываем текущее соединение
+
+        await close();
 
         final dbPath = await getDatabasesPath();
         final path = p.join(dbPath, 'fuelman.db');
-        
+
         await backupFile.copy(path);
-        
-        // Переинициализируем соединение
+
         _db = await _initDb();
         return true;
       }
     } catch (e) {
-      // Игнорируем или логируем ошибку
+      // ignore
     }
     return false;
   }

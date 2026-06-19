@@ -11,6 +11,7 @@ import '../widgets/fuel_entry_tile.dart';
 import '../widgets/goal_progress_bar.dart';
 import '../widgets/stats_card.dart';
 import 'add_entry_screen.dart';
+import 'settings_tab.dart';
 
 /// Главный экран (вкладка «Главная»).
 ///
@@ -34,6 +35,13 @@ class HomeTab extends StatelessWidget {
       appBar: AppBar(
         title: Text('app_title'.tr),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            onPressed: () => Get.to(() => const SettingsTab()),
+            tooltip: 'settings_title'.tr,
+          ),
+        ],
       ),
       floatingActionButton: Obx(() {
         if (vehicleCtrl.selectedVehicle.value == null) {

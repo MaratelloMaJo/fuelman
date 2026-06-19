@@ -75,8 +75,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   Expanded(
                     child: Text(
                       _mode == _ChartMode.consumption
-                          ? 'Расход топлива'
-                          : 'Стоимость заправок',
+                          ? 'consumption_chart_title'.tr
+                          : 'cost_chart_title'.tr,
                       style: Theme.of(context)
                           .textTheme
                           .titleSmall
@@ -91,16 +91,16 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                             const EdgeInsets.symmetric(horizontal: 12),
                         visualDensity: VisualDensity.compact,
                       ),
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: _ChartMode.consumption,
-                          icon: Icon(Icons.show_chart_rounded, size: 16),
-                          tooltip: 'Расход',
+                          icon: const Icon(Icons.show_chart_rounded, size: 16),
+                          tooltip: 'consumption_label'.tr,
                         ),
                         ButtonSegment(
                           value: _ChartMode.cost,
-                          icon: Icon(Icons.bar_chart_rounded, size: 16),
-                          tooltip: 'Стоимость',
+                          icon: const Icon(Icons.bar_chart_rounded, size: 16),
+                          tooltip: 'stats_monthly_costs'.tr,
                         ),
                       ],
                       selected: {_mode},
@@ -116,15 +116,15 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                 padding: const EdgeInsets.only(left: 8, bottom: 8),
                 child: Row(
                   children: [
-                    _LegendDot(color: cs.primary, label: 'Расход'),
+                    _LegendDot(color: cs.primary, label: 'consumption_label'.tr),
                     const SizedBox(width: 12),
                     _LegendDot(
                         color: cs.primary.withAlpha(120),
-                        label: 'Среднее',
+                        label: 'avg_consumption'.tr,
                         dashed: true),
                     const SizedBox(width: 12),
                     _LegendDot(
-                        color: Colors.orange, label: 'Аномалия'),
+                        color: Colors.orange, label: 'anomaly_note'.tr),
                   ],
                 ),
               ),
@@ -135,7 +135,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
               child: widget.entries.isEmpty
                   ? Center(
                       child: Text(
-                        'Недостаточно данных\n(нужно ≥ 2 заправок)',
+                        'stats_no_entries_subtitle'.tr,
                         style: TextStyle(color: cs.onSurfaceVariant),
                         textAlign: TextAlign.center,
                       ),
@@ -300,7 +300,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
               // Игнорируем тулип от линии среднего (второй LineBar)
               if (s.barIndex == 1) {
                 return LineTooltipItem(
-                  'Среднее: ${s.y.toStringAsFixed(1)}',
+                  '${'avg_consumption'.tr}: ${s.y.toStringAsFixed(1)}',
                   TextStyle(
                       fontSize: 11,
                       color: cs.onSurfaceVariant,
@@ -328,8 +328,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   ),
                   if (isAnomaly)
                     TextSpan(
-                      text: '\n⚠ Аномалия',
-                      style: TextStyle(
+                      text: '\n⚠ ${'warn_consumption_short'.tr}',
+                      style: const TextStyle(
                           fontSize: 10,
                           color: Colors.orange,
                           fontWeight: FontWeight.normal),
@@ -377,7 +377,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
     if (costEntries.isEmpty) {
       return Center(
         child: Text(
-          'Нет данных о стоимости.\nДобавьте цену за литр в записях.',
+          'stats_no_data_title'.tr,
           style: TextStyle(color: cs.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),

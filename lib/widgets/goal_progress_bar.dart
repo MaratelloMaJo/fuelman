@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
+
 /// Прогресс-бар для отображения достижения цели по расходу топлива.
 ///
 /// Показывает текущий средний расход относительно установленной цели.
@@ -37,7 +39,7 @@ class GoalProgressBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Цель по расходу',
+                  'goal_consumption_title'.tr,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: cs.onSurfaceVariant,
                       ),
@@ -64,7 +66,7 @@ class GoalProgressBar extends StatelessWidget {
             if (isOverGoal) ...[
               const SizedBox(height: 6),
               Text(
-                '⚠ Расход превышает цель на ${(current - goal).toStringAsFixed(1)} л/100 км',
+                '${'goal_exceeded'.tr} ${(current - goal).toStringAsFixed(1)}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: cs.error,
                     ),

@@ -36,6 +36,15 @@ class FuelEntry {
   /// Валюта записи: 'RUB', 'KZT', 'USD', 'EUR'.
   final String currency;
 
+  /// Широта GPS (необязательно).
+  final double? latitude;
+
+  /// Долгота GPS (необязательно).
+  final double? longitude;
+
+  /// Название АЗС/зарядной станции/дома (необязательно).
+  final String? stationName;
+
   const FuelEntry({
     this.id,
     required this.vehicleId,
@@ -49,7 +58,13 @@ class FuelEntry {
     this.entryType = 'fuel',
     this.volumeUnit = 'L',
     this.currency = 'RUB',
+    this.latitude,
+    this.longitude,
+    this.stationName,
   });
+
+  /// Есть ли GPS координаты.
+  bool get hasLocation => latitude != null && longitude != null;
 
   /// Полная стоимость заправки.
   double? get totalCost =>
@@ -74,6 +89,9 @@ class FuelEntry {
         'entry_type': entryType,
         'volume_unit': volumeUnit,
         'currency': currency,
+        'latitude': latitude,
+        'longitude': longitude,
+        'station_name': stationName,
       };
 
   factory FuelEntry.fromMap(Map<String, dynamic> map) => FuelEntry(
@@ -89,10 +107,11 @@ class FuelEntry {
         entryType: map['entry_type'] as String? ?? 'fuel',
         volumeUnit: map['volume_unit'] as String? ?? 'L',
         currency: map['currency'] as String? ?? 'RUB',
+        latitude: (map['latitude'] as num?)?.toDouble(),
+        longitude: (map['longitude'] as num?)?.toDouble(),
+        stationName: map['station_name'] as String?,
       );
 
-  /// Создаёт копию с изменёнными полями.
-  /// Используй [clearConsumption] = true чтобы явно обнулить расход.
   FuelEntry copyWith({
     int? id,
     int? vehicleId,
@@ -109,6 +128,12 @@ class FuelEntry {
     String? entryType,
     String? volumeUnit,
     String? currency,
+    double? latitude,
+    bool clearLatitude = false,
+    double? longitude,
+    bool clearLongitude = false,
+    String? stationName,
+    bool clearStationName = false,
   }) =>
       FuelEntry(
         id: id ?? this.id,
@@ -126,5 +151,8 @@ class FuelEntry {
         entryType: entryType ?? this.entryType,
         volumeUnit: volumeUnit ?? this.volumeUnit,
         currency: currency ?? this.currency,
+        latitude: clearLatitude ? null : (latitude ?? this.latitude),
+        longitude: clearLongitude ? null : (longitude ?? this.longitude),
+        stationName: clearStationName ? null : (stationName ?? this.stationName),
       );
 }

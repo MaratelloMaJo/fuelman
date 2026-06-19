@@ -370,10 +370,19 @@ class FuelEntryController extends GetxController {
         return;
       }
 
-      // Найдём индексы «полных» заправок
+      // Найдём индексы «полных» заправок, игнорируя слишком короткие дистанции (агрегация)
       final fullIndices = <int>[];
       for (int i = 0; i < list.length; i++) {
-        if (list[i].isFullTank) fullIndices.add(i);
+        if (list[i].isFullTank) {
+          if (fullIndices.isEmpty) {
+            fullIndices.add(i);
+          } else {
+            final distance = list[i].odometer - list[fullIndices.last].odometer;
+            if (distance >= kMinDistanceKm) {
+              fullIndices.add(i);
+            }
+          }
+        }
       }
 
       // Первая запись всегда имеет расход null
@@ -575,7 +584,7 @@ class FuelEntryController extends GetxController {
     final buf = StringBuffer();
 
     buf.writeln(
-      '\uFEFFДата,Одометр (км),Объём,Ед.изм,Цена/ед,Валюта,Стоимость,Расход,Тип,Энергия,Аномалия',
+      '\uFEFFДата,Одометр (км),Объём,Ед.изм,Цена/ед,Валюта,Стоимость,Расход,Тип,Энергия,Станция,Широта,Долгота,Аномалия',
     );
 
     for (final e in all) {
@@ -584,13 +593,16 @@ class FuelEntryController extends GetxController {
       final cost = e.totalCost?.toStringAsFixed(2) ?? '';
       final cons = e.consumption?.toStringAsFixed(2) ?? '—';
       final price = e.pricePerLiter?.toStringAsFixed(2) ?? '';
+      final station = e.stationName ?? '';
+      final lat = e.latitude?.toStringAsFixed(6) ?? '';
+      final lon = e.longitude?.toStringAsFixed(6) ?? '';
       final anomaly = (e.consumption != null &&
               isAnomalousConsumption(e.consumption!, e.entryType))
           ? 'Да'
           : '';
 
       buf.writeln(
-        '${fmt.format(e.date)},${e.odometer.toStringAsFixed(1)},${e.volume.toStringAsFixed(2)},${e.volumeUnit},$price,${e.currency},$cost,$cons,$fillType,$energy,$anomaly',
+        '${fmt.format(e.date)},${e.odometer.toStringAsFixed(1)},${e.volume.toStringAsFixed(2)},${e.volumeUnit},$price,${e.currency},$cost,$cons,$fillType,$energy,$station,$lat,$lon,$anomaly',
       );
     }
 

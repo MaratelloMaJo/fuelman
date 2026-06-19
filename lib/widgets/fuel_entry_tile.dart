@@ -91,7 +91,7 @@ class FuelEntryTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      entry.isFullTank ? 'Полный' : 'Частичный',
+                      entry.isFullTank ? 'full_tank'.tr : 'entry_partial'.tr,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -117,13 +117,13 @@ class FuelEntryTile extends StatelessWidget {
                 child: Row(
                   children: [
                     _Metric(
-                      label: 'Одометр',
-                      value: '${entry.odometer.toStringAsFixed(0)} км',
+                      label: 'odometer_label'.tr,
+                      value: '${entry.odometer.toStringAsFixed(0)} ${'km_unit'.tr}',
                       icon: Icons.speed_rounded,
                     ),
                     _Divider(),
                     _Metric(
-                      label: 'Объём',
+                      label: entry.entryType == 'charge' ? 'volume_label_charge'.tr : 'volume_label_fuel'.tr,
                       value:
                           '${entry.volume.toStringAsFixed(2)} ${entry.volumeUnit}',
                       icon: entry.entryType == 'charge'
@@ -133,7 +133,7 @@ class FuelEntryTile extends StatelessWidget {
                     if (entry.pricePerLiter != null) ...[
                       _Divider(),
                       _Metric(
-                        label: 'Цена/ед',
+                        label: 'price_per_unit'.tr,
                         value:
                             '${entry.pricePerLiter!.toStringAsFixed(1)} ${Get.find<SettingsController>().getSymbolForCurrency(entry.currency)}',
                         icon: Icons.sell_rounded,
@@ -142,7 +142,7 @@ class FuelEntryTile extends StatelessWidget {
                     if (entry.consumption != null) ...[
                       _Divider(),
                       _Metric(
-                        label: 'Расход',
+                        label: 'consumption_label'.tr,
                         value:
                             '${entry.consumption!.toStringAsFixed(1)} ${entry.volumeUnit}/100',
                         icon: isAnomalous
@@ -156,14 +156,13 @@ class FuelEntryTile extends StatelessWidget {
                 ),
               ),
 
-              // ── Строка 3: стоимость + ∆ пробег ──
               if (entry.totalCost != null || distanceKm != null) ...[
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     if (entry.totalCost != null)
                       Text(
-                        'Стоимость: ${entry.totalCost!.toStringAsFixed(0)} ${Get.find<SettingsController>().getSymbolForCurrency(entry.currency)}',
+                        '${'cost_label'.tr}${entry.totalCost!.toStringAsFixed(0)} ${Get.find<SettingsController>().getSymbolForCurrency(entry.currency)}',
                         style:
                             Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: cs.onSurfaceVariant,
@@ -178,7 +177,7 @@ class FuelEntryTile extends StatelessWidget {
                               size: 12, color: cs.onSurfaceVariant),
                           const SizedBox(width: 3),
                           Text(
-                            '∆ ${distanceKm.toStringAsFixed(0)} км',
+                            '∆ ${distanceKm.toStringAsFixed(0)} ${'km_unit'.tr}',
                             style: TextStyle(
                               fontSize: 11,
                               color: cs.onSurfaceVariant,
@@ -217,8 +216,18 @@ class FuelEntryTile extends StatelessWidget {
 
     return Dismissible(
       key: ValueKey(entry.id),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.horizontal,
       background: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: cs.primaryContainer,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20),
+        child: Icon(Icons.edit_rounded, color: cs.onPrimaryContainer),
+      ),
+      secondaryBackground: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
           color: cs.errorContainer,
@@ -228,22 +237,24 @@ class FuelEntryTile extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         child: Icon(Icons.delete_rounded, color: cs.onErrorContainer),
       ),
-      confirmDismiss: (_) async {
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onTap?.call();
+          return false;
+        }
         return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Удалить запись?'),
-            content: const Text(
-              'После удаления расход будет пересчитан. Это действие нельзя отменить.',
-            ),
+            title: Text('swipe_delete'.tr),
+            content: Text('delete_confirm'.tr),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Отмена'),
+                child: Text('cancel'.tr),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Удалить'),
+                child: Text('delete'.tr),
               ),
             ],
           ),

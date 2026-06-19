@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 
+import '../controllers/car_expense_controller.dart';
 import '../controllers/fuel_entry_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/vehicle_controller.dart';
@@ -25,6 +26,7 @@ class FuelManApp extends StatelessWidget {
     Get.put(SettingsController(), permanent: true);
     Get.put(VehicleController(), permanent: true);
     Get.put(FuelEntryController(), permanent: true);
+    Get.put(CarExpenseController(), permanent: true);
 
     final themeCtrl = Get.find<ThemeController>();
     final settingsCtrl = Get.find<SettingsController>();

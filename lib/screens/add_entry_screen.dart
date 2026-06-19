@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/fuel_entry_controller.dart';
 import '../controllers/vehicle_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../models/fuel_entry.dart';
 import '../models/vehicle.dart';
+import '../services/location_service.dart';
 
 /// Экран добавления/редактирования записи о заправке или зарядке.
 ///
@@ -52,6 +54,14 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   bool _isCalculating = false;
 
+  // GPS
+  double? _latitude;
+  double? _longitude;
+  bool _isGettingLocation = false;
+
+  // Название станции
+  final _stationNameCtrl = TextEditingController();
+
   final _entryCtrl = Get.find<FuelEntryController>();
   final _vehicleCtrl = Get.find<VehicleController>();
   final _settingsCtrl = Get.find<SettingsController>();
@@ -65,6 +75,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       _date = widget.editEntry!.date;
       _isFullTank = widget.editEntry!.isFullTank;
       _entryType = widget.editEntry!.entryType;
+      _latitude = widget.editEntry!.latitude;
+      _longitude = widget.editEntry!.longitude;
+      if (widget.editEntry!.stationName != null) {
+        _stationNameCtrl.text = widget.editEntry!.stationName!;
+      }
 
       _odometerCtrl.text = widget.editEntry!.odometer.toStringAsFixed(1);
       _volumeCtrl.text = widget.editEntry!.volume.toStringAsFixed(2);
@@ -223,11 +238,32 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     _volumeCtrl.dispose();
     _priceCtrl.dispose();
     _totalPriceCtrl.dispose();
+    _stationNameCtrl.dispose();
     _odometerFocus.dispose();
     _volumeFocus.dispose();
     _priceFocus.dispose();
     _totalPriceFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _getLocation() async {
+    setState(() => _isGettingLocation = true);
+    final loc = await LocationService.instance.getCurrentLocation();
+    setState(() {
+      _isGettingLocation = false;
+      if (loc != null) {
+        _latitude = loc.latitude;
+        _longitude = loc.longitude;
+        Get.snackbar('gps_saved'.tr,
+            '${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2));
+      } else {
+        Get.snackbar('gps_error'.tr, '',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2));
+      }
+    });
   }
 
   Future<void> _pickDate() async {
@@ -271,6 +307,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       entryType: _entryType,
       volumeUnit: _volumeUnit,
       currency: _currency,
+      latitude: _latitude,
+      longitude: _longitude,
+      stationName: _stationNameCtrl.text.trim().isEmpty
+          ? null
+          : _stationNameCtrl.text.trim(),
     );
 
     if (widget.editEntry != null) {
@@ -427,9 +468,10 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                 : 'new_entry_title'.tr)),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
           key: _formKey,
           child: Obx(() {
             final vehicle = _vehicleCtrl.selectedVehicle.value;
@@ -633,6 +675,30 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // ── Название станции / места зарядки ──
+                Text('station_name_label'.tr,
+                    style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _stationNameCtrl,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.local_gas_station_rounded),
+                    hintText: 'station_name_hint'.tr,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // ── GPS ──
+                _FuelGpsSection(
+                  latitude: _latitude,
+                  longitude: _longitude,
+                  isGetting: _isGettingLocation,
+                  onGetLocation: _getLocation,
+                  onClear: () => setState(() { _latitude = null; _longitude = null; }),
+                ),
+                const SizedBox(height: 16),
+
                 // ── Полный бак / Полная зарядка ──
                 Card(
                   child: SwitchListTile(
@@ -696,10 +762,93 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           }),
         ),
       ),
+    ),
+  );
+}
+}
+
+// ─────────────────────── Fuel GPS Section ──
+
+class _FuelGpsSection extends StatelessWidget {
+  final double? latitude;
+  final double? longitude;
+  final bool isGetting;
+  final VoidCallback onGetLocation;
+  final VoidCallback onClear;
+
+  const _FuelGpsSection({
+    required this.latitude,
+    required this.longitude,
+    required this.isGetting,
+    required this.onGetLocation,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final hasLocation = latitude != null && longitude != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('gps_location_label'.tr,
+            style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 8),
+        if (hasLocation)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_rounded, color: cs.primary, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      final uri = Uri.parse('geo:$latitude,$longitude?q=$latitude,$longitude');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } else {
+                        final webUri = Uri.parse('https://maps.google.com/?q=$latitude,$longitude');
+                        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    child: Text(
+                      '${latitude!.toStringAsFixed(5)}, ${longitude!.toStringAsFixed(5)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: onClear,
+                  icon: Icon(Icons.close_rounded, size: 18, color: cs.onSurfaceVariant),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: isGetting ? null : onGetLocation,
+            icon: isGetting
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.my_location_rounded, size: 18),
+            label: Text(isGetting ? 'gps_getting'.tr : 'gps_button'.tr),
+          ),
+      ],
     );
   }
 }
-
 // ─────────────────────── Consumption Preview Card ──
 
 class _ConsumptionPreviewCard extends StatelessWidget {
