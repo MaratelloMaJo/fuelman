@@ -46,6 +46,11 @@ class AppTranslationsRu extends Translations {
     'period_month': 'Месяц',
     'period_quarter': 'Квартал',
     'period_year': 'Год',
+    'period_all_short': 'Всё',
+    'period_month_short': 'Месяц',
+    'period_quarter_short': 'Кварт.',
+    'period_year_short': 'Год',
+    'period_custom': 'Период',
     'entries_count': 'записей',
     'total_prefix': 'Итого: ',
     'no_entries_period': 'Нет записей за выбранный период',
@@ -211,6 +216,7 @@ class AppTranslationsRu extends Translations {
     'nav_care': 'Уход',
     'care_title': 'Уход',
     'care_all': 'Все',
+    'cat_all': 'Все',
     'cat_service': 'Сервис',
     'cat_oil_change': 'Масло',
     'cat_wash': 'Мойка',
@@ -281,11 +287,17 @@ class AppTranslationsRu extends Translations {
     'stats_care_monthly': 'Ежемесячные расходы',
     'stats_care_no_data': 'Нет данных о расходах',
     'stats_care_no_data_hint': 'Добавьте записи об уходе',
+    'chart_bar': 'Столбч.диагр.',
+    'chart_line': 'Линейн.',
+    'chart_pie': 'Кругов.',
+    'stats_chart_distribution': 'Распределение расходов',
 
     // ── Выбор типа добавления (модальное) ──
     'add_what': 'Что добавить?',
     'add_fuel_entry': 'Заправка / Зарядка',
+    'add_fuel_subtitle': 'Заправка топлива или зарядка ЭКС',
     'add_car_expense': 'Расход на уход',
+    'add_expense_subtitle': 'Сервис, масло, мойка, налог…',
 
     // ── Missing Localization & Fuel Subtypes ──
     'price_per_unit': 'Цена/ед',

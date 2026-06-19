@@ -25,7 +25,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
     setState(() {
-      _version = '${info.version}+${info.buildNumber}';
+      _version = info.version;
     });
   }
 

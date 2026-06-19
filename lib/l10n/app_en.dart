@@ -46,6 +46,11 @@ class AppTranslationsEn extends Translations {
     'period_month': 'Month',
     'period_quarter': 'Quarter',
     'period_year': 'Year',
+    'period_all_short': 'All',
+    'period_month_short': 'Month',
+    'period_quarter_short': 'Quarter',
+    'period_year_short': 'Year',
+    'period_custom': 'Custom',
     'entries_count': 'entries',
     'total_prefix': 'Total: ',
     'no_entries_period': 'No entries for the selected period',
@@ -211,6 +216,7 @@ class AppTranslationsEn extends Translations {
     'nav_care': 'Care',
     'care_title': 'Care',
     'care_all': 'All',
+    'cat_all': 'All',
     'cat_service': 'Service',
     'cat_oil_change': 'Oil',
     'cat_wash': 'Wash',
@@ -281,11 +287,17 @@ class AppTranslationsEn extends Translations {
     'stats_care_monthly': 'Monthly expenses',
     'stats_care_no_data': 'No expense data',
     'stats_care_no_data_hint': 'Add care entries to see stats',
+    'chart_bar': 'Bar chart',
+    'chart_line': 'Line chart',
+    'chart_pie': 'Pie chart',
+    'stats_chart_distribution': 'Expense distribution',
 
     // ── Add type modal ──
     'add_what': 'What to add?',
     'add_fuel_entry': 'Fuel / Charge',
+    'add_fuel_subtitle': 'Fuel fill-up or EV charging',
     'add_car_expense': 'Car expense',
+    'add_expense_subtitle': 'Service, oil, wash, tax…',
 
     // ── Missing Localization & Fuel Subtypes ──
     'price_per_unit': 'Price/unit',

@@ -344,20 +344,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             ? ExtraLinesData(horizontalLines: [
                 HorizontalLine(
                   y: avgY,
-                  color: cs.primary.withAlpha(0), // невидимая — нарисована через LineBarsData
+                  color: cs.primary.withAlpha(0),
                   strokeWidth: 0,
-                  label: HorizontalLineLabel(
-                    show: true,
-                    alignment: Alignment.topRight,
-                    padding: const EdgeInsets.only(right: 4, bottom: 2),
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: cs.primary.withAlpha(180),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    labelResolver: (_) =>
-                        'avg ${avgY.toStringAsFixed(1)}',
-                  ),
                 ),
               ])
             : null,

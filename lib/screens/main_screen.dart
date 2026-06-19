@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -55,59 +56,86 @@ class _MainScreenState extends State<MainScreen> {
 
   void _showAddModal() {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+        return ClipRRect(
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(32)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? cs.surface.withAlpha(220)
+                    : cs.surface.withAlpha(245),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(32)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? Colors.white.withAlpha(25)
+                        : cs.primary.withAlpha(30),
+                    width: 1,
                   ),
                 ),
               ),
-              Text(
-                'add_what'.tr,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: cs.outlineVariant,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
+                    Text(
+                      'add_what'.tr,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 20),
+                    _AddOptionTile(
+                      icon: Icons.local_gas_station_rounded,
+                      color: cs.primary,
+                      title: 'add_fuel_entry'.tr,
+                      subtitle: 'add_fuel_subtitle'.tr,
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await Get.to(() => const AddEntryScreen());
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _AddOptionTile(
+                      icon: Icons.build_rounded,
+                      color: Colors.orange,
+                      title: 'add_car_expense'.tr,
+                      subtitle: 'add_expense_subtitle'.tr,
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await Get.to(() => const AddExpenseScreen());
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              _AddOptionTile(
-                icon: Icons.local_gas_station_rounded,
-                color: cs.primary,
-                title: 'add_fuel_entry'.tr,
-                subtitle: 'Заправка или зарядка',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Get.to(() => const AddEntryScreen());
-                },
-              ),
-              const SizedBox(height: 12),
-              _AddOptionTile(
-                icon: Icons.build_rounded,
-                color: Colors.orange,
-                title: 'add_car_expense'.tr,
-                subtitle: 'Сервис, масло, мойка, налог…',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Get.to(() => const AddExpenseScreen());
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
         );
       },
@@ -117,70 +145,134 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      extendBody: true, // контент идёт под NavigationBar
       body: IndexedStack(index: _index, children: _tabs),
       bottomNavigationBar: Obx(() {
         final vehicleCtrl = Get.find<VehicleController>();
         final hasVehicles = vehicleCtrl.vehicles.isNotEmpty;
         final navIdx = _tabToNavBarIndex(_index);
 
-        return NavigationBar(
-          selectedIndex: navIdx,
-          onDestinationSelected: _onNavTap,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(Icons.home_rounded),
-              label: 'nav_home'.tr,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.history_outlined),
-              selectedIcon: const Icon(Icons.history_rounded),
-              label: 'nav_history'.tr,
-            ),
-
-            // ── Центральная кнопка + ──
-            NavigationDestination(
-              icon: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [cs.primary, cs.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.primary.withValues(alpha: 0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+        // Liquid Glass NavigationBar
+        return ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? [
+                          cs.surface.withAlpha(185),
+                          cs.surface.withAlpha(210),
+                        ]
+                      : [
+                          cs.surface.withAlpha(215),
+                          cs.surface.withAlpha(240),
+                        ],
                 ),
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? Colors.white.withAlpha(18)
+                        : cs.primary.withAlpha(25),
+                    width: 0.5,
+                  ),
+                ),
               ),
-              label: '',
-            ),
+              child: NavigationBar(
+                selectedIndex: navIdx,
+                onDestinationSelected: _onNavTap,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                indicatorColor: cs.primary.withAlpha(isDark ? 35 : 25),
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home_rounded,
+                        color: cs.primary),
+                    label: 'nav_home'.tr,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.history_outlined),
+                    selectedIcon: Icon(Icons.history_rounded,
+                        color: cs.primary),
+                    label: 'nav_history'.tr,
+                  ),
 
-            NavigationDestination(
-              icon: const Icon(Icons.bar_chart_outlined),
-              selectedIcon: const Icon(Icons.bar_chart_rounded),
-              label: 'nav_statistics'.tr,
-            ),
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: !hasVehicles && _index != 3,
-                child: const Icon(Icons.garage_outlined),
+                  // ── Центральная кнопка + ──
+                  NavigationDestination(
+                    icon: _GlassPlusButton(cs: cs, isDark: isDark),
+                    label: '',
+                  ),
+
+                  NavigationDestination(
+                    icon: const Icon(Icons.bar_chart_outlined),
+                    selectedIcon: Icon(Icons.bar_chart_rounded,
+                        color: cs.primary),
+                    label: 'nav_statistics'.tr,
+                  ),
+                  NavigationDestination(
+                    icon: Badge(
+                      isLabelVisible:
+                          !hasVehicles && _index != 3,
+                      child: const Icon(Icons.garage_outlined),
+                    ),
+                    selectedIcon: Icon(Icons.garage_rounded,
+                        color: cs.primary),
+                    label: 'nav_garage'.tr,
+                  ),
+                ],
               ),
-              selectedIcon: const Icon(Icons.garage_rounded),
-              label: 'nav_garage'.tr,
             ),
-          ],
+          ),
         );
       }),
+    );
+  }
+}
+
+// ─────────────────────────── Glass Plus Button ──
+
+class _GlassPlusButton extends StatelessWidget {
+  final ColorScheme cs;
+  final bool isDark;
+  const _GlassPlusButton({required this.cs, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            cs.primary,
+            cs.secondary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withAlpha(isDark ? 100 : 80),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+            spreadRadius: -2,
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withAlpha(60),
+          width: 1,
+        ),
+      ),
+      child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
     );
   }
 }
@@ -212,14 +304,15 @@ class _AddOptionTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
+                  color: color.withAlpha(30),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -231,13 +324,19 @@ class _AddOptionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                     ),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
                             color: cs.onSurfaceVariant,
                           ),
                     ),

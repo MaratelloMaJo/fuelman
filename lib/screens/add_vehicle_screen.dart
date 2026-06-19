@@ -60,8 +60,9 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         _reminderCtrl.text = v.reminderDays!.toString();
       }
       if (v.licensePlate != null) _licensePlateCtrl.text = v.licensePlate!;
-      if (v.engineVolume != null)
+      if (v.engineVolume != null) {
         _engineVolumeCtrl.text = v.engineVolume!.toStringAsFixed(1);
+      }
       if (v.horsePower != null) _horsePowerCtrl.text = v.horsePower!.toString();
       if (v.year != null) _yearCtrl.text = v.year!.toString();
     }
@@ -342,11 +343,13 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                             ),
                             validator: (v) {
                               if (!_reminderEnabled) return null;
-                              if (v == null || v.isEmpty)
+                              if (v == null || v.isEmpty) {
                                 return 'reminder_days_required'.tr;
+                              }
                               final val = int.tryParse(v);
-                              if (val == null || val <= 0)
+                              if (val == null || val <= 0) {
                                 return 'reminder_days_invalid'.tr;
+                              }
                               return null;
                             },
                           ),
@@ -688,9 +691,7 @@ class _FuelSubtypePicker extends StatelessWidget {
   final String engineType;
   final ValueChanged<String> onChanged;
 
-  // ignore: unused_element_parameter
-  const _FuelSubtypePicker(
-      {super.key,
+  const _FuelSubtypePicker({
       required this.selected,
       required this.engineType,
       required this.onChanged});

@@ -8,6 +8,7 @@ import '../models/vehicle.dart';
 import '../widgets/consumption_chart.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/fuel_entry_tile.dart';
+import '../widgets/glass_container.dart';
 import '../widgets/goal_progress_bar.dart';
 import '../widgets/stats_card.dart';
 import 'add_entry_screen.dart';
@@ -35,6 +36,7 @@ class HomeTab extends StatelessWidget {
       appBar: AppBar(
         title: Text('app_title'.tr),
         centerTitle: false,
+        flexibleSpace: const GlassAppBarBackground(),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_rounded),
