@@ -75,7 +75,6 @@ class HomeTab extends StatelessWidget {
 
         final selected = vehicleCtrl.selectedVehicle.value;
         final entries = entryCtrl.entries;
-        final chartEntries = entryCtrl.entriesWithConsumption;
         final stats = entryCtrl.stats;
         final avgConsumption = stats['avg_consumption'];
 
@@ -171,7 +170,7 @@ class HomeTab extends StatelessWidget {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   sliver: SliverToBoxAdapter(
-                    child: ConsumptionChart(entries: chartEntries),
+                    child: ConsumptionChart(entries: entries),
                   ),
                 ),
 

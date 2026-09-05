@@ -111,18 +111,19 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             ),
 
             // ── Легенда (только для графика расхода) ──
-            if (_mode == _ChartMode.consumption && widget.entries.isNotEmpty)
+            if (_mode == _ChartMode.consumption && widget.entries.any((e) => e.consumption != null))
               Padding(
                 padding: const EdgeInsets.only(left: 8, bottom: 8),
-                child: Row(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _LegendDot(color: cs.primary, label: 'consumption_label'.tr),
-                    const SizedBox(width: 12),
                     _LegendDot(
                         color: cs.primary.withAlpha(120),
                         label: 'avg_consumption'.tr,
                         dashed: true),
-                    const SizedBox(width: 12),
                     _LegendDot(
                         color: Colors.orange, label: 'anomaly_note'.tr),
                   ],
@@ -132,7 +133,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             // ── График ──
             SizedBox(
               height: 200,
-              child: widget.entries.isEmpty
+              child: _isModeEmpty()
                   ? Center(
                       child: Text(
                         'stats_no_entries_subtitle'.tr,
@@ -153,6 +154,14 @@ class _ConsumptionChartState extends State<ConsumptionChart>
     );
   }
 
+  bool _isModeEmpty() {
+    if (_mode == _ChartMode.consumption) {
+      return !widget.entries.any((e) => e.consumption != null);
+    } else {
+      return !widget.entries.any((e) => e.totalCost != null);
+    }
+  }
+
   // ─────────────────────────────────── Line Chart ──
 
   Widget _buildLineChart(BuildContext context) {
@@ -160,12 +169,14 @@ class _ConsumptionChartState extends State<ConsumptionChart>
     final dateFmt = DateFormat('dd.MM');
     final entryCtrl = Get.find<FuelEntryController>();
 
+    final lineEntries = widget.entries.where((e) => e.consumption != null).toList();
+
     // Строим spots — аномальные и обычные раздельно
     final List<FlSpot> normalSpots = [];
     final List<FlSpot> anomalySpots = [];
 
-    for (int i = 0; i < widget.entries.length; i++) {
-      final e = widget.entries[i];
+    for (int i = 0; i < lineEntries.length; i++) {
+      final e = lineEntries[i];
       final spot = FlSpot(i.toDouble(), e.consumption!);
       if (entryCtrl.isEntryAnomalous(e.id)) {
         anomalySpots.add(spot);
@@ -181,13 +192,13 @@ class _ConsumptionChartState extends State<ConsumptionChart>
         : null;
 
     // Диапазон Y
-    final allY = widget.entries.map((e) => e.consumption!).toList();
+    final allY = lineEntries.map((e) => e.consumption!).toList();
     final minY =
         (allY.reduce((a, b) => a < b ? a : b) - 1).clamp(0.0, double.infinity);
     final maxY = allY.reduce((a, b) => a > b ? a : b) + 2;
 
     // Все записи как один LineChartBarData (для рисования линии между всеми точками)
-    final allSpots = widget.entries.asMap().entries.map((e) {
+    final allSpots = lineEntries.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.consumption!);
     }).toList();
 
@@ -207,7 +218,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, pct, bar, index) {
-                final e = widget.entries[index];
+                final e = lineEntries[index];
                 final isAnomaly = entryCtrl.isEntryAnomalous(e.id);
                 return FlDotCirclePainter(
                   radius: isAnomaly ? 5 : 4,
@@ -235,7 +246,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             LineChartBarData(
               spots: [
                 FlSpot(0, avgY),
-                FlSpot((widget.entries.length - 1).toDouble(), avgY),
+                FlSpot((lineEntries.length - 1).toDouble(), avgY),
               ],
               isCurved: false,
               color: cs.primary.withAlpha(130),
@@ -260,18 +271,18 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 28,
-              interval: (widget.entries.length / 4)
+              interval: (lineEntries.length / 4)
                   .ceilToDouble()
                   .clamp(1, double.infinity),
               getTitlesWidget: (val, meta) {
                 final idx = val.toInt();
-                if (idx < 0 || idx >= widget.entries.length) {
+                if (idx < 0 || idx >= lineEntries.length) {
                   return const SizedBox.shrink();
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    dateFmt.format(widget.entries[idx].date),
+                    dateFmt.format(lineEntries[idx].date),
                     style: TextStyle(
                         fontSize: 9, color: cs.onSurfaceVariant),
                   ),
@@ -307,7 +318,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                       fontStyle: FontStyle.italic),
                 );
               }
-              final entry = widget.entries[s.spotIndex];
+              final entry = lineEntries[s.spotIndex];
               final dateFmtFull = DateFormat('dd.MM.yyyy');
               final isAnomaly = Get.find<FuelEntryController>()
                   .isEntryAnomalous(entry.id);
@@ -482,37 +493,45 @@ class _LegendDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 16,
-          height: 2,
-          decoration: BoxDecoration(
-            color: dashed ? Colors.transparent : color,
-            border: dashed ? Border(bottom: BorderSide(color: color, width: 2)) : null,
-          ),
-          child: dashed
-              ? null
-              : null,
-        ),
-        if (!dashed) ...[
-          const SizedBox(width: 2),
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 2,
+                    decoration: BoxDecoration(
+                      color: dashed ? Colors.transparent : color,
+                      border: dashed ? Border(bottom: BorderSide(color: color, width: 2)) : null,
+                    ),
+                  ),
+                  if (!dashed) ...[
+                    const SizedBox(width: 2),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
+          TextSpan(
+            text: label,
+            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+          ),
         ],
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
-        ),
-      ],
+      ),
     );
   }
 }

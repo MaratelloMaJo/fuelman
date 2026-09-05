@@ -65,10 +65,8 @@ class _StatisticsTabState extends State<StatisticsTab>
         return TabBarView(
           controller: _tabController,
           children: [
-            _FuelStatsView(
-                vehicleId: vehicle.id!, vehicleName: vehicle.name),
-            _CareStatsView(
-                vehicleId: vehicle.id!, vehicleName: vehicle.name),
+            _FuelStatsView(vehicleId: vehicle.id!, vehicleName: vehicle.name),
+            _CareStatsView(vehicleId: vehicle.id!, vehicleName: vehicle.name),
           ],
         );
       }),
@@ -82,8 +80,7 @@ class _FuelStatsView extends StatefulWidget {
   final int vehicleId;
   final String vehicleName;
 
-  const _FuelStatsView(
-      {required this.vehicleId, required this.vehicleName});
+  const _FuelStatsView({required this.vehicleId, required this.vehicleName});
 
   @override
   State<_FuelStatsView> createState() => _FuelStatsViewState();
@@ -96,170 +93,172 @@ class _FuelStatsViewState extends State<_FuelStatsView> {
   Widget build(BuildContext context) {
     final entryCtrl = Get.find<FuelEntryController>();
     final settingsCtrl = Get.find<SettingsController>();
-    final stats = entryCtrl.stats;
-    final totalEntries = stats['total_entries']?.toInt() ?? 0;
 
-    if (totalEntries == 0) {
-      return EmptyState(
-        icon: Icons.bar_chart_rounded,
-        title: 'stats_no_entries_title'.tr,
-        subtitle: 'stats_no_entries_subtitle'.tr,
-      );
-    }
+    return Obx(() {
+      final stats = entryCtrl.stats;
+      final totalEntries = stats['total_entries']?.toInt() ?? 0;
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: entryCtrl.getMonthlyStats(widget.vehicleId),
-      builder: (context, snap) {
-        final monthly = snap.data ?? [];
+      if (totalEntries < 2) {
+        return EmptyState(
+          icon: Icons.bar_chart_rounded,
+          title: 'stats_no_entries_title'.tr,
+          subtitle: 'stats_no_entries_subtitle'.tr,
+        );
+      }
 
-        return ListView(
-          padding:
-              const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          children: [
-            // ── Сводные карточки ──
-            Text(
-              '${'stats_summary_prefix'.tr}${widget.vehicleName}',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: entryCtrl.getMonthlyStats(widget.vehicleId),
+        builder: (context, snap) {
+          final monthly = snap.data ?? [];
 
-            Builder(builder: (context) {
-              String volumeText = '';
-              if (stats['total_volume'] != null &&
-                  stats['total_volume']! > 0) {
-                volumeText +=
-                    '${stats['total_volume']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
-              }
-              if (stats['total_ev_volume'] != null &&
-                  stats['total_ev_volume']! > 0) {
-                if (volumeText.isNotEmpty) volumeText += '\n';
-                volumeText +=
-                    '${stats['total_ev_volume']!.toStringAsFixed(1)} kWh';
-              }
-              if (volumeText.isEmpty) volumeText = 'no_data'.tr;
-
-              String avgText = '';
-              if (stats['avg_consumption'] != null &&
-                  stats['avg_consumption']! > 0) {
-                avgText +=
-                    '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
-              }
-              if (stats['avg_ev_consumption'] != null &&
-                  stats['avg_ev_consumption']! > 0) {
-                if (avgText.isNotEmpty) avgText += '\n';
-                avgText +=
-                    '${stats['avg_ev_consumption']!.toStringAsFixed(1)} kWh';
-              }
-              if (avgText.isEmpty) avgText = 'no_data'.tr;
-
-              return GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.05,
-                children: [
-                  StatsCard(
-                    icon: Icons.local_gas_station_rounded,
-                    value: volumeText,
-                    label: 'stats_total_volume'.tr,
-                  ),
-                  StatsCard(
-                    icon: Icons.payments_rounded,
-                    value: stats['total_cost'] != null &&
-                            stats['total_cost']! > 0
-                        ? '${stats['total_cost']!.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}'
-                        : 'no_data'.tr,
-                    label: 'total_spent'.tr,
-                    valueColor: Colors.green,
-                  ),
-                  StatsCard(
-                    icon: Icons.show_chart_rounded,
-                    value: avgText,
-                    label: 'avg_consumption'.tr,
-                    valueColor: Colors.blue,
-                  ),
-                  StatsCard(
-                    icon: Icons.format_list_numbered_rounded,
-                    value: totalEntries.toString(),
-                    label: 'stats_total_entries'.tr,
-                  ),
-                ],
-              );
-            }),
-
-            // ── График расхода ──
-            if (monthly.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              _ChartHeader(
-                title:
-                    '${'stats_monthly_consumption'.tr} (${settingsCtrl.volumeUnit.value}/100)',
-                chartType: _chartType,
-                onTypeChanged: (t) => setState(() => _chartType = t),
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            children: [
+              // ── Сводные карточки ──
+              Text(
+                '${'stats_summary_prefix'.tr}${widget.vehicleName}',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
-              _FlexibleMonthlyChart(
-                monthly: monthly,
-                valueKey: 'avg_consumption',
-                color: AppTheme.chartPrimary,
-                suffix: ' ${settingsCtrl.volumeUnit.value}',
-                chartType: _chartType,
-              ),
 
-              // ── График стоимости ──
-              if (monthly.any((m) =>
-                  (m['total_cost'] as num?) != null &&
-                  (m['total_cost'] as num) > 0)) ...[
+              Builder(builder: (context) {
+                String volumeText = '';
+                if (stats['total_volume'] != null &&
+                    stats['total_volume']! > 0) {
+                  volumeText +=
+                      '${stats['total_volume']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
+                }
+                if (stats['total_ev_volume'] != null &&
+                    stats['total_ev_volume']! > 0) {
+                  if (volumeText.isNotEmpty) volumeText += '\n';
+                  volumeText +=
+                      '${stats['total_ev_volume']!.toStringAsFixed(1)} kWh';
+                }
+                if (volumeText.isEmpty) volumeText = 'no_data'.tr;
+
+                String avgText = '';
+                if (stats['avg_consumption'] != null &&
+                    stats['avg_consumption']! > 0) {
+                  avgText +=
+                      '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
+                }
+                if (stats['avg_ev_consumption'] != null &&
+                    stats['avg_ev_consumption']! > 0) {
+                  if (avgText.isNotEmpty) avgText += '\n';
+                  avgText +=
+                      '${stats['avg_ev_consumption']!.toStringAsFixed(1)} kWh';
+                }
+                if (avgText.isEmpty) avgText = 'no_data'.tr;
+
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.3,
+                  children: [
+                    StatsCard(
+                      icon: Icons.local_gas_station_rounded,
+                      value: volumeText,
+                      label: 'stats_total_volume'.tr,
+                    ),
+                    StatsCard(
+                      icon: Icons.payments_rounded,
+                      value: stats['total_cost'] != null &&
+                              stats['total_cost']! > 0
+                          ? '${stats['total_cost']!.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}'
+                          : 'no_data'.tr,
+                      label: 'total_spent'.tr,
+                      valueColor: Colors.green,
+                    ),
+                    StatsCard(
+                      icon: Icons.show_chart_rounded,
+                      value: avgText,
+                      label: 'avg_consumption'.tr,
+                      valueColor: Colors.blue,
+                    ),
+                    StatsCard(
+                      icon: Icons.format_list_numbered_rounded,
+                      value: totalEntries.toString(),
+                      label: 'stats_total_entries'.tr,
+                    ),
+                  ],
+                );
+              }),
+
+              // ── График расхода ──
+              if (monthly.isNotEmpty) ...[
                 const SizedBox(height: 24),
-                Text(
-                  '${'stats_monthly_costs'.tr} (${settingsCtrl.currencySymbol})',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                _FlexibleMonthlyChart(
-                  monthly: monthly,
-                  valueKey: 'total_cost',
-                  color: AppTheme.efficiencyMid,
-                  suffix: ' ${settingsCtrl.currencySymbol}',
+                _ChartHeader(
+                  title:
+                      '${'stats_monthly_consumption'.tr} (${settingsCtrl.volumeUnit.value}/100)',
                   chartType: _chartType,
-                ),
-              ],
-
-              // ── График объёма ──
-              if (monthly.any((m) =>
-                  (m['total_volume'] as num?) != null &&
-                  (m['total_volume'] as num) > 0)) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'stats_total_volume'.tr,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  onTypeChanged: (t) => setState(() => _chartType = t),
                 ),
                 const SizedBox(height: 12),
                 _FlexibleMonthlyChart(
                   monthly: monthly,
-                  valueKey: 'total_volume',
-                  color: Colors.indigo,
+                  valueKey: 'avg_consumption',
+                  color: AppTheme.chartPrimary,
                   suffix: ' ${settingsCtrl.volumeUnit.value}',
                   chartType: _chartType,
                 ),
-              ],
-            ],
 
-            const SizedBox(height: 32),
-          ],
-        );
-      },
-    );
+                // ── График стоимости ──
+                if (monthly.any((m) =>
+                    (m['total_cost'] as num?) != null &&
+                    (m['total_cost'] as num) > 0)) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    '${'stats_monthly_costs'.tr} (${settingsCtrl.currencySymbol})',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  _FlexibleMonthlyChart(
+                    monthly: monthly,
+                    valueKey: 'total_cost',
+                    color: AppTheme.efficiencyMid,
+                    suffix: ' ${settingsCtrl.currencySymbol}',
+                    chartType: _chartType,
+                  ),
+                ],
+
+                // ── График объёма ──
+                if (monthly.any((m) =>
+                    (m['total_volume'] as num?) != null &&
+                    (m['total_volume'] as num) > 0)) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'stats_total_volume'.tr,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  _FlexibleMonthlyChart(
+                    monthly: monthly,
+                    valueKey: 'total_volume',
+                    color: Colors.indigo,
+                    suffix: ' ${settingsCtrl.volumeUnit.value}',
+                    chartType: _chartType,
+                  ),
+                ],
+              ],
+
+              const SizedBox(height: 32),
+            ],
+          );
+        },
+      );
+    });
   }
 }
 
@@ -269,8 +268,7 @@ class _CareStatsView extends StatefulWidget {
   final int vehicleId;
   final String vehicleName;
 
-  const _CareStatsView(
-      {required this.vehicleId, required this.vehicleName});
+  const _CareStatsView({required this.vehicleId, required this.vehicleName});
 
   @override
   State<_CareStatsView> createState() => _CareStatsViewState();
@@ -344,65 +342,56 @@ class _CareStatsViewState extends State<_CareStatsView> {
               const SizedBox(height: 12),
 
               // Доля каждой категории
-              ..._categories
-                  .where((c) => (stats[c] ?? 0) > 0)
-                  .map((cat) {
-                    final amount = stats[cat] ?? 0;
-                    final pct = total > 0 ? amount / total : 0.0;
-                    final (icon, color) =
-                        ExpenseCategoryIcon.dataFor(cat);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Column(
+              ..._categories.where((c) => (stats[c] ?? 0) > 0).map((cat) {
+                final amount = stats[cat] ?? 0;
+                final pct = total > 0 ? amount / total : 0.0;
+                final (icon, color) = ExpenseCategoryIcon.dataFor(cat);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Column(
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Icon(icon, size: 16, color: color),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'cat_${cat}_full'.tr,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall,
-                                ),
-                              ),
-                              Text(
-                                '${amount.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
+                          Icon(icon, size: 16, color: color),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'cat_${cat}_full'.tr,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          Text(
+                            '${amount.toStringAsFixed(0)} ${settingsCtrl.currencySymbol}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: color,
                                     ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${(pct * 100).toStringAsFixed(0)}%',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(pct * 100).toStringAsFixed(0)}%',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurfaceVariant,
                                     ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          LinearProgressIndicator(
-                            value: pct.toDouble(),
-                            backgroundColor: color.withAlpha(30),
-                            valueColor: AlwaysStoppedAnimation(color),
-                            borderRadius: BorderRadius.circular(4),
-                            minHeight: 6,
                           ),
                         ],
                       ),
-                    );
-                  }),
+                      const SizedBox(height: 4),
+                      LinearProgressIndicator(
+                        value: pct.toDouble(),
+                        backgroundColor: color.withAlpha(30),
+                        valueColor: AlwaysStoppedAnimation(color),
+                        borderRadius: BorderRadius.circular(4),
+                        minHeight: 6,
+                      ),
+                    ],
+                  ),
+                );
+              }),
 
               // ── Pie / Donut Chart ──
               if (stats.isNotEmpty && total > 0) ...[
@@ -594,7 +583,13 @@ class _CareExpensePieChart extends StatefulWidget {
   const _CareExpensePieChart({required this.stats, required this.total});
 
   static const _categories = [
-    'service', 'oil_change', 'wash', 'tires', 'tax', 'parts', 'other',
+    'service',
+    'oil_change',
+    'wash',
+    'tires',
+    'tax',
+    'parts',
+    'other',
   ];
 
   @override
@@ -623,10 +618,12 @@ class _CareExpensePieChartState extends State<_CareExpensePieChart> {
       return PieChartSectionData(
         value: amount,
         color: color,
-        title: isTouched ? '${(pct * 100).toStringAsFixed(0)}%' : '',
+        title: isTouched
+            ? '${amount.toStringAsFixed(0)}\n${(pct * 100).toStringAsFixed(0)}%'
+            : (pct > 0.05 ? '${(pct * 100).toStringAsFixed(0)}%' : ''),
         radius: isTouched ? 70 : 60,
         titleStyle: TextStyle(
-          fontSize: isTouched ? 14 : 11,
+          fontSize: isTouched ? 11 : 11,
           fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
@@ -636,8 +633,7 @@ class _CareExpensePieChartState extends State<_CareExpensePieChart> {
     // Legend
     final legend = activeCats.map((cat) {
       final amount = widget.stats[cat] ?? 0;
-      final pct =
-          widget.total > 0 ? (amount / widget.total * 100) : 0.0;
+      final pct = widget.total > 0 ? (amount / widget.total * 100) : 0.0;
       final (_, color) = ExpenseCategoryIcon.dataFor(cat);
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -645,8 +641,7 @@ class _CareExpensePieChartState extends State<_CareExpensePieChart> {
           Container(
               width: 8,
               height: 8,
-              decoration:
-                  BoxDecoration(color: color, shape: BoxShape.circle)),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 4),
           Text(
             'cat_$cat'.tr,
@@ -656,9 +651,7 @@ class _CareExpensePieChartState extends State<_CareExpensePieChart> {
           Text(
             '${pct.toStringAsFixed(0)}%',
             style: TextStyle(
-                fontSize: 10,
-                color: color,
-                fontWeight: FontWeight.w600),
+                fontSize: 10, color: color, fontWeight: FontWeight.w600),
           ),
           const SizedBox(width: 10),
         ],
@@ -683,8 +676,8 @@ class _CareExpensePieChartState extends State<_CareExpensePieChart> {
                       _touchedIndex = null;
                       return;
                     }
-                    _touchedIndex = response
-                        .touchedSection!.touchedSectionIndex;
+                    _touchedIndex =
+                        response.touchedSection!.touchedSectionIndex;
                   });
                 },
               ),
@@ -738,34 +731,37 @@ class _MonthlyPieChartState extends State<_MonthlyPieChart> {
     final colors = List.generate(
       widget.monthly.length,
       (i) => HSLColor.fromColor(widget.color)
-          .withHue((HSLColor.fromColor(widget.color).hue +
-                  i * 30) %
-              360)
+          .withHue((HSLColor.fromColor(widget.color).hue + i * 30) % 360)
           .toColor(),
     );
 
-    final sections = widget.monthly.asMap().entries.map((entry) {
-      final i = entry.key;
-      final m = entry.value;
-      final val = (m[widget.valueKey] as num?)?.toDouble() ?? 0.0;
-      if (val == 0) return null;
-      final pct = total > 0 ? val / total : 0.0;
-      final isTouched = _touchedIndex == i;
+    final sections = widget.monthly
+        .asMap()
+        .entries
+        .map((entry) {
+          final i = entry.key;
+          final m = entry.value;
+          final val = (m[widget.valueKey] as num?)?.toDouble() ?? 0.0;
+          if (val == 0) return null;
+          final pct = total > 0 ? val / total : 0.0;
+          final isTouched = _touchedIndex == i;
 
-      return PieChartSectionData(
-        value: val,
-        color: colors[i % colors.length],
-        title: isTouched
-            ? '${(pct * 100).toStringAsFixed(0)}%'
-            : '',
-        radius: isTouched ? 70 : 58,
-        titleStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-        ),
-      );
-    }).whereType<PieChartSectionData>().toList();
+          return PieChartSectionData(
+            value: val,
+            color: colors[i % colors.length],
+            title: isTouched
+                ? '${val.toStringAsFixed(1)}${widget.suffix}\n${(pct * 100).toStringAsFixed(0)}%'
+                : (pct > 0.05 ? '${(pct * 100).toStringAsFixed(0)}%' : ''),
+            radius: isTouched ? 70 : 58,
+            titleStyle: TextStyle(
+              fontSize: isTouched ? 10 : 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          );
+        })
+        .whereType<PieChartSectionData>()
+        .toList();
 
     return Column(
       children: [
@@ -785,8 +781,8 @@ class _MonthlyPieChartState extends State<_MonthlyPieChart> {
                       _touchedIndex = null;
                       return;
                     }
-                    _touchedIndex = response
-                        .touchedSection!.touchedSectionIndex;
+                    _touchedIndex =
+                        response.touchedSection!.touchedSectionIndex;
                   });
                 },
               ),
@@ -800,8 +796,7 @@ class _MonthlyPieChartState extends State<_MonthlyPieChart> {
           children: widget.monthly.asMap().entries.map((entry) {
             final i = entry.key;
             final m = entry.value;
-            final val =
-                (m[widget.valueKey] as num?)?.toDouble() ?? 0.0;
+            final val = (m[widget.valueKey] as num?)?.toDouble() ?? 0.0;
             if (val == 0) return const SizedBox.shrink();
             final month = m['month'] as String;
             final parts = month.split('-');
@@ -822,8 +817,7 @@ class _MonthlyPieChartState extends State<_MonthlyPieChart> {
                 const SizedBox(width: 3),
                 Text(
                   label,
-                  style: TextStyle(
-                      fontSize: 10, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -853,9 +847,8 @@ class _MonthlyLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final values = monthly
-        .map((m) => (m[valueKey] as num?)?.toDouble() ?? 0.0)
-        .toList();
+    final values =
+        monthly.map((m) => (m[valueKey] as num?)?.toDouble() ?? 0.0).toList();
 
     if (values.every((v) => v == 0)) return const SizedBox.shrink();
 
@@ -905,7 +898,9 @@ class _MonthlyLineChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 28,
+                interval: 1,
                 getTitlesWidget: (val, _) {
+                  if (val != val.toInt()) return const SizedBox.shrink();
                   final idx = val.toInt();
                   if (idx < 0 || idx >= monthly.length) {
                     return const SizedBox.shrink();
@@ -913,14 +908,12 @@ class _MonthlyLineChart extends StatelessWidget {
                   final month = monthly[idx]['month'] as String;
                   final parts = month.split('-');
                   if (parts.length < 2) return const SizedBox.shrink();
-                  final label =
-                      '${parts[1]}.${parts[0].substring(2)}';
+                  final label = '${parts[1]}.${parts[0].substring(2)}';
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(label,
-                        style: TextStyle(
-                            fontSize: 9,
-                            color: cs.onSurfaceVariant)),
+                        style:
+                            TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
                   );
                 },
               ),
@@ -931,15 +924,14 @@ class _MonthlyLineChart extends StatelessWidget {
                 reservedSize: 48,
                 getTitlesWidget: (val, _) => Text(
                   val.toStringAsFixed(0),
-                  style: TextStyle(
-                      fontSize: 9, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
                 ),
               ),
             ),
-            rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           gridData: FlGridData(
             show: true,
@@ -988,9 +980,8 @@ class _MonthlyBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final values = monthly
-        .map((m) => (m[valueKey] as num?)?.toDouble() ?? 0.0)
-        .toList();
+    final values =
+        monthly.map((m) => (m[valueKey] as num?)?.toDouble() ?? 0.0).toList();
 
     if (values.every((v) => v == 0)) return const SizedBox.shrink();
 
@@ -1025,7 +1016,9 @@ class _MonthlyBarChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 28,
+                interval: 1,
                 getTitlesWidget: (val, _) {
+                  if (val != val.toInt()) return const SizedBox.shrink();
                   final idx = val.toInt();
                   if (idx < 0 || idx >= monthly.length) {
                     return const SizedBox.shrink();
@@ -1033,14 +1026,12 @@ class _MonthlyBarChart extends StatelessWidget {
                   final month = monthly[idx]['month'] as String;
                   final parts = month.split('-');
                   if (parts.length < 2) return const SizedBox.shrink();
-                  final label =
-                      '${parts[1]}.${parts[0].substring(2)}';
+                  final label = '${parts[1]}.${parts[0].substring(2)}';
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(label,
-                        style: TextStyle(
-                            fontSize: 9,
-                            color: cs.onSurfaceVariant)),
+                        style:
+                            TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
                   );
                 },
               ),
@@ -1051,15 +1042,14 @@ class _MonthlyBarChart extends StatelessWidget {
                 reservedSize: 48,
                 getTitlesWidget: (val, _) => Text(
                   val.toStringAsFixed(0),
-                  style: TextStyle(
-                      fontSize: 9, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
                 ),
               ),
             ),
-            rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           gridData: FlGridData(
             show: true,
@@ -1077,8 +1067,7 @@ class _MonthlyBarChart extends StatelessWidget {
                 final m = monthly[group.x]['month'] as String;
                 return BarTooltipItem(
                   '$m\n',
-                  TextStyle(
-                      fontSize: 10, color: cs.onSurfaceVariant),
+                  TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
                   children: [
                     TextSpan(
                       text: '${rod.toY.toStringAsFixed(1)}$suffix',
