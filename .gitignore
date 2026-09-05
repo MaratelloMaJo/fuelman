@@ -1,0 +1,83 @@
+# ==============================================================================
+# Flutter & Dart Build Outputs & Caches
+# ==============================================================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+doc/api/
+*.lock.db
+
+# ==============================================================================
+# Android Build Artifacts & Gradle Cache
+# ==============================================================================
+.gradle/
+**/android/.gradle/
+**/android/.kotlin/
+**/android/app/build/
+**/android/captures/
+**/android/local.properties
+**/android/key.properties
+**/android/app/google-services.json
+
+# Packages and APK outputs
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Native C++ / CMake build outputs
+.cxx/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# ==============================================================================
+# Environment, Secrets & Local Data
+# ==============================================================================
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.key
+*.pem
+*.db
+*.sqlite
+*.sqlite3
+
+# ==============================================================================
+# IDEs & Editor Configuration
+# ==============================================================================
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code (скрываем кэш редактора, сохраняем конфиг запуска)
+.vscode/*
+!.vscode/launch.json
+
+# AI Editors & Tools Cache
+.trae/
+.cursor/
+.windsurf/
+.cline/
+.geminiignore
+
+# ==============================================================================
+# System & Temporary Files
+# ==============================================================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+*.log
+*.tmp
+*.bak
