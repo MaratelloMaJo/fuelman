@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: "💬 Обсуждения и идеи (GitHub Discussions)"
+  - name: "💬 Discussions & Q&A / Обсуждения и вопросы"
     url: "https://github.com/maratellomajo/fuelman/discussions"
-    about: "Свободное обсуждение функционала, обмен опытом и вопросы"
-  - name: "📖 Дорожная карта проекта"
+    about: "Discuss features, get help / Обсуждение и помощь"
+  - name: "🗺️ Project Roadmap / Дорожная карта"
     url: "https://github.com/maratellomajo/fuelman#--roadmap"
-    about: "Посмотреть запланированные задачи и следующие релизы"
+    about: "Upcoming features and releases / Запланированные фичи"
