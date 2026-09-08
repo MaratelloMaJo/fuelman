@@ -32,7 +32,7 @@ dependencies:
   share_plus: ^13.3.0
 
   # Date formatting
-  intl: ^0.20.2
+  intl: ^0.20.3
 
   # Persist theme preference
   shared_preferences: ^2.3.3
