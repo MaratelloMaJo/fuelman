@@ -10,7 +10,6 @@ repository:
     - hybrid-cars
     - phev
     - energy-tracker
-    - obd2
   has_issues: true
   has_projects: false
   has_wiki: false
@@ -30,9 +29,6 @@ labels:
   - name: "phev/hev"
     color: "0e8a16"
     description: "Задачи по гибридам, батареям и смешанному расходу"
-  - name: "obd2"
-    color: "1d76db"
-    description: "Телеметрия по Bluetooth BLE / CAN-шине"
   - name: "ui/ux"
     color: "f9d0c4"
     description: "Интерфейс, темы, анимации и экраны"
