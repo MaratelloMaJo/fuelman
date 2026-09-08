@@ -12,12 +12,14 @@ class ExpenseTile extends StatelessWidget {
   final CarExpense expense;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final EdgeInsetsGeometry margin;
 
   const ExpenseTile({
     super.key,
     required this.expense,
     this.onTap,
     this.onDelete,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
   });
 
   @override
@@ -32,6 +34,7 @@ class ExpenseTile extends StatelessWidget {
       key: Key('expense_${expense.id}'),
       direction: DismissDirection.endToStart,
       background: Container(
+        margin: margin,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
@@ -62,7 +65,7 @@ class ExpenseTile extends StatelessWidget {
       },
       onDismissed: (_) => onDelete?.call(),
       child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        margin: margin,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),

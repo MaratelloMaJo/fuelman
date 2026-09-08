@@ -12,6 +12,7 @@ import '../widgets/glass_container.dart';
 import '../widgets/goal_progress_bar.dart';
 import '../widgets/stats_card.dart';
 import 'add_entry_screen.dart';
+import 'add_vehicle_screen.dart';
 import 'settings_tab.dart';
 
 /// Главный экран (вкладка «Главная»).
@@ -68,8 +69,8 @@ class HomeTab extends StatelessWidget {
             icon: Icons.directions_car_outlined,
             title: 'add_vehicle_prompt'.tr,
             subtitle: 'add_vehicle_subtitle'.tr,
-            actionLabel: null,
-            onAction: null,
+            actionLabel: 'add_vehicle_fab'.tr,
+            onAction: () => Get.to(() => const AddVehicleScreen()),
           );
         }
 
@@ -245,9 +246,21 @@ class _VehicleSelector extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         scrollDirection: Axis.horizontal,
-        itemCount: vehicles.length,
+        itemCount: vehicles.length + 1,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
+          if (i == vehicles.length) {
+            return ActionChip(
+              avatar: Icon(Icons.add_rounded, size: 18, color: cs.primary),
+              label: Text('add_vehicle_chip'.tr),
+              backgroundColor: cs.surfaceContainerHighest,
+              labelStyle: TextStyle(
+                color: cs.primary,
+                fontWeight: FontWeight.w600,
+              ),
+              onPressed: () => Get.to(() => const AddVehicleScreen()),
+            );
+          }
           final v = vehicles[i];
           final isActive = selected?.id == v.id;
           return FilterChip(

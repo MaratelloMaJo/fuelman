@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../database/fuel_database.dart';
 import '../models/fuel_entry.dart';
+import '../models/vehicle.dart';
 import '../services/notification_service.dart';
 import '../services/currency_service.dart';
 import 'settings_controller.dart';
@@ -14,12 +15,11 @@ import 'vehicle_controller.dart';
 
 // ─────────────────────────── Constants ──────────────────────────────────────
 
-/// Минимальное расстояние в км для достоверного расчёта расхода.
-/// Если разница одометра меньше — расход не рассчитывается (слишком ненадёжно).
-const double kMinDistanceKm = 10.0;
+/// Минимальное расстояние в км для достоверного расчёта расхода (Zero & Micro-delta guard).
+/// Если разница одометра меньше 15 км — удельный расход не рассчитывается (null).
+const double kMinDistanceKm = 15.0;
 
 /// Максимальный «разумный» расход топлива л/100 км.
-/// Выше — помечаем как аномалию.
 const double kMaxReasonableConsumptionFuel = 50.0;
 
 /// Минимальный «разумный» расход топлива л/100 км.
@@ -31,30 +31,90 @@ const double kMaxReasonableConsumptionEv = 80.0;
 /// Минимальный «разумный» расход электроэнергии кВт·ч/100 км.
 const double kMinReasonableConsumptionEv = 4.0;
 
-/// Максимально допустимый разовый объём топлива в литрах.
-/// Больше — скорее всего ошибка ввода.
+/// Максимально допустимый разовый объём топлива в литрах (общий лимит).
 const double kMaxSingleFuelVolume = 250.0;
 
-/// Максимально допустимый разовый объём зарядки кВт·ч.
+/// Максимально допустимый разовый объём зарядки кВт·ч (общий лимит).
 const double kMaxSingleEvVolume = 300.0;
 
-/// Порог «очень маленького» расстояния (предупреждение без блокировки).
-const double kWarningDistanceKm = 30.0;
+/// Лимиты емкостей для BYD Chazor / Destroyer 05
+const double kChazorFuelTankNominal = 48.0;
+const double kChazorFuelTankMax = 53.0; // 48 л + 10% запас горловины
+const double kChazorBatteryNominal = 18.3;
+const double kChazorBatteryMax = 22.0; // 18.3 кВт·ч + потери зарядки
 
 /// Порог «очень большого» расстояния (предупреждение о возможной ошибке ввода).
 const double kMaxWarningDistanceKm = 3000.0;
 
+// ─────────────────────── Overall PHEV Stats Model ───────────────────────────
+
+/// Комбинированная сводная статистика для PHEV / гибридов и обычных авто.
+class PhevOverallStats {
+  /// Чистый средний расход бензина по методу Full-to-Full (L/100 km).
+  final double? avgFuelConsumption;
+
+  /// Средний расход энергии батареи (kWh/100 km).
+  final double? avgEvConsumption;
+
+  /// Общая совокупная стоимость 1 км пути (TCO):
+  /// (Все потраченные деньги на бензин + Все потраченные деньги на зарядку) / (MaxOdo - MinOdo).
+  final double? costPerKm;
+
+  final double totalFuelVolume;
+  final double totalEvVolume;
+  final double totalCost;
+  final double? totalDistance;
+  final double? minConsumption;
+  final double? maxConsumption;
+  final int totalEntries;
+  final int calcEntries;
+  final double? kmPerDay;
+  final double? costPerDay;
+
+  const PhevOverallStats({
+    this.avgFuelConsumption,
+    this.avgEvConsumption,
+    this.costPerKm,
+    this.totalFuelVolume = 0.0,
+    this.totalEvVolume = 0.0,
+    this.totalCost = 0.0,
+    this.totalDistance,
+    this.minConsumption,
+    this.maxConsumption,
+    this.totalEntries = 0,
+    this.calcEntries = 0,
+    this.kmPerDay,
+    this.costPerDay,
+  });
+
+  Map<String, double?> toMap() => {
+        'min_consumption': minConsumption,
+        'max_consumption': maxConsumption,
+        'avg_consumption': avgFuelConsumption,
+        'avg_ev_consumption': avgEvConsumption,
+        'total_volume': totalFuelVolume,
+        'total_ev_volume': totalEvVolume,
+        'total_cost': totalCost,
+        'total_entries': totalEntries.toDouble(),
+        'calc_entries': calcEntries.toDouble(),
+        'cost_per_km': costPerKm,
+        'km_per_day': kmPerDay,
+        'cost_per_day': costPerDay,
+        'total_distance': totalDistance,
+      };
+}
+
 // ─────────────────────────── Controller ─────────────────────────────────────
 
-/// Контроллер записей о заправках.
+/// Контроллер записей о заправках и зарядках для ДВС, электромобилей и PHEV.
 ///
 /// Ключевая ответственность:
-///   — CRUD операции с [FuelEntry]
-///   — Алгоритм Full-to-Full (пересчёт расхода после каждого изменения)
-///   — Агрегированная статистика
-///   — Экспорт в CSV через share_plus
-///   — Проверка напоминаний о заправке
-///   — Детектирование аномального расхода
+///   — Изолированные цепочки для топлива и электричества (Isolated Chains)
+///   — Классический алгоритм полного бака с накоплением дозаправок (Full-to-Full Accumulation)
+///   — Защита от микропробегов (< 15 км) и деления на 0 (Zero & Micro-delta guard)
+///   — Защита от физических аномалий емкости бака (Chazor 53 л) и батареи (22 кВт·ч)
+///   — Корректность пересчета цен и затрат
+///   — Комбинированная сводная статистика (TCO, L/100km, kWh/100km)
 class FuelEntryController extends GetxController {
   final entries = <FuelEntry>[].obs;
   final stats = <String, double?>{}.obs;
@@ -63,30 +123,34 @@ class FuelEntryController extends GetxController {
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
 
-  final _vehicleCtrl = Get.find<VehicleController>();
+  VehicleController? get _vehicleCtrl =>
+      Get.isRegistered<VehicleController>() ? Get.find<VehicleController>() : null;
 
   @override
   void onInit() {
     super.onInit();
-    // Перезагружаем данные при смене активного автомобиля.
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
-    _onVehicleChanged();
+    final vc = _vehicleCtrl;
+    if (vc != null) {
+      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _onVehicleChanged();
+    }
 
-    // Пересчет статистики при смене валюты или единиц измерения
-    final settings = Get.find<SettingsController>();
-    ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
-    ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+    if (Get.isRegistered<SettingsController>()) {
+      final settings = Get.find<SettingsController>();
+      ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
+      ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+    }
   }
 
   void _recalcStatsCurrentVehicle() {
-    final v = _vehicleCtrl.selectedVehicle.value;
+    final v = _vehicleCtrl?.selectedVehicle.value;
     if (v != null) {
       _loadStats(v.id!);
     }
   }
 
   void _onVehicleChanged() {
-    final v = _vehicleCtrl.selectedVehicle.value;
+    final v = _vehicleCtrl?.selectedVehicle.value;
     if (v != null) {
       loadEntries(v.id!);
     } else {
@@ -110,7 +174,6 @@ class FuelEntryController extends GetxController {
     }
   }
 
-  /// Перестраивает набор id аномальных записей.
   void _rebuildAnomalousSet(List<FuelEntry> list) {
     final Set<int> newSet = {};
     for (final e in list) {
@@ -123,8 +186,11 @@ class FuelEntryController extends GetxController {
     anomalousIds.assignAll(newSet);
   }
 
-  /// Возвращает true, если значение расхода аномально (вне разумных пределов).
-  bool isAnomalousConsumption(double value, String entryType) {
+  /// Возвращает true, если значение расхода аномально.
+  bool isAnomalousConsumption(double value, String entryType) =>
+      isAnomalousValue(value, entryType);
+
+  static bool isAnomalousValue(double value, String entryType) {
     if (entryType == 'charge') {
       return value < kMinReasonableConsumptionEv ||
           value > kMaxReasonableConsumptionEv;
@@ -133,7 +199,6 @@ class FuelEntryController extends GetxController {
         value > kMaxReasonableConsumptionFuel;
   }
 
-  /// Возвращает true, если запись с данным id является аномальной.
   bool isEntryAnomalous(int? id) => id != null && anomalousIds.contains(id);
 
   // ─────────────────────────────── Stats ──
@@ -143,16 +208,36 @@ class FuelEntryController extends GetxController {
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
-    double minCons = double.infinity;
-    double maxCons = 0.0;
-    double sumCons = 0.0;
-    int calcEntries = 0;
+    final overall = calculateOverallStats(
+      all,
+      currencySvc: currencySvc,
+      targetCurrency: settings.currency.value,
+      settings: settings,
+    );
 
-    // EV / зарядка — отдельная статистика
+    stats.assignAll(overall.toMap());
+  }
+
+  /// Расчёт комбинированной сводной статистики гибрида/авто.
+  static PhevOverallStats calculateOverallStats(
+    List<FuelEntry> all, {
+    CurrencyService? currencySvc,
+    String targetCurrency = 'RUB',
+    SettingsController? settings,
+  }) {
+    if (all.isEmpty) return const PhevOverallStats();
+
+    final cSvc = currencySvc ?? CurrencyService.instance;
+
+    double minFuelCons = double.infinity;
+    double maxFuelCons = 0.0;
+    double sumFuelCons = 0.0;
+    int calcFuelEntries = 0;
+
     double sumEvCons = 0.0;
     int calcEvEntries = 0;
 
-    double totalVolume = 0.0;
+    double totalFuelVolume = 0.0;
     double totalEvVolume = 0.0;
     double totalCost = 0.0;
 
@@ -168,29 +253,33 @@ class FuelEntryController extends GetxController {
       if (e.odometer > maxOdo) maxOdo = e.odometer;
 
       if (e.entryType == 'fuel') {
-        double vol = settings.convertVolume(
-            e.volume, e.volumeUnit, settings.volumeUnit.value);
-        totalVolume += vol;
+        double vol = e.volume;
+        if (settings != null) {
+          vol = settings.convertVolume(
+              e.volume, e.volumeUnit, settings.volumeUnit.value);
+        }
+        totalFuelVolume += vol;
       } else if (e.entryType == 'charge') {
-        totalEvVolume += e.volume; // кВт·ч не конвертируем
+        totalEvVolume += e.volume;
       }
 
-      double cost = e.totalCost ?? 0.0;
-      double convertedCost =
-          currencySvc.convert(cost, e.currency, settings.currency.value);
+      final cost = e.totalCost ?? 0.0;
+      final convertedCost = cSvc.convert(cost, e.currency, targetCurrency);
       totalCost += convertedCost;
 
       if (e.consumption != null) {
-        // Аномальные записи исключаем из статистики avg/min/max
-        final isAnomaly = isAnomalousConsumption(e.consumption!, e.entryType);
+        final isAnomaly = isAnomalousValue(e.consumption!, e.entryType);
         if (!isAnomaly) {
           if (e.entryType == 'fuel') {
-            double cons = settings.convertVolume(
-                e.consumption!, e.volumeUnit, settings.volumeUnit.value);
-            if (cons < minCons) minCons = cons;
-            if (cons > maxCons) maxCons = cons;
-            sumCons += cons;
-            calcEntries++;
+            double cons = e.consumption!;
+            if (settings != null) {
+              cons = settings.convertVolume(
+                  e.consumption!, e.volumeUnit, settings.volumeUnit.value);
+            }
+            if (cons < minFuelCons) minFuelCons = cons;
+            if (cons > maxFuelCons) maxFuelCons = cons;
+            sumFuelCons += cons;
+            calcFuelEntries++;
           } else if (e.entryType == 'charge') {
             sumEvCons += e.consumption!;
             calcEvEntries++;
@@ -199,43 +288,70 @@ class FuelEntryController extends GetxController {
       }
     }
 
-    double? avgCons = calcEntries > 0 ? sumCons / calcEntries : null;
-    double? avgEvCons = calcEvEntries > 0 ? sumEvCons / calcEvEntries : null;
-    if (minCons == double.infinity) minCons = 0;
+    final avgFuel = calcFuelEntries > 0 ? sumFuelCons / calcFuelEntries : null;
+    final avgEv = calcEvEntries > 0 ? sumEvCons / calcEvEntries : null;
 
     double? costPerKm;
     double? kmPerDay;
     double? costPerDay;
     double? totalDistance;
 
-    if (all.length >= 2 && firstDate != null && lastDate != null) {
-      double distance = maxOdo - minOdo;
-      int days = lastDate.difference(firstDate).inDays;
-      if (days == 0) days = 1;
-
+    if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
+      final distance = maxOdo - minOdo;
       if (distance > 0) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }
-      kmPerDay = distance / days;
-      costPerDay = totalCost / days;
+      if (firstDate != null && lastDate != null) {
+        int days = lastDate.difference(firstDate).inDays;
+        if (days == 0) days = 1;
+        kmPerDay = distance / days;
+        costPerDay = totalCost / days;
+      }
     }
 
-    stats.assignAll({
-      'min_consumption': minCons > 0 ? minCons : null,
-      'max_consumption': maxCons > 0 ? maxCons : null,
-      'avg_consumption': avgCons,
-      'avg_ev_consumption': avgEvCons,
-      'total_volume': totalVolume,
-      'total_ev_volume': totalEvVolume,
-      'total_cost': totalCost,
-      'total_entries': all.length.toDouble(),
-      'calc_entries': calcEntries.toDouble(),
-      'cost_per_km': costPerKm,
-      'km_per_day': kmPerDay,
-      'cost_per_day': costPerDay,
-      'total_distance': totalDistance,
-    });
+    return PhevOverallStats(
+      avgFuelConsumption: avgFuel,
+      avgEvConsumption: avgEv,
+      costPerKm: costPerKm,
+      totalFuelVolume: totalFuelVolume,
+      totalEvVolume: totalEvVolume,
+      totalCost: totalCost,
+      totalDistance: totalDistance,
+      minConsumption:
+          minFuelCons < double.infinity && minFuelCons > 0 ? minFuelCons : null,
+      maxConsumption: maxFuelCons > 0 ? maxFuelCons : null,
+      totalEntries: all.length,
+      calcEntries: calcFuelEntries + calcEvEntries,
+      kmPerDay: kmPerDay,
+      costPerDay: costPerDay,
+    );
+  }
+
+  /// Общая совокупная стоимость 1 км пути (TCO):
+  /// (Все потраченные деньги на бензин + Все потраченные деньги на зарядку) / (Максимальный одометр - Начальный одометр)
+  static double? calculateCostPerKm(
+    List<FuelEntry> entries, {
+    CurrencyService? currencySvc,
+    String targetCurrency = 'RUB',
+  }) {
+    if (entries.length < 2) return null;
+    final cSvc = currencySvc ?? CurrencyService.instance;
+
+    double totalCost = 0.0;
+    double minOdo = double.infinity;
+    double maxOdo = 0.0;
+
+    for (final e in entries) {
+      if (e.odometer < minOdo) minOdo = e.odometer;
+      if (e.odometer > maxOdo) maxOdo = e.odometer;
+      final cost = e.totalCost ?? 0.0;
+      totalCost += cSvc.convert(cost, e.currency, targetCurrency);
+    }
+
+    final distance = maxOdo - minOdo;
+    if (distance <= 0) return null;
+    return totalCost / distance;
   }
 
   Future<List<Map<String, dynamic>>> getMonthlyStats(int vehicleId) async {
@@ -270,8 +386,7 @@ class FuelEntryController extends GetxController {
       }
 
       if (e.consumption != null) {
-        // Аномалии не включаем в ежемесячную статистику avg
-        final isAnomaly = isAnomalousConsumption(e.consumption!, e.entryType);
+        final isAnomaly = isAnomalousValue(e.consumption!, e.entryType);
         if (!isAnomaly) {
           if (e.entryType == 'fuel') {
             double cons = settings.convertVolume(
@@ -301,28 +416,21 @@ class FuelEntryController extends GetxController {
         }).toList();
   }
 
-  // ───────────────────────────────────────── Add ──
+  // ───────────────────────────────────────── Add / Update / Delete ──
 
   Future<void> addEntry(FuelEntry entry) async {
     final bool isFirstEntryGlobally =
         await FuelDatabase.instance.getAllEntriesCount() == 0;
 
-    // 1. Сохраняем запись в БД (без расхода — будет пересчитан ниже).
     final saved = await FuelDatabase.instance.insertEntry(entry);
     entries.add(saved);
 
-    // Если это первая запись вообще, меняем глобальную валюту на выбранную пользователем
     if (isFirstEntryGlobally) {
       await Get.find<SettingsController>().setCurrency(entry.currency);
     }
 
-    // 2. Пересчитываем расход для ВСЕХ записей этого авто (Full-to-Full).
     await _recalculateConsumption(entry.vehicleId);
-
-    // 3. Перезагружаем список и статистику после пересчёта.
     await loadEntries(entry.vehicleId);
-
-    // 4. Проверяем напоминания (сброс при новой заправке).
     await _checkReminder(entry.vehicleId);
   }
 
@@ -333,153 +441,329 @@ class FuelEntryController extends GetxController {
     await _checkReminder(entry.vehicleId);
   }
 
-  // ───────────────────────────────────────── Delete ──
-
   Future<void> deleteEntry(int entryId, int vehicleId) async {
     await FuelDatabase.instance.deleteEntry(entryId);
     entries.removeWhere((e) => e.id == entryId);
 
-    // Пересчёт необходим: удаление меняет цепочку Full-to-Full.
     await _recalculateConsumption(vehicleId);
     await loadEntries(vehicleId);
   }
 
   // ─────────────────────────────── Consumption Algorithm ──
 
-  /// Алгоритм Full-to-Full с защитой от аномалий и малых расстояний.
-  ///
-  /// Ключевые правила:
-  ///   1. Если расстояние между точками < [kMinDistanceKm] → consumption = null.
-  ///   2. Блок суммирует объёмы от одной полной заправки до следующей.
-  ///   3. Хвостовой блок (частичные после последней полной) → накопительный.
-  ///   4. Первая запись всегда null (нет предыдущей точки).
-  ///   5. Аномальный расход сохраняется в БД AS IS, но помечается в [anomalousIds].
+  /// Пересчёт расхода в базе данных с применением изолированных цепочек Full-to-Full.
   Future<void> _recalculateConsumption(int vehicleId) async {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
+    final calculated = computeEntriesWithConsumption(all);
 
-    // Разделим на топливо и электричество
-    final fuelEntries = all.where((e) => e.entryType == 'fuel').toList();
-    final chargeEntries = all.where((e) => e.entryType == 'charge').toList();
-
-    final Map<int, double?> updates = {};
-
-    void calculateList(List<FuelEntry> list) {
-      if (list.isEmpty) return;
-      if (list.length < 2) {
-        updates[list[0].id!] = null;
-        return;
-      }
-
-      // Найдём индексы «полных» заправок, игнорируя слишком короткие дистанции (агрегация)
-      final fullIndices = <int>[];
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].isFullTank) {
-          if (fullIndices.isEmpty) {
-            fullIndices.add(i);
-          } else {
-            final distance = list[i].odometer - list[fullIndices.last].odometer;
-            if (distance >= kMinDistanceKm) {
-              fullIndices.add(i);
-            }
-          }
+    for (final entry in calculated) {
+      if (entry.id != null) {
+        final original = all.firstWhere((e) => e.id == entry.id);
+        if (original.consumption != entry.consumption) {
+          await FuelDatabase.instance.updateEntry(entry);
         }
-      }
-
-      // Первая запись всегда имеет расход null
-      updates[list[0].id!] = null;
-
-      // ── Хелпер: рассчитать расход за блок ──────────────────────────────
-      double? calcBlockConsumption({
-        required double distance,
-        required double sumVolume,
-      }) {
-        if (distance < kMinDistanceKm) return null; // слишком мало — ненадёжно
-        return (sumVolume / distance) * 100;
-      }
-
-      // ── Сценарий: нет полных заправок вообще ────────────────────────────
-      if (fullIndices.isEmpty) {
-        final startOdo = list[0].odometer;
-        for (int i = 1; i < list.length; i++) {
-          final distance = list[i].odometer - startOdo;
-          double sumVolume = 0.0;
-          for (int j = 1; j <= i; j++) {
-            sumVolume += list[j].volume;
-          }
-          updates[list[i].id!] =
-              calcBlockConsumption(distance: distance, sumVolume: sumVolume);
-        }
-        return;
-      }
-
-      // ── Блок 1: от записи 0 до первой полной заправки ───────────────────
-      final int firstFullIdx = fullIndices[0];
-      if (firstFullIdx > 0) {
-        final distance =
-            list[firstFullIdx].odometer - list[0].odometer;
-        final double sumVolume = list
-            .sublist(1, firstFullIdx + 1)
-            .fold(0.0, (s, e) => s + e.volume);
-        final cons = calcBlockConsumption(
-            distance: distance, sumVolume: sumVolume);
-        for (int j = 1; j <= firstFullIdx; j++) {
-          updates[list[j].id!] = cons;
-        }
-      }
-
-      // ── Блоки между полными заправками ──────────────────────────────────
-      for (int i = 0; i < fullIndices.length - 1; i++) {
-        final int startIdx = fullIndices[i];
-        final int endIdx = fullIndices[i + 1];
-        final distance =
-            list[endIdx].odometer - list[startIdx].odometer;
-        final double sumVolume = list
-            .sublist(startIdx + 1, endIdx + 1)
-            .fold(0.0, (s, e) => s + e.volume);
-        final cons = calcBlockConsumption(
-            distance: distance, sumVolume: sumVolume);
-        for (int j = startIdx + 1; j <= endIdx; j++) {
-          updates[list[j].id!] = cons;
-        }
-      }
-
-      // ── Хвостовой блок: от последней полной до конца ────────────────────
-      final int lastFullIdx = fullIndices.last;
-      if (lastFullIdx < list.length - 1) {
-        for (int i = lastFullIdx + 1; i < list.length; i++) {
-          final distance =
-              list[i].odometer - list[lastFullIdx].odometer;
-          final double sumVolume = list
-              .sublist(lastFullIdx + 1, i + 1)
-              .fold(0.0, (s, e) => s + e.volume);
-          updates[list[i].id!] = calcBlockConsumption(
-              distance: distance, sumVolume: sumVolume);
-        }
-      }
-    }
-
-    calculateList(fuelEntries);
-    calculateList(chargeEntries);
-
-    // Применим все обновления к базе данных
-    for (final entry in all) {
-      if (!updates.containsKey(entry.id)) continue;
-      final newConsumption = updates[entry.id];
-      if (entry.consumption != newConsumption) {
-        final updated = entry.copyWith(
-          consumption: newConsumption,
-          clearConsumption: newConsumption == null,
-        );
-        await FuelDatabase.instance.updateEntry(updated);
       }
     }
   }
 
-  // ─────────────────────────────── Validation Helpers ──
+  /// Чистая функция расчета расхода для PHEV (Full-to-Full Accumulation с изолированными цепочками).
+  ///
+  /// Гарантии:
+  ///   1. Бензин связывается только с бензином, зарядка — только с зарядкой.
+  ///   2. Частичные заправки (isFullTank == false) всегда имеют consumption == null.
+  ///      Их объем накапливается до следующей полной заправки.
+  ///   3. Полная заправка (isFullTank == true) рассчитывается строго от предыдущей полной:
+  ///      deltaDistance = currentFull.odometer - previousFull.odometer.
+  ///      totalFuel = currentVolume + sum(intermediatePartialVolumes).
+  ///      Расход = (totalFuel / deltaDistance) * 100.
+  ///   4. Zero & Micro-delta guard: если deltaDistance <= 0 или deltaDistance < 15 км —
+  ///      consumption = null (защита от деления на 0 и нереальных цифр).
+  ///   5. Буфер накопления сбрасывается после каждой полной заправки.
+  static List<FuelEntry> computeEntriesWithConsumption(List<FuelEntry> entries) {
+    if (entries.isEmpty) return [];
+
+    final consumptions = List<double?>.filled(entries.length, null);
+
+    // Группируем индексы по vehicleId
+    final byVehicle = <int, List<int>>{};
+    for (int i = 0; i < entries.length; i++) {
+      byVehicle.putIfAbsent(entries[i].vehicleId, () => []).add(i);
+    }
+
+    for (final vehicleIndices in byVehicle.values) {
+      final fuelIndices = vehicleIndices
+          .where((i) => entries[i].entryType == 'fuel')
+          .toList();
+      final chargeIndices = vehicleIndices
+          .where((i) => entries[i].entryType == 'charge')
+          .toList();
+
+      _processIndexedChain(fuelIndices, entries, consumptions);
+      _processIndexedChain(chargeIndices, entries, consumptions);
+    }
+
+    return List<FuelEntry>.generate(entries.length, (i) {
+      final cons = consumptions[i];
+      return entries[i].copyWith(
+        consumption: cons,
+        clearConsumption: cons == null,
+      );
+    });
+  }
+
+  static void _processIndexedChain(
+    List<int> indices,
+    List<FuelEntry> entries,
+    List<double?> consumptions,
+  ) {
+    if (indices.isEmpty) return;
+
+    // Сортируем по одометру, затем по дате
+    final sortedIndices = List<int>.from(indices)
+      ..sort((a, b) {
+        final cmp = entries[a].odometer.compareTo(entries[b].odometer);
+        if (cmp != 0) return cmp;
+        return entries[a].date.compareTo(entries[b].date);
+      });
+
+    int? prevFullIdx;
+    double accumulatedIntermediate = 0.0;
+
+    for (final idx in sortedIndices) {
+      final e = entries[idx];
+      if (!e.isFullTank) {
+        // Частичная заправка / зарядка: расход ОБЯЗАН быть null
+        consumptions[idx] = null;
+        if (prevFullIdx != null) {
+          accumulatedIntermediate += e.volume;
+        }
+      } else {
+        // Полный бак / полный заряд
+        if (prevFullIdx == null) {
+          // Первая полная заправка — точка отсчёта
+          consumptions[idx] = null;
+          prevFullIdx = idx;
+          accumulatedIntermediate = 0.0;
+        } else {
+          final prevOdo = entries[prevFullIdx].odometer;
+          final deltaDistance = e.odometer - prevOdo;
+          final totalFuel = e.volume + accumulatedIntermediate;
+
+          // Zero & Micro-delta guard (< 15 км или <= 0)
+          if (deltaDistance <= 0 || deltaDistance < kMinDistanceKm) {
+            consumptions[idx] = null;
+          } else {
+            consumptions[idx] = (totalFuel / deltaDistance) * 100.0;
+          }
+
+          prevFullIdx = idx;
+          accumulatedIntermediate = 0.0;
+        }
+      }
+    }
+  }
+
+  // ─────────────────────────────── Validation & Limits ──
+
+  /// Возвращает номинальный объем бака (л) или батареи (кВт·ч) автомобиля.
+  /// 1. Приоритет 1: Явно заданный пользователем tankCapacity / batteryCapacityKwh в профиле авто.
+  /// 2. Приоритет 2: База пресетов популярных моделей (Lixiang, Geely, BYD, Chery, Haval и др.).
+  /// 3. Приоритет 3: Дефолты по классу силовой установки (PHEV, бензин, электро).
+  static double? getNominalCapacity(String entryType, {Vehicle? vehicle}) {
+    if (vehicle == null) return null;
+
+    final nameAndModel = '${vehicle.name} ${vehicle.model}'.toLowerCase();
+
+    if (entryType == 'charge') {
+      // 1. Задано пользователем в профиле
+      if (vehicle.batteryCapacityKwh != null && vehicle.batteryCapacityKwh! > 0) {
+        return vehicle.batteryCapacityKwh!;
+      }
+      if (vehicle.usableCapacityKwh != null && vehicle.usableCapacityKwh! > 0) {
+        return vehicle.usableCapacityKwh!;
+      }
+
+      // 2. Пресеты моделей
+      if (nameAndModel.contains('lixiang') ||
+          nameAndModel.contains('li auto') ||
+          nameAndModel.contains('li l') ||
+          nameAndModel.contains('li one')) {
+        if (nameAndModel.contains('l9') ||
+            nameAndModel.contains('l8') ||
+            nameAndModel.contains('l7')) {
+          return 44.5; // Li L7/L8/L9 ~42.8 - 52.3 кВт·ч
+        }
+        return 40.0;
+      }
+      if (nameAndModel.contains('chazor') ||
+          nameAndModel.contains('destroyer') ||
+          nameAndModel.contains('qin')) {
+        return kChazorBatteryNominal; // 18.3 кВт·ч
+      }
+      if (nameAndModel.contains('song') ||
+          nameAndModel.contains('tang') ||
+          nameAndModel.contains('han')) {
+        return 26.6;
+      }
+      if (nameAndModel.contains('galaxy') || nameAndModel.contains('monjaro')) {
+        return 18.7;
+      }
+      if (nameAndModel.contains('voyah')) {
+        return 39.0;
+      }
+      if (vehicle.isPhev) return 25.0;
+      return null;
+    } else {
+      // entryType == 'fuel'
+      // 1. Задано пользователем в профиле авто
+      if (vehicle.tankCapacity != null && vehicle.tankCapacity! > 0) {
+        return vehicle.tankCapacity!;
+      }
+
+      // 2. Пресеты моделей
+      if (nameAndModel.contains('lixiang') ||
+          nameAndModel.contains('li auto') ||
+          nameAndModel.contains('li l')) {
+        return 65.0; // Li L7/L8/L9 = 65 л, L6 = 60 л
+      }
+      if (nameAndModel.contains('li one')) {
+        return 55.0;
+      }
+      if (nameAndModel.contains('chazor') ||
+          nameAndModel.contains('destroyer') ||
+          nameAndModel.contains('qin')) {
+        return kChazorFuelTankNominal; // 48.0 л
+      }
+      if (nameAndModel.contains('song')) {
+        return 60.0; // Song Plus DM-i = 60 л
+      }
+      if (nameAndModel.contains('monjaro')) {
+        return 62.0; // Geely Monjaro = 62 л
+      }
+      if (nameAndModel.contains('coolray')) {
+        return 45.0; // Geely Coolray = 45 л
+      }
+      if (nameAndModel.contains('tugella') || nameAndModel.contains('atlas')) {
+        return 54.0;
+      }
+      if (nameAndModel.contains('galaxy')) {
+        return 60.0; // Geely Galaxy L7/L6 = 60 л
+      }
+      if (nameAndModel.contains('tank 300') ||
+          nameAndModel.contains('tank 500')) {
+        return 80.0; // Tank 300/500 = 80 л
+      }
+      if (nameAndModel.contains('tiggo') ||
+          nameAndModel.contains('jaecoo') ||
+          nameAndModel.contains('omoda')) {
+        return 57.0; // Chery Tiggo 7/8 / Jaecoo ~51-60 л
+      }
+      if (nameAndModel.contains('haval') ||
+          nameAndModel.contains('jolion') ||
+          nameAndModel.contains('dargo')) {
+        return 60.0;
+      }
+      if (vehicle.isPhev) return 60.0;
+      return null;
+    }
+  }
+
+  /// Максимально допустимый физический объем для заправки/зарядки с учетом запаса.
+  /// (+10% для топливного бака с горловиной, +20% для зарядки батареи с потерями).
+  static double getMaxAllowedVolume(String entryType, {Vehicle? vehicle}) {
+    final nominal = getNominalCapacity(entryType, vehicle: vehicle);
+    if (nominal != null && nominal > 0) {
+      if (entryType == 'charge') {
+        final val = double.parse((nominal * 1.20).toStringAsFixed(2));
+        return val.ceilToDouble(); // +20% потери
+      } else {
+        final val = double.parse((nominal * 1.10).toStringAsFixed(2));
+        return val.ceilToDouble(); // +10% горловина
+      }
+    }
+
+    if (entryType == 'charge') {
+      return kMaxSingleEvVolume; // 300.0 кВт·ч
+    } else {
+      return kMaxSingleFuelVolume; // 250.0 л
+    }
+  }
+
+  /// Физическая валидация объема заправки/зарядки с учетом горловины/потерь.
+  /// Для бензина/дизеля/газа: max = tankCapacity * 1.10 (+10% горловина).
+  /// Для зарядки: max = batteryCapacity * 1.20 (+20% потери).
+  /// Возвращает понятный текст ошибки или null, если объем допустим.
+  static String? validateEntryVolume({
+    required double volume,
+    required String entryType,
+    required Vehicle? vehicle,
+  }) {
+    if (volume <= 0) {
+      return 'Объем должен быть больше 0';
+    }
+    if (vehicle == null) return null;
+
+    final maxAllowed = getMaxAllowedVolume(entryType, vehicle: vehicle);
+    if (volume > maxAllowed) {
+      final maxStr = maxAllowed % 1 == 0
+          ? maxAllowed.toStringAsFixed(0)
+          : maxAllowed.toStringAsFixed(1);
+      if (entryType == 'charge') {
+        return 'Заряженная энергия превышает физическую емкость батареи (макс. $maxStr кВт·ч)';
+      } else {
+        return 'Объем заправки превышает емкость бака с учетом горловины (макс. $maxStr л)';
+      }
+    }
+    return null;
+  }
+
+  /// Валидация показаний одометра.
+  /// Запрещает ввод одометра строго меньше последнего зафиксированного значения по данному авто.
+  static String? validateOdometer({
+    required double odometer,
+    required double? lastOdometer,
+  }) {
+    if (lastOdometer != null && odometer < lastOdometer) {
+      final odoStr = lastOdometer.toStringAsFixed(0);
+      return 'Одометр не может быть меньше последнего зафиксированного значения ($odoStr км)';
+    }
+    return null;
+  }
+
+  /// Авторасчет и синхронизация стоимости:
+  /// - totalCost = volume * unitPrice
+  /// - Если общая стоимость введена пользователем вручную: unitPrice = totalCost / volume
+  static ({double? unitPrice, double? totalCost}) calculatePriceSync({
+    required double volume,
+    double? unitPrice,
+    double? totalCost,
+    bool preferTotalCost = false,
+  }) {
+    if (volume <= 0) {
+      return (unitPrice: unitPrice, totalCost: totalCost);
+    }
+    if (preferTotalCost && totalCost != null && totalCost > 0) {
+      return (
+        unitPrice: totalCost / volume,
+        totalCost: totalCost,
+      );
+    }
+    if (totalCost != null && totalCost > 0 && (unitPrice == null || unitPrice <= 0)) {
+      return (
+        unitPrice: totalCost / volume,
+        totalCost: totalCost,
+      );
+    }
+    if (unitPrice != null && unitPrice > 0) {
+      return (
+        unitPrice: unitPrice,
+        totalCost: volume * unitPrice,
+      );
+    }
+    return (unitPrice: unitPrice, totalCost: totalCost);
+  }
 
   /// Расчёт предварительного расхода для предпросмотра при вводе.
-  ///
-  /// Возвращает null если данных недостаточно или расстояние слишком мало.
   double? previewConsumption({
     required double odometer,
     required double volume,
@@ -487,49 +771,57 @@ class FuelEntryController extends GetxController {
     required bool isFullTank,
     required List<FuelEntry> tailPartials,
   }) {
+    // Частичные дозаправки не имеют удельного расхода
+    if (!isFullTank) return null;
     if (prevOdometer == null) return null;
     final distance = odometer - prevOdometer;
-    if (distance < kMinDistanceKm) return null;
+    if (distance <= 0 || distance < kMinDistanceKm) return null;
 
-    // Суммируем объёмы хвостовых частичных + текущий
-    double totalVolume = tailPartials.fold(0.0, (s, e) => s + e.volume) + volume;
+    final totalVolume =
+        tailPartials.fold(0.0, (s, e) => s + e.volume) + volume;
     return (totalVolume / distance) * 100;
   }
 
-  /// Проверяет, является ли предварительный расход аномальным.
-  AnomalyWarning? checkAnomalyWarning({
+  /// Проверяет, является ли запись аномальной перед сохранением.
+  static AnomalyWarning? checkAnomalyWarning({
     required double odometer,
     required double volume,
     required double? prevOdometer,
     required String entryType,
+    Vehicle? vehicle,
   }) {
-    if (prevOdometer == null) return null;
-    final distance = odometer - prevOdometer;
+    if (prevOdometer != null) {
+      final distance = odometer - prevOdometer;
+      if (distance < 0) {
+        return AnomalyWarning.odometerDecreased;
+      }
+      if (distance > 0 && distance < kMinDistanceKm) {
+        return AnomalyWarning.distanceTooSmall;
+      }
+      if (distance > kMaxWarningDistanceKm) {
+        return AnomalyWarning.distanceTooLarge;
+      }
+    }
 
-    if (distance < 0) {
-      return AnomalyWarning.odometerDecreased;
-    }
-    if (distance > 0 && distance < kMinDistanceKm) {
-      return AnomalyWarning.distanceTooSmall;
-    }
-    if (distance > kMaxWarningDistanceKm) {
-      return AnomalyWarning.distanceTooLarge;
-    }
-
-    final maxVol = entryType == 'charge' ? kMaxSingleEvVolume : kMaxSingleFuelVolume;
+    final maxVol = getMaxAllowedVolume(entryType, vehicle: vehicle);
     if (volume > maxVol) {
       return AnomalyWarning.volumeTooLarge;
     }
 
-    if (distance >= kMinDistanceKm) {
-      final cons = (volume / distance) * 100;
-      if (entryType == 'charge') {
-        if (cons > kMaxReasonableConsumptionEv || cons < kMinReasonableConsumptionEv) {
-          return AnomalyWarning.consumptionAnomalous;
-        }
-      } else {
-        if (cons > kMaxReasonableConsumptionFuel || cons < kMinReasonableConsumptionFuel) {
-          return AnomalyWarning.consumptionAnomalous;
+    if (prevOdometer != null) {
+      final distance = odometer - prevOdometer;
+      if (distance >= kMinDistanceKm) {
+        final cons = (volume / distance) * 100;
+        if (entryType == 'charge') {
+          if (cons > kMaxReasonableConsumptionEv ||
+              cons < kMinReasonableConsumptionEv) {
+            return AnomalyWarning.consumptionAnomalous;
+          }
+        } else {
+          if (cons > kMaxReasonableConsumptionFuel ||
+              cons < kMinReasonableConsumptionFuel) {
+            return AnomalyWarning.consumptionAnomalous;
+          }
         }
       }
     }
@@ -539,9 +831,8 @@ class FuelEntryController extends GetxController {
 
   // ─────────────────────────────────────── Reminder ──
 
-  /// Проверяет, нужно ли показать напоминание о заправке.
   Future<void> checkAllReminders() async {
-    final vehicles = _vehicleCtrl.vehicles;
+    final vehicles = _vehicleCtrl?.vehicles ?? [];
     for (final vehicle in vehicles) {
       if (vehicle.reminderDays == null || vehicle.id == null) continue;
       await _checkReminder(vehicle.id!);
@@ -549,7 +840,7 @@ class FuelEntryController extends GetxController {
   }
 
   Future<void> _checkReminder(int vehicleId) async {
-    final vehicle = _vehicleCtrl.vehicles
+    final vehicle = _vehicleCtrl?.vehicles
         .firstWhereOrNull((v) => v.id == vehicleId);
     if (vehicle == null || vehicle.reminderDays == null) return;
 
@@ -621,22 +912,37 @@ class FuelEntryController extends GetxController {
 
   // ──────────────────────────────── Helpers ──
 
-  /// Возвращает только записи с рассчитанным расходом (для графика).
   List<FuelEntry> get entriesWithConsumption =>
       entries.where((e) => e.consumption != null).toList();
 
-  /// Одометр последней записи (для валидации новой записи).
   double? get lastOdometer =>
       entries.isNotEmpty ? entries.last.odometer : null;
 
+  /// Возвращает максимальный одометр среди всех записей для текущего автомобиля.
+  double? getLastRecordedOdometer({int? excludeEntryId}) {
+    final filtered = excludeEntryId != null
+        ? entries.where((e) => e.id != excludeEntryId).toList()
+        : entries;
+    if (filtered.isEmpty) return null;
+    return filtered.map((e) => e.odometer).reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Возвращает последнюю полную заправку/зарядку для данного типа энергии.
+  FuelEntry? getLastFullEntry(String entryType) {
+    final filtered = entries
+        .where((e) => e.entryType == entryType && e.isFullTank)
+        .toList();
+    if (filtered.isEmpty) return null;
+    return filtered.last;
+  }
+
   /// Возвращает хвостовые частичные заправки после последней полной
-  /// (нужно для предпросмотра расхода при добавлении новой полной заправки).
+  /// (для предпросмотра расхода при добавлении новой полной заправки).
   List<FuelEntry> getTailPartials(String entryType) {
     final filtered =
         entries.where((e) => e.entryType == entryType).toList();
     if (filtered.isEmpty) return [];
 
-    // Ищем с конца последнюю полную
     int lastFullIdx = -1;
     for (int i = filtered.length - 1; i >= 0; i--) {
       if (filtered[i].isFullTank) {
@@ -644,28 +950,18 @@ class FuelEntryController extends GetxController {
         break;
       }
     }
-    if (lastFullIdx == -1) return filtered; // нет полных — все хвост
+    if (lastFullIdx == -1) return filtered;
     return filtered.sublist(lastFullIdx + 1);
   }
 }
 
 // ─────────────────────── Anomaly Warning Enum ────────────────────────────────
 
-/// Типы предупреждений при вводе записи.
 enum AnomalyWarning {
-  /// Одометр меньше предыдущего.
   odometerDecreased,
-
-  /// Расстояние слишком маленькое (< 10 км) — расход не будет рассчитан.
   distanceTooSmall,
-
-  /// Расстояние слишком большое (> 3000 км) — возможна ошибка ввода.
   distanceTooLarge,
-
-  /// Введённый объём нереально большой.
   volumeTooLarge,
-
-  /// Предварительный расход выходит за разумные пределы.
   consumptionAnomalous,
 }
 

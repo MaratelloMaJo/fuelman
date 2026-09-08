@@ -11,6 +11,7 @@ build/
 coverage/
 doc/api/
 *.lock.db
+macos
 
 # ==============================================================================
 # Android Build Artifacts & Gradle Cache
@@ -69,6 +70,7 @@ cmake_install.cmake
 .windsurf/
 .cline/
 .geminiignore
+GEMINI.MD
 
 # ==============================================================================
 # System & Temporary Files

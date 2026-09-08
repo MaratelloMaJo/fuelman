@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../controllers/vehicle_controller.dart';
 import 'add_entry_screen.dart';
 import 'add_expense_screen.dart';
+import 'add_vehicle_screen.dart';
 import 'home_tab.dart';
 import 'history_tab.dart';
 import 'statistics_tab.dart';
@@ -129,6 +130,17 @@ class _MainScreenState extends State<MainScreen> {
                       onTap: () async {
                         Navigator.pop(ctx);
                         await Get.to(() => const AddExpenseScreen());
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _AddOptionTile(
+                      icon: Icons.directions_car_rounded,
+                      color: Colors.teal,
+                      title: 'add_vehicle_option'.tr,
+                      subtitle: 'add_vehicle_subtitle_modal'.tr,
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await Get.to(() => const AddVehicleScreen());
                       },
                     ),
                     const SizedBox(height: 8),

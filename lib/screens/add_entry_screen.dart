@@ -119,9 +119,15 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     }
   }
 
-  double? get _lastOdometer {
+  double? get _lastRecordedOdometer {
+    return _entryCtrl.getLastRecordedOdometer(
+      excludeEntryId: widget.editEntry?.id,
+    );
+  }
+
+  double? get _lastFullOdometer {
     if (widget.editEntry != null) return null;
-    return _entryCtrl.lastOdometer;
+    return _entryCtrl.getLastFullEntry(_entryType)?.odometer;
   }
 
   // ─────────────────────────── Live Calculation ──
@@ -141,14 +147,10 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   void _onTotalPriceChanged() {
     if (_isCalculating || !_totalPriceFocus.hasFocus) return;
     final t = double.tryParse(_totalPriceCtrl.text.replaceAll(',', '.')) ?? 0;
-    final p = double.tryParse(_priceCtrl.text.replaceAll(',', '.')) ?? 0;
     final v = double.tryParse(_volumeCtrl.text.replaceAll(',', '.')) ?? 0;
 
-    if (t > 0 && p > 0) {
-      _isCalculating = true;
-      _volumeCtrl.text = (t / p).toStringAsFixed(2);
-      _isCalculating = false;
-    } else if (t > 0 && v > 0) {
+    // Приоритет фактической сумме чека: автопересчёт цены за единицу
+    if (t > 0 && v > 0) {
       _isCalculating = true;
       _priceCtrl.text = (t / v).toStringAsFixed(2);
       _isCalculating = false;
@@ -190,7 +192,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         double.tryParse(_odometerCtrl.text.replaceAll(',', '.'));
     final volume =
         double.tryParse(_volumeCtrl.text.replaceAll(',', '.'));
-    final prev = _lastOdometer;
+    final prev = _lastFullOdometer;
 
     if (odometer == null || volume == null || volume <= 0) {
       setState(() {
@@ -201,11 +203,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     }
 
     // Предупреждение
-    final warning = _entryCtrl.checkAnomalyWarning(
+    final warning = FuelEntryController.checkAnomalyWarning(
       odometer: odometer,
       volume: volume,
       prevOdometer: prev,
       entryType: _entryType,
+      vehicle: _vehicleCtrl.selectedVehicle.value,
     );
 
     // Предпросмотр расхода (только если есть предыдущий одометр)
@@ -291,19 +294,55 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
     setState(() => _isSaving = true);
 
+    final volume = double.parse(_volumeCtrl.text.replaceAll(',', '.'));
+    final volumeErr = FuelEntryController.validateEntryVolume(
+      volume: volume,
+      entryType: _entryType,
+      vehicle: vehicle,
+    );
+    if (volumeErr != null) {
+      setState(() => _isSaving = false);
+      Get.snackbar('Ошибка', volumeErr, snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    final odometer = double.parse(_odometerCtrl.text.replaceAll(',', '.'));
+    final odoErr = FuelEntryController.validateOdometer(
+      odometer: odometer,
+      lastOdometer: _lastRecordedOdometer,
+    );
+    if (odoErr != null) {
+      setState(() => _isSaving = false);
+      Get.snackbar('Ошибка', odoErr, snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    double? totalPrice = _totalPriceCtrl.text.isEmpty
+        ? null
+        : double.tryParse(_totalPriceCtrl.text.replaceAll(',', '.'));
+    double? unitPrice = _priceCtrl.text.isEmpty
+        ? null
+        : double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
+
+    // Авторасчет: если введен totalCost вручную, unitPrice = totalCost / volume
+    final priceSync = FuelEntryController.calculatePriceSync(
+      volume: volume,
+      unitPrice: unitPrice,
+      totalCost: totalPrice,
+      preferTotalCost: _totalPriceCtrl.text.isNotEmpty,
+    );
+    unitPrice = priceSync.unitPrice;
+    totalPrice = priceSync.totalCost;
+
     final entry = FuelEntry(
       id: widget.editEntry?.id,
       vehicleId: vehicle.id!,
       date: _date,
       odometer: double.parse(_odometerCtrl.text.replaceAll(',', '.')),
-      volume: double.parse(_volumeCtrl.text.replaceAll(',', '.')),
+      volume: volume,
       isFullTank: _isFullTank,
-      pricePerLiter: _priceCtrl.text.isEmpty
-          ? null
-          : double.tryParse(_priceCtrl.text.replaceAll(',', '.')),
-      storedTotalCost: _totalPriceCtrl.text.isEmpty
-          ? null
-          : double.tryParse(_totalPriceCtrl.text.replaceAll(',', '.')),
+      pricePerLiter: unitPrice,
+      storedTotalCost: totalPrice,
       entryType: _entryType,
       volumeUnit: _volumeUnit,
       currency: _currency,
@@ -437,9 +476,17 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           Icons.warning_amber_rounded,
         );
       case AnomalyWarning.volumeTooLarge:
+        final vehicle = _vehicleCtrl.selectedVehicle.value;
+        final nominal = FuelEntryController.getNominalCapacity(_entryType, vehicle: vehicle);
+        final maxAllowed = FuelEntryController.getMaxAllowedVolume(_entryType, vehicle: vehicle);
+        final unitStr = _entryType == 'charge' ? 'кВт·ч' : (_volumeUnit.isEmpty ? 'л' : _volumeUnit);
+        String body = 'warn_vol_large_body'.tr;
+        if (nominal != null && nominal > 0) {
+          body += '\n\n${'tank_capacity'.tr}: ${nominal.toStringAsFixed(1)} $unitStr (макс. с учетом запаса: ${maxAllowed.toStringAsFixed(1)} $unitStr)';
+        }
         return (
           'warn_vol_large_title'.tr,
-          'warn_vol_large_body'.tr,
+          body,
           Icons.warning_amber_rounded,
         );
       case AnomalyWarning.consumptionAnomalous:
@@ -532,12 +579,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                   ],
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.speed_rounded),
-                    hintText: _lastOdometer != null
-                        ? '${'odometer_label'.tr}: ${_lastOdometer!.toStringAsFixed(0)}'
+                    hintText: _lastRecordedOdometer != null
+                        ? '${'odometer_label'.tr}: ${_lastRecordedOdometer!.toStringAsFixed(0)}'
                         : '50000',
                     suffixText: 'odometer_suffix'.tr,
-                    helperText: _lastOdometer != null
-                        ? '${'prev_odometer_hint'.tr}: ${_lastOdometer!.toStringAsFixed(0)} км'
+                    helperText: _lastRecordedOdometer != null
+                        ? '${'prev_odometer_hint'.tr}: ${_lastRecordedOdometer!.toStringAsFixed(0)} км'
                         : null,
                     helperStyle:
                         TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
@@ -546,9 +593,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                     if (v == null || v.isEmpty) return 'odometer_required'.tr;
                     final val = double.tryParse(v.replaceAll(',', '.'));
                     if (val == null) return 'odometer_invalid'.tr;
-                    if (_lastOdometer != null && val <= _lastOdometer!) {
-                      return '${'odometer_too_low'.tr} ${_lastOdometer!.toStringAsFixed(0)} ${'odometer_suffix'.tr}';
-                    }
+                    final err = FuelEntryController.validateOdometer(
+                      odometer: val,
+                      lastOdometer: _lastRecordedOdometer,
+                    );
+                    if (err != null) return err;
                     return null;
                   },
                 ),
@@ -603,6 +652,13 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                     if (v == null || v.isEmpty) return 'volume_required'.tr;
                     final val = double.tryParse(v.replaceAll(',', '.'));
                     if (val == null || val <= 0) return 'volume_invalid'.tr;
+                    final vehicle = _vehicleCtrl.selectedVehicle.value;
+                    final err = FuelEntryController.validateEntryVolume(
+                      volume: val,
+                      entryType: _entryType,
+                      vehicle: vehicle,
+                    );
+                    if (err != null) return err;
                     return null;
                   },
                 ),
@@ -737,7 +793,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                   warning: _warning,
                   entryType: _entryType,
                   volumeUnit: _volumeUnit,
-                  prevOdometer: _lastOdometer,
+                  prevOdometer: _lastFullOdometer,
                   currentOdometer:
                       double.tryParse(_odometerCtrl.text.replaceAll(',', '.')),
                 ),

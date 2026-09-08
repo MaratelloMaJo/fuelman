@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:fuelman/controllers/charging_entry_controller.dart';
 import 'package:get/get.dart';
 
 import '../controllers/car_expense_controller.dart';
@@ -27,6 +28,7 @@ class FuelManApp extends StatelessWidget {
     Get.put(VehicleController(), permanent: true);
     Get.put(FuelEntryController(), permanent: true);
     Get.put(CarExpenseController(), permanent: true);
+    Get.put(ChargingEntryController(), permanent: true);
 
     final themeCtrl = Get.find<ThemeController>();
     final settingsCtrl = Get.find<SettingsController>();
@@ -42,29 +44,29 @@ class FuelManApp extends StatelessWidget {
       final locale = localeMap[langCode] ?? Locale(langCode);
 
       return GetMaterialApp(
-          title: 'FuelMan',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          themeMode: themeCtrl.themeMode,
+        title: 'FuelMan',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: themeCtrl.themeMode,
 
-          // Локализация
-          translations: AppTranslations(),
-          locale: locale,
-          fallbackLocale: const Locale('ru', 'RU'),
-          supportedLocales: const [
-            Locale('ru', 'RU'),
-            Locale('en', 'US'),
-            Locale('kk', 'KZ'),
-          ],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+        // Локализация
+        translations: AppTranslations(),
+        locale: locale,
+        fallbackLocale: const Locale('ru', 'RU'),
+        supportedLocales: const [
+          Locale('ru', 'RU'),
+          Locale('en', 'US'),
+          Locale('kk', 'KZ'),
+        ],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
 
-          home: const MainScreen(),
-        );
+        home: const MainScreen(),
+      );
     });
   }
 }

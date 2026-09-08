@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
 import '../models/fuel_entry.dart';
 import '../controllers/settings_controller.dart';
 import '../controllers/fuel_entry_controller.dart';
 import 'efficiency_badge.dart';
-import 'package:get/get.dart';
 
-/// Элемент списка записей о заправке.
+/// Элемент списка записей о заправке / зарядке.
 ///
 /// Улучшения:
+///   — Компактный бейдж статуса ("Дозаправка", "Полный бак", "Полный заряд")
+///   — Защита от переполнения верстки (Flexible + TextOverflow.ellipsis)
+///   — Настраиваемый margin для идеального выравнивания в списках
 ///   — Показывает пройденное расстояние (∆ km)
 ///   — Маркирует аномальный расход
 ///   — Swipe-to-delete через [Dismissible]
@@ -19,6 +22,7 @@ class FuelEntryTile extends StatelessWidget {
   final double? prevOdometer; // одометр предыдущей записи (для ∆ км)
   final VoidCallback? onDelete;
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry margin;
 
   const FuelEntryTile({
     super.key,
@@ -27,6 +31,7 @@ class FuelEntryTile extends StatelessWidget {
     this.prevOdometer,
     this.onDelete,
     this.onTap,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
   });
 
   @override
@@ -36,13 +41,22 @@ class FuelEntryTile extends StatelessWidget {
     final entryCtrl = Get.find<FuelEntryController>();
     final isAnomalous = entryCtrl.isEntryAnomalous(entry.id);
 
+    // Лаконичный статус без длинных фраз
+    final isCharge = entry.entryType == 'charge';
+    final String statusText;
+    if (isCharge) {
+      statusText = entry.isFullTank ? 'full_charge'.tr : 'entry_partial'.tr;
+    } else {
+      statusText = entry.isFullTank ? 'full_tank'.tr : 'entry_partial'.tr;
+    }
+
     // Рассчитываем ∆ пробег
     final distanceKm = (prevOdometer != null && prevOdometer! > 0)
         ? (entry.odometer - prevOdometer!)
         : null;
 
     final Widget tile = Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: margin,
       clipBehavior: Clip.antiAlias,
       // Лёгкая подсветка аномальной записи
       color: isAnomalous
@@ -61,11 +75,11 @@ class FuelEntryTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Строка 1: дата + тип + бейдж ──
+              // ── Строка 1: дата + тип + статус + бейдж ──
               Row(
                 children: [
                   Icon(
-                    entry.entryType == 'charge'
+                    isCharge
                         ? Icons.electrical_services_rounded
                         : (entry.isFullTank
                             ? Icons.local_gas_station_rounded
@@ -74,40 +88,55 @@ class FuelEntryTile extends StatelessWidget {
                     color: entry.isFullTank ? cs.primary : cs.secondary,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    dateFmt.format(entry.date),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Text(
+                      dateFmt.format(entry.date),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: entry.isFullTank
-                          ? cs.primaryContainer
-                          : cs.secondaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      entry.isFullTank ? 'full_tank'.tr : 'entry_partial'.tr,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
                         color: entry.isFullTank
-                            ? cs.onPrimaryContainer
-                            : cs.onSecondaryContainer,
+                            ? cs.primaryContainer
+                            : cs.secondaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        statusText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: entry.isFullTank
+                              ? cs.onPrimaryContainer
+                              : cs.onSecondaryContainer,
+                        ),
                       ),
                     ),
                   ),
                   const Spacer(),
-                  if (entry.consumption != null)
-                    EfficiencyBadge(
-                      consumption: entry.consumption!,
-                      avgConsumption: avgConsumption,
-                      isAnomalous: isAnomalous,
+                  if (entry.consumption != null) ...[
+                    const SizedBox(width: 4),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: EfficiencyBadge(
+                        consumption: entry.consumption!,
+                        avgConsumption: avgConsumption,
+                        isAnomalous: isAnomalous,
+                      ),
                     ),
+                  ],
                 ],
               ),
               const SizedBox(height: 10),
@@ -123,10 +152,10 @@ class FuelEntryTile extends StatelessWidget {
                     ),
                     _Divider(),
                     _Metric(
-                      label: entry.entryType == 'charge' ? 'volume_label_charge'.tr : 'volume_label_fuel'.tr,
+                      label: isCharge ? 'volume_label_charge'.tr : 'volume_label_fuel'.tr,
                       value:
                           '${entry.volume.toStringAsFixed(2)} ${entry.volumeUnit}',
-                      icon: entry.entryType == 'charge'
+                      icon: isCharge
                           ? Icons.electrical_services_rounded
                           : Icons.water_drop_rounded,
                     ),
@@ -161,30 +190,43 @@ class FuelEntryTile extends StatelessWidget {
                 Row(
                   children: [
                     if (entry.totalCost != null)
-                      Text(
-                        '${'cost_label'.tr}${entry.totalCost!.toStringAsFixed(0)} ${Get.find<SettingsController>().getSymbolForCurrency(entry.currency)}',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                ),
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: Text(
+                          '${'cost_label'.tr}${entry.totalCost!.toStringAsFixed(0)} ${Get.find<SettingsController>().getSymbolForCurrency(entry.currency)}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     const Spacer(),
                     if (distanceKm != null && distanceKm > 0)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.route_rounded,
-                              size: 12, color: cs.onSurfaceVariant),
-                          const SizedBox(width: 3),
-                          Text(
-                            '∆ ${distanceKm.toStringAsFixed(0)} ${'km_unit'.tr}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.route_rounded,
+                                size: 12, color: cs.onSurfaceVariant),
+                            const SizedBox(width: 3),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Text(
+                                '∆ ${distanceKm.toStringAsFixed(0)} ${'km_unit'.tr}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: cs.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                   ],
                 ),
@@ -195,13 +237,17 @@ class FuelEntryTile extends StatelessWidget {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
+                    const Icon(Icons.warning_amber_rounded,
                         size: 12, color: Colors.orange),
                     const SizedBox(width: 4),
-                    Text(
-                      'anomaly_note'.tr,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.orange),
+                    Expanded(
+                      child: Text(
+                        'anomaly_note'.tr,
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.orange),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -218,7 +264,7 @@ class FuelEntryTile extends StatelessWidget {
       key: ValueKey(entry.id),
       direction: DismissDirection.horizontal,
       background: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        margin: margin,
         decoration: BoxDecoration(
           color: cs.primaryContainer,
           borderRadius: BorderRadius.circular(16),
@@ -228,7 +274,7 @@ class FuelEntryTile extends StatelessWidget {
         child: Icon(Icons.edit_rounded, color: cs.onPrimaryContainer),
       ),
       secondaryBackground: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        margin: margin,
         decoration: BoxDecoration(
           color: cs.errorContainer,
           borderRadius: BorderRadius.circular(16),
@@ -305,11 +351,15 @@ class _Metric extends StatelessWidget {
               color: color,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             label,
             style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

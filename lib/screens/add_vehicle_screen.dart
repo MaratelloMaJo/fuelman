@@ -24,6 +24,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _goalCtrl = TextEditingController();
   final _evGoalCtrl = TextEditingController();
   final _reminderCtrl = TextEditingController();
+  final _tankCapacityCtrl = TextEditingController();
+  final _batteryCapacityCtrl = TextEditingController();
 
   String _bodyType = 'sedan';
   String _engineType = 'gas';
@@ -42,6 +44,16 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   bool get _isEditing => widget.editVehicle != null;
 
+  bool get _isTankRequired => Vehicle.isTankRequiredFor(
+        engineType: _engineType,
+        fuelSubtype: _fuelSubtype,
+      );
+
+  bool get _isBatteryRequired => Vehicle.isBatteryRequiredFor(
+        engineType: _engineType,
+        hybridType: _hybridType,
+      );
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +67,12 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       _fuelSubtype = v.fuelSubtype;
       if (v.fuelGoal != null) _goalCtrl.text = v.fuelGoal!.toStringAsFixed(1);
       if (v.evGoal != null) _evGoalCtrl.text = v.evGoal!.toStringAsFixed(1);
+      if (v.tankCapacity != null) {
+        _tankCapacityCtrl.text = v.tankCapacity!.toStringAsFixed(1);
+      }
+      if (v.batteryCapacityKwh != null) {
+        _batteryCapacityCtrl.text = v.batteryCapacityKwh!.toStringAsFixed(1);
+      }
       if (v.reminderDays != null) {
         _reminderEnabled = true;
         _reminderCtrl.text = v.reminderDays!.toString();
@@ -75,6 +93,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     _goalCtrl.dispose();
     _evGoalCtrl.dispose();
     _reminderCtrl.dispose();
+    _tankCapacityCtrl.dispose();
+    _batteryCapacityCtrl.dispose();
     _licensePlateCtrl.dispose();
     _engineVolumeCtrl.dispose();
     _horsePowerCtrl.dispose();
@@ -104,6 +124,18 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       evGoal: _evGoalCtrl.text.isEmpty
           ? null
           : double.tryParse(_evGoalCtrl.text.replaceAll(',', '.')),
+      tankCapacity: _engineType == 'electric'
+          ? null
+          : (_tankCapacityCtrl.text.isEmpty
+              ? null
+              : double.tryParse(_tankCapacityCtrl.text.replaceAll(',', '.'))),
+      batteryCapacityKwh: (_engineType == 'electric' ||
+              (_engineType == 'hybrid' &&
+                  (_hybridType == 'PHEV' || _hybridType == 'BEV_REX')))
+          ? (_batteryCapacityCtrl.text.isEmpty
+              ? null
+              : double.tryParse(_batteryCapacityCtrl.text.replaceAll(',', '.')))
+          : null,
       reminderDays: _reminderEnabled && _reminderCtrl.text.isNotEmpty
           ? int.tryParse(_reminderCtrl.text)
           : null,
@@ -252,7 +284,88 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       ? 'brand_model_required'.tr
                       : null,
                 ),
-                const SizedBox(height: 20),
+                // ── Емкости бака и батареи ──
+                if (_isTankRequired || _engineType != 'electric') ...[
+                  _SectionLabel('${'tank_capacity_label'.tr}${_isTankRequired ? ' *' : ''}'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _tankCapacityCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.local_gas_station_rounded),
+                      hintText: 'tank_capacity_hint'.tr,
+                      suffixText: 'tank_capacity_suffix'.tr,
+                    ),
+                    validator: (v) {
+                      final text = v?.replaceAll(',', '.').trim() ?? '';
+                      if (_isTankRequired) {
+                        if (text.isEmpty) {
+                          return 'Укажите объем топливного бака';
+                        }
+                        final val = double.tryParse(text);
+                        if (val == null || val <= 0) {
+                          return 'Объем бака должен быть больше 0';
+                        }
+                        return null;
+                      } else {
+                        if (text.isEmpty) return null;
+                        final val = double.tryParse(text);
+                        if (val == null || val <= 0) {
+                          return 'Объем бака должен быть больше 0';
+                        }
+                        return null;
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                if (_isBatteryRequired ||
+                    _engineType == 'electric' ||
+                    (_engineType == 'hybrid' &&
+                        (_hybridType == 'PHEV' ||
+                            _hybridType == 'BEV_REX'))) ...[
+                  _SectionLabel('${'battery_capacity_label'.tr}${_isBatteryRequired ? ' *' : ''}'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _batteryCapacityCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.battery_charging_full_rounded),
+                      hintText: 'battery_capacity_hint'.tr,
+                      suffixText: 'battery_capacity_suffix'.tr,
+                    ),
+                    validator: (v) {
+                      final text = v?.replaceAll(',', '.').trim() ?? '';
+                      if (_isBatteryRequired) {
+                        if (text.isEmpty) {
+                          return 'Укажите емкость аккумулятора';
+                        }
+                        final val = double.tryParse(text);
+                        if (val == null || val <= 0) {
+                          return 'Емкость аккумулятора должна быть больше 0';
+                        }
+                        return null;
+                      } else {
+                        if (text.isEmpty) return null;
+                        final val = double.tryParse(text);
+                        if (val == null || val <= 0) {
+                          return 'Емкость аккумулятора должна быть больше 0';
+                        }
+                        return null;
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 // ── Цели по расходу ──
                 if (_engineType != 'electric') ...[

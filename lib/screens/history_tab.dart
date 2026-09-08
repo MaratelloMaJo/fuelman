@@ -411,7 +411,8 @@ class _FuelHistoryList extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 32),
+              padding: const EdgeInsets.only(
+                  top: 8, left: 16, right: 16, bottom: 120),
               itemCount: filtered.length,
               itemBuilder: (_, i) {
                 final entry = filtered[i];
@@ -422,6 +423,7 @@ class _FuelHistoryList extends StatelessWidget {
                   entry: entry,
                   avgConsumption: avgConsumption,
                   prevOdometer: prevOdo,
+                  margin: const EdgeInsets.symmetric(vertical: 4),
                   onTap: () async {
                     await Get.to(() => AddEntryScreen(editEntry: entry));
                   },
@@ -557,12 +559,14 @@ class _CareHistoryListState extends State<_CareHistoryList> {
                     subtitle: 'care_no_entries_hint'.tr,
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 32),
+                    padding: const EdgeInsets.only(
+                        top: 8, left: 16, right: 16, bottom: 120),
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
                       final expense = filtered[i];
                       return ExpenseTile(
                         expense: expense,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
                         onTap: () async {
                           await Get.to(() =>
                               AddExpenseScreen(editExpense: expense));

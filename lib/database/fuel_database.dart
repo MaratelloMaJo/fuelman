@@ -7,10 +7,20 @@ import 'package:file_picker/file_picker.dart';
 import '../models/vehicle.dart';
 import '../models/fuel_entry.dart';
 import '../models/car_expense.dart';
+import '../models/charging_entry.dart';
 
 /// Singleton-обёртка над SQLite базой данных FuelMan.
 ///
-/// Содержит CRUD-методы для [Vehicle], [FuelEntry] и [CarExpense],
+/// История версий:
+///   v1 — базовая схема vehicles + fuel_entries
+///   v2 — engine_type, entry_type, volume_unit, currency
+///   v3 — hybrid_type, ev_goal
+///   v4 — total_cost в fuel_entries
+///   v5 — license_plate, engine_volume, horse_power, year, GPS, car_expenses
+///   v6 — fuel_subtype
+///   v7 — battery_capacity_kwh, usable_capacity_kwh в vehicles; таблица charging_entries
+///
+/// Содержит CRUD-методы для [Vehicle], [FuelEntry], [CarExpense] и [ChargingEntry],
 /// а также агрегированные запросы статистики.
 class FuelDatabase {
   FuelDatabase._();
@@ -29,7 +39,7 @@ class FuelDatabase {
 
     return openDatabase(
       path,
-      version: 6,
+      version: 8,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -38,23 +48,28 @@ class FuelDatabase {
     );
   }
 
+  // ──────────────────────────────────────────────── Schema ──
+
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE vehicles (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        name          TEXT    NOT NULL,
-        model         TEXT    NOT NULL,
-        icon_type     TEXT    NOT NULL DEFAULT 'sedan',
-        engine_type   TEXT    NOT NULL DEFAULT 'gas',
-        hybrid_type   TEXT,
-        fuel_subtype  TEXT,
-        fuel_goal     REAL,
-        ev_goal       REAL,
-        reminder_days INTEGER,
-        license_plate TEXT,
-        engine_volume REAL,
-        horse_power   INTEGER,
-        year          INTEGER
+        id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+        name                 TEXT    NOT NULL,
+        model                TEXT    NOT NULL,
+        icon_type            TEXT    NOT NULL DEFAULT 'sedan',
+        engine_type          TEXT    NOT NULL DEFAULT 'gas',
+        hybrid_type          TEXT,
+        fuel_subtype         TEXT,
+        fuel_goal            REAL,
+        ev_goal              REAL,
+        reminder_days        INTEGER,
+        license_plate        TEXT,
+        engine_volume        REAL,
+        horse_power          INTEGER,
+        year                 INTEGER,
+        battery_capacity_kwh REAL,
+        usable_capacity_kwh  REAL,
+        tank_capacity        REAL
       )
     ''');
 
@@ -96,14 +111,41 @@ class FuelDatabase {
         FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute(_createChargingEntriesSQL);
   }
+
+  /// SQL для создания таблицы charging_entries (используется и в onCreate, и в onUpgrade).
+  static const String _createChargingEntriesSQL = '''
+    CREATE TABLE IF NOT EXISTS charging_entries (
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      vehicle_id          INTEGER NOT NULL,
+      date                TEXT    NOT NULL,
+      odometer            REAL    NOT NULL,
+      ev_odometer         REAL,
+      kwh_added           REAL    NOT NULL,
+      start_soc_percent   REAL,
+      end_soc_percent     REAL,
+      total_cost          REAL    NOT NULL DEFAULT 0,
+      charger_type        TEXT    NOT NULL DEFAULT 'acSlow',
+      charger_standard    TEXT    NOT NULL DEFAULT 'homeSocket',
+      power_kw            REAL,
+      temperature_celsius REAL,
+      station_name        TEXT,
+      FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+    )
+  ''';
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await db.execute("ALTER TABLE vehicles ADD COLUMN engine_type TEXT NOT NULL DEFAULT 'gas'");
-      await db.execute("ALTER TABLE fuel_entries ADD COLUMN entry_type TEXT NOT NULL DEFAULT 'fuel'");
-      await db.execute("ALTER TABLE fuel_entries ADD COLUMN volume_unit TEXT NOT NULL DEFAULT 'L'");
-      await db.execute("ALTER TABLE fuel_entries ADD COLUMN currency TEXT NOT NULL DEFAULT 'RUB'");
+      await db.execute(
+          "ALTER TABLE vehicles ADD COLUMN engine_type TEXT NOT NULL DEFAULT 'gas'");
+      await db.execute(
+          "ALTER TABLE fuel_entries ADD COLUMN entry_type TEXT NOT NULL DEFAULT 'fuel'");
+      await db.execute(
+          "ALTER TABLE fuel_entries ADD COLUMN volume_unit TEXT NOT NULL DEFAULT 'L'");
+      await db.execute(
+          "ALTER TABLE fuel_entries ADD COLUMN currency TEXT NOT NULL DEFAULT 'RUB'");
     }
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE vehicles ADD COLUMN hybrid_type TEXT');
@@ -113,18 +155,15 @@ class FuelDatabase {
       await db.execute('ALTER TABLE fuel_entries ADD COLUMN total_cost REAL');
     }
     if (oldVersion < 5) {
-      // Новые поля автомобиля
       await db.execute('ALTER TABLE vehicles ADD COLUMN license_plate TEXT');
       await db.execute('ALTER TABLE vehicles ADD COLUMN engine_volume REAL');
       await db.execute('ALTER TABLE vehicles ADD COLUMN horse_power INTEGER');
       await db.execute('ALTER TABLE vehicles ADD COLUMN year INTEGER');
 
-      // GPS + название станции для заправок/зарядок
       await db.execute('ALTER TABLE fuel_entries ADD COLUMN latitude REAL');
       await db.execute('ALTER TABLE fuel_entries ADD COLUMN longitude REAL');
       await db.execute('ALTER TABLE fuel_entries ADD COLUMN station_name TEXT');
 
-      // Новая таблица расходов на уход
       await db.execute('''
         CREATE TABLE IF NOT EXISTS car_expenses (
           id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -145,6 +184,19 @@ class FuelDatabase {
     }
     if (oldVersion < 6) {
       await db.execute('ALTER TABLE vehicles ADD COLUMN fuel_subtype TEXT');
+    }
+    if (oldVersion < 7) {
+      // Новые поля ёмкости АКБ для EV/PHEV (nullable → backwards-compatible)
+      await db.execute(
+          'ALTER TABLE vehicles ADD COLUMN battery_capacity_kwh REAL');
+      await db.execute(
+          'ALTER TABLE vehicles ADD COLUMN usable_capacity_kwh REAL');
+
+      // Новая таблица сессий зарядки
+      await db.execute(_createChargingEntriesSQL);
+    }
+    if (oldVersion < 8) {
+      await db.execute('ALTER TABLE vehicles ADD COLUMN tank_capacity REAL');
     }
   }
 
@@ -218,6 +270,73 @@ class FuelDatabase {
   Future<void> deleteEntry(int id) async {
     final db = await database;
     await db.delete('fuel_entries', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ─────────────────────────────────────── Charging Entries ──
+
+  /// Возвращает все сессии зарядки для автомобиля, отсортированные по дате ASC.
+  Future<List<ChargingEntry>> getChargingEntriesByVehicleId(
+      int vehicleId) async {
+    final db = await database;
+    final rows = await db.query(
+      'charging_entries',
+      where: 'vehicle_id = ?',
+      whereArgs: [vehicleId],
+      orderBy: 'date ASC',
+    );
+    return rows.map(ChargingEntry.fromMap).toList();
+  }
+
+  /// Сохраняет новую сессию зарядки. Возвращает запись с присвоенным [id].
+  Future<ChargingEntry> insertChargingEntry(ChargingEntry entry) async {
+    final db = await database;
+    final map = Map<String, dynamic>.from(entry.toMap())..remove('id');
+    final id = await db.insert('charging_entries', map);
+    return entry.copyWith(id: id);
+  }
+
+  /// Обновляет существующую сессию зарядки.
+  /// [entry.id] должен быть ненулевым.
+  Future<void> updateChargingEntry(ChargingEntry entry) async {
+    assert(entry.id != null, 'ChargingEntry.id must not be null for update');
+    final db = await database;
+    await db.update(
+      'charging_entries',
+      entry.toMap(),
+      where: 'id = ?',
+      whereArgs: [entry.id],
+    );
+  }
+
+  /// Удаляет сессию зарядки по [id].
+  Future<void> deleteChargingEntry(int id) async {
+    final db = await database;
+    await db.delete('charging_entries', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Суммарная статистика зарядок для автомобиля.
+  ///
+  /// Возвращает: `total_kwh`, `total_cost`, `session_count`.
+  Future<Map<String, double>> getChargingStats(int vehicleId) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT
+        COALESCE(SUM(kwh_added),   0) AS total_kwh,
+        COALESCE(SUM(total_cost),  0) AS total_cost,
+        COUNT(*)                       AS session_count
+      FROM charging_entries
+      WHERE vehicle_id = ?
+    ''', [vehicleId]);
+
+    if (result.isEmpty) {
+      return {'total_kwh': 0.0, 'total_cost': 0.0, 'session_count': 0.0};
+    }
+    final row = result.first;
+    return {
+      'total_kwh': (row['total_kwh'] as num).toDouble(),
+      'total_cost': (row['total_cost'] as num).toDouble(),
+      'session_count': (row['session_count'] as num).toDouble(),
+    };
   }
 
   // ──────────────────────────────────────────── Car Expenses ──
@@ -335,15 +454,30 @@ class FuelDatabase {
     ''', [vehicleId]);
   }
 
-  /// Дата последней записи для автомобиля.
+  /// Дата последней записи (заправка или зарядка) для автомобиля.
   Future<DateTime?> getLastEntryDate(int vehicleId) async {
     final db = await database;
-    final result = await db.rawQuery(
+
+    // Проверяем оба источника и берём более позднюю дату
+    final fuelResult = await db.rawQuery(
       'SELECT MAX(date) as last_date FROM fuel_entries WHERE vehicle_id = ?',
       [vehicleId],
     );
-    final raw = result.first['last_date'] as String?;
-    return raw != null ? DateTime.parse(raw) : null;
+    final chargeResult = await db.rawQuery(
+      'SELECT MAX(date) as last_date FROM charging_entries WHERE vehicle_id = ?',
+      [vehicleId],
+    );
+
+    final fuelRaw = fuelResult.first['last_date'] as String?;
+    final chargeRaw = chargeResult.first['last_date'] as String?;
+
+    final fuelDate = fuelRaw != null ? DateTime.tryParse(fuelRaw) : null;
+    final chargeDate = chargeRaw != null ? DateTime.tryParse(chargeRaw) : null;
+
+    if (fuelDate == null && chargeDate == null) return null;
+    if (fuelDate == null) return chargeDate;
+    if (chargeDate == null) return fuelDate;
+    return fuelDate.isAfter(chargeDate) ? fuelDate : chargeDate;
   }
 
   Future<void> close() async {
@@ -376,8 +510,8 @@ class FuelDatabase {
         type: FileType.any,
       );
 
-      if (result != null && result.files.single.path != null) {
-        final backupFile = File(result.files.single.path!);
+      if (result.isNotEmpty && result.first.path != null) {
+        final backupFile = File(result.first.path!);
 
         await close();
 
@@ -389,7 +523,7 @@ class FuelDatabase {
         _db = await _initDb();
         return true;
       }
-    } catch (e) {
+    } catch (_) {
       // ignore
     }
     return false;
