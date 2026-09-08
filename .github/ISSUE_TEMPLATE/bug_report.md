@@ -1,38 +1,82 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+name: "🐛 Отчет об ошибке"
+description: "Сообщить о баге, вылете или некорректном расчете расхода/зарядки"
+title: "[BUG]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Спасибо за участие в улучшении FuelMan!
+        Пожалуйста, заполните форму ниже как можно подробнее. Это сэкономит время при диагностике.
 
----
+  - type: dropdown
+    id: powertrain
+    attributes:
+      label: "Тип силовой установки авто"
+      description: "На каком типе двигателя произошла ошибка?"
+      options:
+        - "PHEV (Плагин-гибрид)"
+        - "HEV (Классический гибрид)"
+        - "EV (Чистый электромобиль)"
+        - "ICE (Бензин / Дизель)"
+        - "Не относится к расчету поездок (общий UI/настройки)"
+    validations:
+      required: true
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Платформа"
+      options:
+        - "Android (Realme / Xiaomi / Samsung и др.)"
+        - "iOS"
+        - "Эмулятор / Desktop"
+    validations:
+      required: true
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+  - type: input
+    id: app-version
+    attributes:
+      label: "Версия приложения или коммит"
+      placeholder: "например, v1.0.2 или коммит 20eb38d"
+    validations:
+      required: true
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "Что пошло не так?"
+      description: "Четко опишите, что произошло, и чего вы ожидали вместо этого."
+      placeholder: "При вводе емкости батареи 18.3 кВт·ч расчет средней стоимости километра выдал отрицательное число..."
+    validations:
+      required: true
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: "Шаги для воспроизведения"
+      description: "Пошаговая инструкция, как добиться этой же ошибки."
+      placeholder: |
+        1. Открыть вкладку 'Автомобили'
+        2. Нажать 'Добавить зарядку'
+        3. Заполнить SOC с 20% по 80%
+        4. Нажать кнопку сохранения
+    validations:
+      required: true
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+  - type: textarea
+    id: logs-screenshots
+    attributes:
+      label: "Скриншоты или логи (если есть)"
+      description: "Перетащите изображения прямо в это поле или вставьте логи Flutter (`flutter run -v`)."
+      placeholder: "Прикрепите скриншот экрана с ошибкой..."
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Финальная проверка"
+      options:
+        - label: "Я проверил, что этот баг еще не описан в существующих Issues"
+          required: true
+        - label: "Я использую последнюю версию из ветки `main`"
+          required: false
