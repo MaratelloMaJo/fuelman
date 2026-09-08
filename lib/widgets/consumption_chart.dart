@@ -392,7 +392,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             barRods: [
               BarChartRodData(
                 toY: cost,
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [AppTheme.chartSecondary, AppTheme.chartPrimary],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
@@ -462,7 +462,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   TextSpan(
                     text:
                         '${rod.toY.toStringAsFixed(0)} ${Get.find<SettingsController>().currencySymbol}',
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 12,
                         color: AppTheme.chartPrimary,
                         fontWeight: FontWeight.w700),

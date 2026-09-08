@@ -74,12 +74,12 @@ abstract final class AppTheme {
             borderRadius: BorderRadius.all(Radius.circular(16)),
           ),
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: const OutlineInputBorder(
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(12)),
           ),
           filled: true,
-          fillColor: const Color(0xFFF7F4EF),
+          fillColor: Color(0xFFF7F4EF),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(

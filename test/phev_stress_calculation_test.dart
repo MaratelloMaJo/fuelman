@@ -36,7 +36,7 @@ void main() {
 
     // ── Тест 2: Защита от перелива бака ──────────────────────────────────────
     test('test_overflow_tank_validation: Попытка сохранить 65 л при баке 48 л возвращает ошибку валидации', () {
-      final vehicle = const Vehicle(
+      const vehicle = Vehicle(
         name: 'BYD',
         model: 'Chazor',
         engineType: 'hybrid',
@@ -66,7 +66,7 @@ void main() {
 
     // ── Тест 3: Защита от перезаряда батареи ─────────────────────────────────
     test('test_overflow_battery_validation: Попытка сохранить 45 кВт·ч при батарее 18.3 кВт·ч возвращает ошибку валидации', () {
-      final vehicle = const Vehicle(
+      const vehicle = Vehicle(
         name: 'BYD',
         model: 'Chazor',
         engineType: 'hybrid',

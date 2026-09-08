@@ -215,7 +215,7 @@ void main() {
 
     // ── Сценарий 7: Защита физических лимитов BYD Chazor ─────────────────────
     test('test_chazor_volume_limits_validation: Лимиты 53 л для бака и 22 кВт·ч для батареи Chazor', () {
-      final chazor = const Vehicle(
+      const chazor = Vehicle(
         name: 'BYD',
         model: 'Chazor DM-i',
         engineType: 'hybrid',
@@ -312,7 +312,7 @@ void main() {
 
     // ── Сценарий 11: Пользовательский объем бака (tankCapacity) ────────────────
     test('test_user_defined_tank_capacity: Пользовательский объем бака управляет валидацией', () {
-      final customCar = const Vehicle(
+      const customCar = Vehicle(
         name: 'Toyota',
         model: 'Camry',
         engineType: 'petrol',
@@ -349,7 +349,7 @@ void main() {
     // ── Сценарий 12: Пресеты брендов (Lixiang, Geely, Tank, Chery, Haval) ──────
     test('test_multi_brand_presets: Проверка авто-определения емкостей для Lixiang, Geely, Tank, etc.', () {
       // 1. Lixiang L7/L9 (Li Auto)
-      final lixiang = const Vehicle(
+      const lixiang = Vehicle(
         name: 'Li Auto',
         model: 'L9 Max',
         engineType: 'hybrid',
@@ -359,7 +359,7 @@ void main() {
       expect(FuelEntryController.getMaxAllowedVolume('fuel', vehicle: lixiang), equals(72.0)); // ceil(65 * 1.1) = 72
 
       // 2. Geely Monjaro
-      final geelyMonjaro = const Vehicle(
+      const geelyMonjaro = Vehicle(
         name: 'Geely',
         model: 'Monjaro 2.0T',
         engineType: 'petrol',
@@ -368,7 +368,7 @@ void main() {
       expect(FuelEntryController.getMaxAllowedVolume('fuel', vehicle: geelyMonjaro), equals(69.0)); // ceil(62 * 1.1) = 69
 
       // 3. Geely Coolray
-      final geelyCoolray = const Vehicle(
+      const geelyCoolray = Vehicle(
         name: 'Geely',
         model: 'Coolray',
         engineType: 'petrol',
@@ -377,7 +377,7 @@ void main() {
       expect(FuelEntryController.getMaxAllowedVolume('fuel', vehicle: geelyCoolray), equals(50.0)); // ceil(45 * 1.1) = 50
 
       // 4. Geely Galaxy L7 (PHEV)
-      final geelyGalaxy = const Vehicle(
+      const geelyGalaxy = Vehicle(
         name: 'Geely',
         model: 'Galaxy L7',
         engineType: 'hybrid',
@@ -387,7 +387,7 @@ void main() {
       expect(FuelEntryController.getNominalCapacity('charge', vehicle: geelyGalaxy), equals(18.7));
 
       // 5. Tank 300 / 500
-      final tank500 = const Vehicle(
+      const tank500 = Vehicle(
         name: 'Great Wall Tank',
         model: 'Tank 500',
         engineType: 'petrol',
@@ -396,7 +396,7 @@ void main() {
       expect(FuelEntryController.getMaxAllowedVolume('fuel', vehicle: tank500), equals(88.0)); // ceil(80 * 1.1) = 88
 
       // 6. Chery Tiggo 8 Pro
-      final chery = const Vehicle(
+      const chery = Vehicle(
         name: 'Chery',
         model: 'Tiggo 8 Pro Max',
         engineType: 'petrol',
@@ -404,7 +404,7 @@ void main() {
       expect(FuelEntryController.getNominalCapacity('fuel', vehicle: chery), equals(57.0));
 
       // 7. Haval Jolion
-      final haval = const Vehicle(
+      const haval = Vehicle(
         name: 'Haval',
         model: 'Jolion',
         engineType: 'petrol',
@@ -415,7 +415,7 @@ void main() {
     // ── Сценарий 13: Приоритет пользовательского ввода над пресетами ───────────
     test('test_user_capacity_overrides_preset: Заданный пользователем объем бака имеет наивысший приоритет', () {
       // Пользователь вручную указал 70 л на Geely Monjaro (где стандартный пресет 62 л)
-      final customMonjaro = const Vehicle(
+      const customMonjaro = Vehicle(
         name: 'Geely',
         model: 'Monjaro',
         engineType: 'petrol',

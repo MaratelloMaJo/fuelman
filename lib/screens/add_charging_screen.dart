@@ -728,9 +728,9 @@ class _DatePickerRow extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(12),
       child: InputDecorator(
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.calendar_month_outlined),
-          border: const OutlineInputBorder(
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.calendar_month_outlined),
+          border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(12)),
           ),
         ),

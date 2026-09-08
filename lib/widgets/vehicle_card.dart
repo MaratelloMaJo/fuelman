@@ -128,10 +128,10 @@ class VehicleCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   itemBuilder: (_) => [
                     if (onEdit != null)
-                      PopupMenuItem(
+                      const PopupMenuItem(
                         value: 'edit',
                         child: ListTile(
-                          leading: const Icon(Icons.edit_outlined),
+                          leading: Icon(Icons.edit_outlined),
                           title: Text('Изменить'),
                           contentPadding: EdgeInsets.zero,
                         ),

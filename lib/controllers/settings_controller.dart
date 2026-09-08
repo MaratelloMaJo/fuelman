@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,29 +69,29 @@ class SettingsController extends GetxController {
 
   Future<void> setLanguage(String val) async {
     language.value = val;
-    (await _prefs).setString('language', val);
+    unawaited((await _prefs).setString('language', val));
     // Map language code to full locale
     final localeMap = <String, Locale>{
       'ru': const Locale('ru', 'RU'),
       'en': const Locale('en', 'US'),
       'kk': const Locale('kk', 'KZ'),
     };
-    Get.updateLocale(localeMap[val] ?? Locale(val));
+    unawaited(Get.updateLocale(localeMap[val] ?? Locale(val)));
   }
 
   Future<void> setCurrency(String val) async {
     currency.value = val;
-    (await _prefs).setString('currency', val);
+    unawaited((await _prefs).setString('currency', val));
   }
 
   Future<void> setVolumeUnit(String val) async {
     volumeUnit.value = val;
-    (await _prefs).setString('volume_unit', val);
+    unawaited((await _prefs).setString('volume_unit', val));
   }
 
   Future<void> setDistanceUnit(String val) async {
     distanceUnit.value = val;
-    (await _prefs).setString('distance_unit', val);
+    unawaited((await _prefs).setString('distance_unit', val));
   }
 
   String get currencySymbol => getSymbolForCurrency(currency.value);
