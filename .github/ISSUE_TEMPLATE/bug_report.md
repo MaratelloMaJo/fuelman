@@ -1,82 +1,77 @@
-name: "🐛 Отчет об ошибке"
-description: "Сообщить о баге, вылете или некорректном расчете расхода/зарядки"
+name: "Bug Report / Отчет об ошибке"
+description: "Report a bug, calculation issue, or app crash / Сообщить об ошибке или сбое"
 title: "[BUG]: "
 labels: ["bug", "triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        ### Спасибо за участие в улучшении FuelMan!
-        Пожалуйста, заполните форму ниже как можно подробнее. Это сэкономит время при диагностике.
+        ### 🇷🇺 Спасибо за помощь! / 🇬🇧 Thanks for reporting!
+        Please fill in the details below / Пожалуйста, заполните форму ниже.
 
   - type: dropdown
     id: powertrain
     attributes:
-      label: "Тип силовой установки авто"
-      description: "На каком типе двигателя произошла ошибка?"
+      label: "Powertrain Type / Тип силовой установки"
+      description: "Select powertrain of the vehicle / Выберите тип двигателя"
       options:
-        - "PHEV (Плагин-гибрид)"
-        - "HEV (Классический гибрид)"
-        - "EV (Чистый электромобиль)"
-        - "ICE (Бензин / Дизель)"
-        - "Не относится к расчету поездок (общий UI/настройки)"
+        - "PHEV (Plug-in Hybrid / Плагин-гибрид)"
+        - "HEV (Classic Hybrid / Гибрид)"
+        - "EV (Electric Vehicle / Электромобиль)"
+        - "ICE (Petrol / Diesel / ДВС)"
+        - "General UI / Settings (Общий интерфейс)"
     validations:
       required: true
 
   - type: dropdown
     id: platform
     attributes:
-      label: "Платформа"
+      label: "Platform / Платформа"
       options:
-        - "Android (Realme / Xiaomi / Samsung и др.)"
+        - "Android"
         - "iOS"
-        - "Эмулятор / Desktop"
+        - "Emulator / Desktop"
     validations:
       required: true
 
   - type: input
-    id: app-version
+    id: version
     attributes:
-      label: "Версия приложения или коммит"
-      placeholder: "например, v1.0.2 или коммит 20eb38d"
+      label: "App Version or Commit / Версия приложения или коммит"
+      placeholder: "e.g. v1.0.0 or 20eb38d"
     validations:
       required: true
 
   - type: textarea
-    id: what-happened
+    id: description
     attributes:
-      label: "Что пошло не так?"
-      description: "Четко опишите, что произошло, и чего вы ожидали вместо этого."
-      placeholder: "При вводе емкости батареи 18.3 кВт·ч расчет средней стоимости километра выдал отрицательное число..."
+      label: "What happened? / Что пошло не так?"
+      description: "Clear explanation of the error / Подробное описание проблемы"
+      placeholder: "Cost per km calculation returns negative value when..."
     validations:
       required: true
 
   - type: textarea
-    id: repro-steps
+    id: steps
     attributes:
-      label: "Шаги для воспроизведения"
-      description: "Пошаговая инструкция, как добиться этой же ошибки."
+      label: "Reproduction Steps / Шаги воспроизведения"
       placeholder: |
-        1. Открыть вкладку 'Автомобили'
-        2. Нажать 'Добавить зарядку'
-        3. Заполнить SOC с 20% по 80%
-        4. Нажать кнопку сохранения
+        1. Open 'Add Entry' screen
+        2. Set SOC from 20% to 80%
+        3. Tap Save button
     validations:
       required: true
 
   - type: textarea
-    id: logs-screenshots
+    id: attachments
     attributes:
-      label: "Скриншоты или логи (если есть)"
-      description: "Перетащите изображения прямо в это поле или вставьте логи Flutter (`flutter run -v`)."
-      placeholder: "Прикрепите скриншот экрана с ошибкой..."
+      label: "Logs or Screenshots / Логи или скриншоты"
+      description: "Attach screenshots or paste logcat / flutter output"
 
   - type: checkboxes
-    id: checks
+    id: confirmations
     attributes:
-      label: "Финальная проверка"
+      label: "Checklist / Чек-лист"
       options:
-        - label: "Я проверил, что этот баг еще не описан в существующих Issues"
+        - label: "I checked that this issue does not exist / Я проверил, что такого бага еще нет"
           required: true
-        - label: "Я использую последнюю версию из ветки `main`"
-          required: false
