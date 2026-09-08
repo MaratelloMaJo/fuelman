@@ -1,0 +1,41 @@
+repository:
+  name: fuelman
+  description: "Smart vehicle expense & mixed energy consumption tracker for ICE, PHEV, and EVs built with Flutter"
+  homepage: https://github.com/maratellomajo/fuelman
+  topics:
+    - flutter
+    - dart
+    - getx
+    - sqlite
+    - hybrid-cars
+    - phev
+    - energy-tracker
+    - obd2
+  has_issues: true
+  has_projects: false
+  has_wiki: false
+  has_discussions: true
+  allow_squash_merge: true
+  allow_merge_commit: true
+  allow_rebase_merge: false
+  delete_branch_on_merge: true
+
+labels:
+  - name: "bug"
+    color: "d73a4a"
+    description: "Что-то сломалось или работает некорректно"
+  - name: "enhancement"
+    color: "a2eeef"
+    description: "Предложение новой функциональности или улучшения"
+  - name: "phev/hev"
+    color: "0e8a16"
+    description: "Задачи по гибридам, батареям и смешанному расходу"
+  - name: "obd2"
+    color: "1d76db"
+    description: "Телеметрия по Bluetooth BLE / CAN-шине"
+  - name: "ui/ux"
+    color: "f9d0c4"
+    description: "Интерфейс, темы, анимации и экраны"
+  - name: "i18n"
+    color: "bfdadc"
+    description: "Локализация (ru, en, kk)"
