@@ -1,54 +1,43 @@
-name: "💡 Идея или улучшение"
-description: "Предложить новую формулу расчета, виджет или поддержку нового датчика/стандарта"
+name: "💡 Feature Request / Идея или улучшение"
+description: "Suggest a feature, formula, or integration / Предложить новую фичу или формулу"
 title: "[FEATURE]: "
 labels: ["enhancement"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ### Есть крутая идея для гибридов, UI или аналитики?
-        Опишите концепт, чтобы мы могли запланировать его в роадмапе.
-
   - type: dropdown
-    id: feature-category
+    id: category
     attributes:
-      label: "Категория предложения"
+      label: "Category / Категория"
       options:
-        - "🔋 Гибридный модуль / Расчеты батареи"
-        - "📊 Аналитика, графики и статистика"
-        - "🔌 Подключение OBD2 / Bluetooth телеметрия"
-        - "🎨 Интерфейс, темы и анимации"
-        - "🌐 Локализация (RU / EN / KK)"
-        - "⚙️ Экспорт / Импорт данных (CSV, PDF)"
+        - "🔋 Hybrid & Battery Logic / Расчеты батареи"
+        - "📊 Analytics & Charts / Аналитика и графики"
+        - "🔌 OBD2 / BLE Telemetry / Телеметрия"
+        - "🎨 UI & Theme / Интерфейс"
+        - "🌐 Localization / Локализация"
+        - "⚙️ Export & Import (CSV/PDF) / Экспорт данных"
     validations:
       required: true
 
   - type: textarea
     id: problem
     attributes:
-      label: "Какую проблему или боль решает эта фича?"
-      placeholder: "Сейчас тяжело отслеживать ночной тариф на зарядку авто дома..."
+      label: "Problem / Проблема"
+      description: "What pain does this solve? / Какую проблему решает?"
+      placeholder: "Currently hard to track dual-rate electricity tariffs..."
     validations:
       required: true
 
   - type: textarea
     id: solution
     attributes:
-      label: "Предлагаемое решение"
-      placeholder: "Добавить в настройки профиля авто поле 'Стоимость 1 кВт·ч (ночь)' и тумблер на экране добавления зарядки..."
+      label: "Proposed Solution / Предлагаемое решение"
+      placeholder: "Add day/night tariff inputs on charging screen..."
     validations:
       required: true
 
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: "Альтернативы, которые вы рассматривали"
-      placeholder: "Сейчас приходится вручную пересчитывать тенге в уме и вводить итоговую сумму..."
-
   - type: checkboxes
-    id: contribution
+    id: help
     attributes:
-      label: "Готовы помочь в реализации?"
+      label: "Contribution / Готовность помочь"
       options:
-        - label: "Я готов протестировать эту функцию, когда появится альфа-версия"
-        - label: "Я готов сделать Pull Request с кодом"
+        - label: "I can test this feature / Готов протестировать"
+        - label: "I can submit a PR / Могу сделать Pull Request"
