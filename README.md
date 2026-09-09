@@ -1,10 +1,16 @@
 # ⛽ FuelMan — Умный учёт расхода топлива
 
+[![Flutter CI/CD](https://github.com/MaratelloMaJo/fuelman/actions/workflows/flutter_ci.yml/badge.svg)](https://github.com/MaratelloMaJo/fuelman/actions/workflows/flutter_ci.yml)
+[![Flutter Version](https://img.shields.io/badge/Flutter-3.47.2-02569B?logo=flutter)](https://flutter.dev)
+[![GitHub Release](https://img.shields.io/github/v/release/MaratelloMaJo/fuelman?include_prereleases&color=blue)](https://github.com/MaratelloMaJo/fuelman/releases)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **FuelMan** — это современное кроссплатформенное мобильное приложение для умного, детального учёта расхода топлива, электроэнергии и общих расходов на содержание вашего автомобиля (или целого автопарка). 
 
 Приложение спроектировано с акцентом на локальность хранения, конфиденциальность, высокую точность расчётов и удобство ежедневного использования.
 
 ---
+
 
 ## 🛠️ Стек технологий (Tech Stack)
 

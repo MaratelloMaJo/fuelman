@@ -1,77 +1,42 @@
-name: "Bug Report / Отчет об ошибке"
-description: "Report a bug, calculation issue, or app crash / Сообщить об ошибке или сбое"
+name: Bug report
+description: Create a report to help us improve
 title: "[BUG]: "
-labels: ["bug", "triage"]
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
-      value: |
-        ### 🇷🇺 Спасибо за помощь! / 🇬🇧 Thanks for reporting!
-        Please fill in the details below / Пожалуйста, заполните форму ниже.
-
-  - type: dropdown
-    id: powertrain
-    attributes:
-      label: "Powertrain Type / Тип силовой установки"
-      description: "Select powertrain of the vehicle / Выберите тип двигателя"
-      options:
-        - "PHEV (Plug-in Hybrid / Плагин-гибрид)"
-        - "HEV (Classic Hybrid / Гибрид)"
-        - "EV (Electric Vehicle / Электромобиль)"
-        - "ICE (Petrol / Diesel / ДВС)"
-        - "General UI / Settings (Общий интерфейс)"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: platform
-    attributes:
-      label: "Platform / Платформа"
-      options:
-        - "Android"
-        - "iOS"
-        - "Emulator / Desktop"
-    validations:
-      required: true
-
-  - type: input
-    id: version
-    attributes:
-      label: "App Version or Commit / Версия приложения или коммит"
-      placeholder: "e.g. v1.0.0 or 20eb38d"
-    validations:
-      required: true
-
+      value: Thanks for taking the time to fill out this bug report!
   - type: textarea
     id: description
     attributes:
-      label: "What happened? / Что пошло не так?"
-      description: "Clear explanation of the error / Подробное описание проблемы"
-      placeholder: "Cost per km calculation returns negative value when..."
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
     validations:
       required: true
-
   - type: textarea
-    id: steps
+    id: reproduction
     attributes:
-      label: "Reproduction Steps / Шаги воспроизведения"
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior.
       placeholder: |
-        1. Open 'Add Entry' screen
-        2. Set SOC from 20% to 80%
-        3. Tap Save button
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
     validations:
       required: true
-
   - type: textarea
-    id: attachments
+    id: expected
     attributes:
-      label: "Logs or Screenshots / Логи или скриншоты"
-      description: "Attach screenshots or paste logcat / flutter output"
-
-  - type: checkboxes
-    id: confirmations
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
     attributes:
-      label: "Checklist / Чек-лист"
-      options:
-        - label: "I checked that this issue does not exist / Я проверил, что такого бага еще нет"
-          required: true
+      label: Environment Info
+      description: Flutter version, OS, Device model, etc.
+      placeholder: |
+        - OS: Android / iOS
+        - App Version: v1.1.0

@@ -1,0 +1,26 @@
+# Директории сборки и плагинов
+build/
+android/
+.dart_tool/
+.gradle/
+.idea/
+.vscode/
+
+# Ресурсы и бинарники (модель не умеет читать картинки как код)
+assets/
+*.png
+*.jpg
+*.svg
+*.ico
+*.jar
+*.so
+*.apk
+*.aab
+*.dex
+
+# Логи и кэши
+*.log
+*.lock
+*.lock.db
+*.bin
+*.stamp

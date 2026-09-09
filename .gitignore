@@ -11,7 +11,6 @@ build/
 coverage/
 doc/api/
 *.lock.db
-macos
 
 # ==============================================================================
 # Android Build Artifacts & Gradle Cache
@@ -24,6 +23,8 @@ macos
 **/android/local.properties
 **/android/key.properties
 **/android/app/google-services.json
+gradle.properties.local
+**/android/gradle.properties.local
 
 # Packages and APK outputs
 *.apk
@@ -60,7 +61,7 @@ cmake_install.cmake
 *.iws
 *.ipr
 
-# VS Code (скрываем кэш редактора, сохраняем конфиг запуска)
+# VS Code
 .vscode/*
 !.vscode/launch.json
 
@@ -69,8 +70,6 @@ cmake_install.cmake
 .cursor/
 .windsurf/
 .cline/
-.geminiignore
-GEMINI.MD
 
 # ==============================================================================
 # System & Temporary Files

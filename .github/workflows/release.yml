@@ -1,18 +1,24 @@
-name: Release APK
+name: Release Build
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Версия релиза'
+        description: 'Release version tag (e.g. v1.1.6)'
         required: true
-        default: ''
+        default: 'v1.1.6'
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -20,13 +26,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Java
+      - name: Set up Java Zulu 17
         uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.2'
@@ -36,22 +42,41 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Release APK
+      - name: Build APK Release
         run: flutter build apk --release
 
-      - name: Prepare Named APK
+      - name: Prepare Release Artifacts
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/fuelman-${{ github.event.inputs.version }}.apk
+          VERSION="${{ github.event.inputs.version }}"
+          APK_DIR="build/app/outputs/flutter-apk"
+          cp "$APK_DIR/app-release.apk" "$APK_DIR/fuelman-${VERSION}.apk"
+          sha256sum "$APK_DIR/fuelman-${VERSION}.apk" > "$APK_DIR/fuelman-${VERSION}.apk.sha256"
 
-      - name: Create Draft Release and Upload APK
+      - name: Create Draft GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           draft: true
-          generate_release_notes: true
+          prerelease: ${{ github.event.inputs.prerelease }}
           files: |
             build/app/outputs/flutter-apk/fuelman-${{ github.event.inputs.version }}.apk
+            build/app/outputs/flutter-apk/fuelman-${{ github.event.inputs.version }}.apk.sha256
             build/app/outputs/flutter-apk/app-release.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
+
+      - name: Generate Build Summary
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          APK_PATH="build/app/outputs/flutter-apk/fuelman-${VERSION}.apk"
+          SIZE=$(du -h "$APK_PATH" | cut -f1)
+          SHA=$(cat "build/app/outputs/flutter-apk/fuelman-${VERSION}.apk.sha256" | cut -d' ' -f1)
+
+          echo "### 🚀 Release Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`$VERSION\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **APK Size** | \`$SIZE\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **SHA-256 Checksum** | \`$SHA\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Draft Status** | Ready in Draft Releases |" >> $GITHUB_STEP_SUMMARY
