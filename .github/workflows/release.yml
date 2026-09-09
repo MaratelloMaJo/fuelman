@@ -53,7 +53,7 @@ jobs:
           sha256sum "$APK_DIR/fuelman-${VERSION}.apk" > "$APK_DIR/fuelman-${VERSION}.apk.sha256"
 
       - name: Create Draft GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
