@@ -43,7 +43,10 @@ jobs:
         run: flutter pub get
 
       - name: Build APK Release
-        run: flutter build apk --release
+        run: |
+          RAW_VERSION="${{ github.event.inputs.version }}"
+          CLEAN_VERSION="${RAW_VERSION#v}"
+          flutter build apk --release --build-name="$CLEAN_VERSION" --build-number="${{ github.run_number }}"
 
       - name: Prepare Release Artifacts
         run: |
@@ -62,7 +65,6 @@ jobs:
           files: |
             build/app/outputs/flutter-apk/fuelman-${{ github.event.inputs.version }}.apk
             build/app/outputs/flutter-apk/fuelman-${{ github.event.inputs.version }}.apk.sha256
-            build/app/outputs/flutter-apk/app-release.apk
           generate_release_notes: true
 
       - name: Generate Build Summary
