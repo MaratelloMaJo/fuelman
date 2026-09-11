@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'dart:async';
-import 'dart:async';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -124,8 +122,7 @@ class FuelEntryController extends GetxController {
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
-  final List<StreamSubscription> _subscriptions = [];
-  final List<StreamSubscription> _subscriptions = [];
+  final List<Worker> _workers = [];
 
   VehicleController? get _vehicleCtrl =>
       Get.isRegistered<VehicleController>() ? Get.find<VehicleController>() : null;
@@ -135,29 +132,21 @@ class FuelEntryController extends GetxController {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      _subscriptions.add(vc.selectedVehicle.listen((_) => _onVehicleChanged()));
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      _subscriptions.add(settings.currency.listen((_) => _recalcStatsCurrentVehicle()));
-      _subscriptions.add(settings.volumeUnit.listen((_) => _recalcStatsCurrentVehicle()));
+      _workers.add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
+      _workers.add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
   }
 
   @override
   void onClose() {
-    for (final sub in _subscriptions) {
-      sub.cancel();
-    }
-    super.onClose();
-  }
-
-  @override
-  void onClose() {
-    for (final sub in _subscriptions) {
-      sub.cancel();
+    for (final w in _workers) {
+      w.dispose();
     }
     super.onClose();
   }
@@ -318,7 +307,7 @@ class FuelEntryController extends GetxController {
 
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
-      if (distance > 0) {
+      if (distance > 0 && distance.isFinite) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }

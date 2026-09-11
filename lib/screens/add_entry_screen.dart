@@ -592,7 +592,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'odometer_required'.tr;
                     final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null) return 'odometer_invalid'.tr;
+                    if (val == null || val < 0) return 'odometer_invalid'.tr;
                     final err = FuelEntryController.validateOdometer(
                       odometer: val,
                       lastOdometer: _lastRecordedOdometer,
