@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'dart:async';
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -122,6 +124,8 @@ class FuelEntryController extends GetxController {
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
+  final List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription> _subscriptions = [];
 
   VehicleController? get _vehicleCtrl =>
       Get.isRegistered<VehicleController>() ? Get.find<VehicleController>() : null;
@@ -131,15 +135,31 @@ class FuelEntryController extends GetxController {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _subscriptions.add(vc.selectedVehicle.listen((_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
-      ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+      _subscriptions.add(settings.currency.listen((_) => _recalcStatsCurrentVehicle()));
+      _subscriptions.add(settings.volumeUnit.listen((_) => _recalcStatsCurrentVehicle()));
     }
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.onClose();
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.onClose();
   }
 
   void _recalcStatsCurrentVehicle() {

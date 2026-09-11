@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:async';
 import 'package:get/get.dart';
 
 import '../database/fuel_database.dart';
@@ -152,13 +154,31 @@ class ChargingEntryController extends GetxController {
   final timeline = <TimelineItem>[].obs;
 
   final _vehicleCtrl = Get.find<VehicleController>();
+  final List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription> _subscriptions = [];
 
   @override
   void onInit() {
     super.onInit();
     // Перезагружаем данные при смене активного автомобиля.
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _subscriptions.add(_vehicleCtrl.selectedVehicle.listen((_) => _onVehicleChanged()));
     _onVehicleChanged();
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.onClose();
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.onClose();
   }
 
   void _onVehicleChanged() {

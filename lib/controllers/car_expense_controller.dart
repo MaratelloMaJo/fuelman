@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'dart:async';
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,12 +20,30 @@ class CarExpenseController extends GetxController {
   final isLoading = false.obs;
 
   final _vehicleCtrl = Get.find<VehicleController>();
+  final List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription> _subscriptions = [];
 
   @override
   void onInit() {
     super.onInit();
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _subscriptions.add(_vehicleCtrl.selectedVehicle.listen((_) => _onVehicleChanged()));
     _onVehicleChanged();
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.onClose();
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.onClose();
   }
 
   void _onVehicleChanged() {
