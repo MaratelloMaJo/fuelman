@@ -12,32 +12,15 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
-
-  # State management
   get: ^4.6.6
-
-  # Database
-  sqflite: any
+  sqflite: ^2.3.0
   path: ^1.9.0
-
-  # File system
   path_provider: ^2.1.6
-
-  # Charts
   fl_chart: ^1.2.0
-
-  # Export / sharing
   share_plus: ^13.3.0
-
-  # Date formatting
   intl: ^0.20.2
-
-  # Persist theme preference
   shared_preferences: ^2.3.3
-
-  # Optional local notifications (fuel reminders)
   flutter_local_notifications: ^22.3.0
   file_picker: ^12.2.0
   http: ^1.6.0
@@ -50,7 +33,10 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: any
+  flutter_native_splash: ^2.4.8
+  sqflite_common_ffi: ^2.3.0
+  sqlite3_flutter_libs: ^0.5.0
+  mocktail: ^1.0.3
 
 flutter:
   uses-material-design: true
@@ -69,4 +55,6 @@ flutter_native_splash:
   android: true
   ios: true
   web: false
-
+
+dependency_overrides:
+  meta: ^1.18.0
