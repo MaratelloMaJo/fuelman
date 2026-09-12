@@ -7,8 +7,8 @@ import 'package:get/get.dart';
 /// Показывает текущий средний расход относительно установленной цели.
 /// Если среднее превышает цель — прогресс заполнен на 100% и становится красным.
 class GoalProgressBar extends StatelessWidget {
-  final double current;  // Текущий средний расход (л/100 км)
-  final double goal;     // Целевой расход (л/100 км)
+  final double current; // Текущий средний расход (л/100 км)
+  final double goal; // Целевой расход (л/100 км)
 
   const GoalProgressBar({
     super.key,

@@ -187,10 +187,10 @@ class FuelDatabase {
     }
     if (oldVersion < 7) {
       // Новые поля ёмкости АКБ для EV/PHEV (nullable → backwards-compatible)
-      await db.execute(
-          'ALTER TABLE vehicles ADD COLUMN battery_capacity_kwh REAL');
-      await db.execute(
-          'ALTER TABLE vehicles ADD COLUMN usable_capacity_kwh REAL');
+      await db
+          .execute('ALTER TABLE vehicles ADD COLUMN battery_capacity_kwh REAL');
+      await db
+          .execute('ALTER TABLE vehicles ADD COLUMN usable_capacity_kwh REAL');
 
       // Новая таблица сессий зарядки
       await db.execute(_createChargingEntriesSQL);
@@ -265,6 +265,18 @@ class FuelDatabase {
       where: 'id = ?',
       whereArgs: [entry.id],
     );
+  }
+
+  Future<void> updateEntriesBatch(List<FuelEntry> entries) async {
+    final db = await database;
+    final batch = db.batch();
+    for (final entry in entries) {
+      if (entry.id != null) {
+        batch.update('fuel_entries', entry.toMap(),
+            where: 'id = ?', whereArgs: [entry.id]);
+      }
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<void> deleteEntry(int id) async {

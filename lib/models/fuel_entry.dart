@@ -68,13 +68,13 @@ class FuelEntry {
 
   /// Полная стоимость заправки.
   double? get totalCost =>
-      storedTotalCost ?? (pricePerLiter != null ? volume * pricePerLiter! : null);
+      storedTotalCost ??
+      (pricePerLiter != null ? volume * pricePerLiter! : null);
 
   /// Стоимость проезда 100 км.
-  double? get costPer100km =>
-      consumption != null && pricePerLiter != null
-          ? consumption! * pricePerLiter!
-          : null;
+  double? get costPer100km => consumption != null && pricePerLiter != null
+      ? consumption! * pricePerLiter!
+      : null;
 
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -144,8 +144,9 @@ class FuelEntry {
         isFullTank: isFullTank ?? this.isFullTank,
         pricePerLiter:
             clearPricePerLiter ? null : (pricePerLiter ?? this.pricePerLiter),
-        storedTotalCost:
-            clearStoredTotalCost ? null : (storedTotalCost ?? this.storedTotalCost),
+        storedTotalCost: clearStoredTotalCost
+            ? null
+            : (storedTotalCost ?? this.storedTotalCost),
         consumption:
             clearConsumption ? null : (consumption ?? this.consumption),
         entryType: entryType ?? this.entryType,
@@ -153,6 +154,7 @@ class FuelEntry {
         currency: currency ?? this.currency,
         latitude: clearLatitude ? null : (latitude ?? this.latitude),
         longitude: clearLongitude ? null : (longitude ?? this.longitude),
-        stationName: clearStationName ? null : (stationName ?? this.stationName),
+        stationName:
+            clearStationName ? null : (stationName ?? this.stationName),
       );
 }

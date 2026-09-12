@@ -59,37 +59,35 @@ class VehicleCard extends StatelessWidget {
                   children: [
                     Text(
                       vehicle.name,
-                      style:
-                          Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: isSelected
-                                    ? cs.onPrimaryContainer
-                                    : cs.onSurface,
-                              ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? cs.onPrimaryContainer
+                                : cs.onSurface,
+                          ),
                     ),
                     Text(
                       vehicle.model,
-                      style:
-                          Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: isSelected
-                                    ? cs.onPrimaryContainer.withValues(alpha: 0.7)
-                                    : cs.onSurfaceVariant,
-                              ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: isSelected
+                                ? cs.onPrimaryContainer.withValues(alpha: 0.7)
+                                : cs.onSurfaceVariant,
+                          ),
                     ),
                     if (vehicle.fuelGoal != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         '${vehicle.fuelGoal!.toStringAsFixed(1)} ${'fuel_goal_suffix'.tr}',
-                        style:
-                            Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: cs.primary,
-                                ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: cs.primary,
+                            ),
                       ),
                     ],
                     if (vehicle.hybridType != null) ...[
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: cs.secondaryContainer,
                           borderRadius: BorderRadius.circular(6),

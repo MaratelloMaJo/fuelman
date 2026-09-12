@@ -110,12 +110,16 @@ class HomeTab extends StatelessWidget {
                     children: [
                       Builder(builder: (context) {
                         String avgText = '';
-                        if (stats['avg_consumption'] != null && stats['avg_consumption']! > 0) {
-                          avgText += '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
+                        if (stats['avg_consumption'] != null &&
+                            stats['avg_consumption']! > 0) {
+                          avgText +=
+                              '${stats['avg_consumption']!.toStringAsFixed(1)} ${settingsCtrl.volumeUnit.value}';
                         }
-                        if (stats['avg_ev_consumption'] != null && stats['avg_ev_consumption']! > 0) {
+                        if (stats['avg_ev_consumption'] != null &&
+                            stats['avg_ev_consumption']! > 0) {
                           if (avgText.isNotEmpty) avgText += '\n';
-                          avgText += '${stats['avg_ev_consumption']!.toStringAsFixed(1)} kWh';
+                          avgText +=
+                              '${stats['avg_ev_consumption']!.toStringAsFixed(1)} kWh';
                         }
                         if (avgText.isEmpty) avgText = 'no_data'.tr;
 
@@ -157,8 +161,7 @@ class HomeTab extends StatelessWidget {
                 // ── Цель по расходу ──
                 if (selected.fuelGoal != null && avgConsumption != null)
                   SliverPadding(
-                    padding:
-                        const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     sliver: SliverToBoxAdapter(
                       child: GoalProgressBar(
                         current: avgConsumption,
@@ -182,7 +185,9 @@ class HomeTab extends StatelessWidget {
                     sliver: SliverToBoxAdapter(
                       child: Text(
                         'last_refuels'.tr,
-                        style: Theme.of(context).textTheme.titleMedium
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
