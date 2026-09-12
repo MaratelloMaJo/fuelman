@@ -9,6 +9,7 @@
     <application
         android:label="FuelMan"
         android:name="${applicationName}"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name="com.majo.fuelman.MainActivity"
