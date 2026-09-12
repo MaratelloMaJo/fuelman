@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fuelman/controllers/fuel_entry_controller.dart';
 import 'package:fuelman/models/fuel_entry.dart';
 import 'package:fuelman/controllers/settings_controller.dart';
@@ -36,6 +37,6 @@ void main() {
     }
     stopwatch.stop();
 
-    print('Average calculateOverallStats time for 10000 entries: ${stopwatch.elapsedMilliseconds / iterations} ms');
+    debugPrint('Average calculateOverallStats time for 10000 entries: ${stopwatch.elapsedMilliseconds / iterations} ms');
   });
 }
