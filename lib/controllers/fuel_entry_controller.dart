@@ -168,7 +168,7 @@ class FuelEntryController extends GetxController {
       final list = await FuelDatabase.instance.getEntries(vehicleId);
       entries.assignAll(list);
       _rebuildAnomalousSet(list);
-      await _loadStats(vehicleId);
+      await _loadStats(vehicleId, preloadedEntries: list);
     } finally {
       isLoading.value = false;
     }
@@ -203,8 +203,8 @@ class FuelEntryController extends GetxController {
 
   // ─────────────────────────────── Stats ──
 
-  Future<void> _loadStats(int vehicleId) async {
-    final all = await FuelDatabase.instance.getEntries(vehicleId);
+  Future<void> _loadStats(int vehicleId, {List<FuelEntry>? preloadedEntries}) async {
+    final all = preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
