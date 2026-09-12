@@ -827,10 +827,12 @@ class FuelEntryController extends GetxController {
 
   Future<void> checkAllReminders() async {
     final vehicles = _vehicleCtrl?.vehicles ?? [];
+    final futures = <Future<void>>[];
     for (final vehicle in vehicles) {
       if (vehicle.reminderDays == null || vehicle.id == null) continue;
-      await _checkReminder(vehicle.id!);
+      futures.add(_checkReminder(vehicle.id!));
     }
+    await Future.wait(futures);
   }
 
   Future<void> _checkReminder(int vehicleId) async {
