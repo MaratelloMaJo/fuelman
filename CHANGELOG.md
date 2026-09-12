@@ -10,3 +10,7 @@
 
 ## [1.0.0] - 2026-06
 - Первоначальный релиз: учет заправок бензиновых авто, GetX архитектура, мультиязычность (ru, en, kk).
+
+## [Unreleased]
+### Added
+- Added unit tests for `ChargingEntry` data model to verify calculation logic and serialization.
