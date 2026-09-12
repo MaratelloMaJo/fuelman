@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.1.0
 
 environment:
-  sdk: ^3.5.0
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -19,7 +19,7 @@ dependencies:
   get: ^4.6.6
 
   # Database
-  sqflite: any
+  sqflite: ^2.3.0
   path: ^1.9.0
 
   # File system
@@ -69,4 +69,6 @@ flutter_native_splash:
   android: true
   ios: true
   web: false
-
+
+dependency_overrides:
+  meta: ^1.17.0
