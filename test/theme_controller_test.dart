@@ -19,7 +19,7 @@ void main() {
     expect(controller.isSystem, true);
     expect(controller.isDark, false);
 
-    Get.delete<ThemeController>();
+    await Get.delete<ThemeController>();
   });
 
   test('loads dark mode from preferences', () async {
@@ -32,7 +32,7 @@ void main() {
     expect(controller.isSystem, false);
     expect(controller.isDark, true);
 
-    Get.delete<ThemeController>();
+    await Get.delete<ThemeController>();
   });
 
   test('loads light mode from preferences', () async {
@@ -45,7 +45,7 @@ void main() {
     expect(controller.isSystem, false);
     expect(controller.isDark, false);
 
-    Get.delete<ThemeController>();
+    await Get.delete<ThemeController>();
   });
 
   test('fallback loading using the old isDarkMode boolean preference (true)', () async {
@@ -58,7 +58,7 @@ void main() {
     expect(controller.isSystem, false);
     expect(controller.isDark, true);
 
-    Get.delete<ThemeController>();
+    await Get.delete<ThemeController>();
   });
 
   test('fallback loading using the old isDarkMode boolean preference (false)', () async {
@@ -71,7 +71,7 @@ void main() {
     expect(controller.isSystem, false);
     expect(controller.isDark, false);
 
-    Get.delete<ThemeController>();
+    await Get.delete<ThemeController>();
   });
 
   test('setThemeMode updates themeMode and saves to SharedPreferences', () async {
@@ -94,6 +94,6 @@ void main() {
 
     expect(prefs.getString('themeMode'), 'system');
 
-    Get.delete<ThemeController>();
+    await Get.delete<ThemeController>();
   });
 }
