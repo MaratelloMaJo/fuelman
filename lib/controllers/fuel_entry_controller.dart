@@ -335,28 +335,16 @@ class FuelEntryController extends GetxController {
     CurrencyService? currencySvc,
     String targetCurrency = 'RUB',
   }) {
-    if (entries.length < 2) return null;
-    final cSvc = currencySvc ?? CurrencyService.instance;
-
-    double totalCost = 0.0;
-    double minOdo = double.infinity;
-    double maxOdo = 0.0;
-
-    for (final e in entries) {
-      if (e.odometer < minOdo) minOdo = e.odometer;
-      if (e.odometer > maxOdo) maxOdo = e.odometer;
-      final cost = e.totalCost ?? 0.0;
-      totalCost += cSvc.convert(cost, e.currency, targetCurrency);
-    }
-
-    final distance = maxOdo - minOdo;
-    if (distance <= 0) return null;
-    return totalCost / distance;
+    return calculateOverallStats(
+      entries,
+      currencySvc: currencySvc,
+      targetCurrency: targetCurrency,
+    ).costPerKm;
   }
 
   Future<List<Map<String, dynamic>>> getMonthlyStats(int vehicleId) async {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
-    final settings = Get.find<SettingsController>();
+    final settings = Get.isRegistered<SettingsController>() ? Get.find<SettingsController>() : null;
     final currencySvc = CurrencyService.instance;
 
     final Map<String, _MonthStat> map = {};
@@ -371,8 +359,11 @@ class FuelEntryController extends GetxController {
       final stat = map.putIfAbsent(month, () => _MonthStat(month));
 
       if (e.entryType == 'fuel') {
-        double vol = settings.convertVolume(
-            e.volume, e.volumeUnit, settings.volumeUnit.value);
+        double vol = e.volume;
+        if (settings != null) {
+          vol = settings.convertVolume(
+              e.volume, e.volumeUnit, settings.volumeUnit.value);
+        }
         stat.totalVolume += vol;
       } else if (e.entryType == 'charge') {
         stat.totalEvVolume += e.volume;
@@ -381,7 +372,7 @@ class FuelEntryController extends GetxController {
       if (e.totalCost != null) {
         double cost = e.totalCost!;
         double convertedCost =
-            currencySvc.convert(cost, e.currency, settings.currency.value);
+            currencySvc.convert(cost, e.currency, settings?.currency.value ?? 'RUB');
         stat.totalCost += convertedCost;
       }
 
@@ -389,8 +380,11 @@ class FuelEntryController extends GetxController {
         final isAnomaly = isAnomalousValue(e.consumption!, e.entryType);
         if (!isAnomaly) {
           if (e.entryType == 'fuel') {
-            double cons = settings.convertVolume(
-                e.consumption!, e.volumeUnit, settings.volumeUnit.value);
+            double cons = e.consumption!;
+            if (settings != null) {
+              cons = settings.convertVolume(
+                  e.consumption!, e.volumeUnit, settings.volumeUnit.value);
+            }
             stat.sumConsumption += cons;
             stat.calcEntries++;
           } else if (e.entryType == 'charge') {
