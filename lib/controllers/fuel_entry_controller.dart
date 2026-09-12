@@ -449,14 +449,17 @@ class FuelEntryController extends GetxController {
   Future<void> _recalculateConsumption(int vehicleId) async {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
     final calculated = computeEntriesWithConsumption(all);
-
+    final toUpdate = <FuelEntry>[];
     for (final entry in calculated) {
       if (entry.id != null) {
         final original = all.firstWhere((e) => e.id == entry.id);
         if (original.consumption != entry.consumption) {
-          await FuelDatabase.instance.updateEntry(entry);
+          toUpdate.add(entry);
         }
       }
+    }
+    if (toUpdate.isNotEmpty) {
+      await FuelDatabase.instance.updateEntriesBatch(toUpdate);
     }
   }
 
