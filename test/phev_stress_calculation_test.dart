@@ -6,7 +6,9 @@ import 'package:fuelman/models/vehicle.dart';
 void main() {
   group('PHEV Stress Calculation Test Suite', () {
     // ── Тест 1: Первая заправка любого типа ──────────────────────────────────
-    test('test_first_fillup_no_consumption: Первая заправка любого типа возвращает null для расхода', () {
+    test(
+        'test_first_fillup_no_consumption: Первая заправка любого типа возвращает null для расхода',
+        () {
       final entries = [
         FuelEntry(
           vehicleId: 1,
@@ -29,13 +31,17 @@ void main() {
       final result = FuelEntryController.computeEntriesWithConsumption(entries);
 
       expect(result[0].consumption, isNull,
-          reason: 'Первая заправка топлива не имеет базы отсчета, расход должен быть null');
+          reason:
+              'Первая заправка топлива не имеет базы отсчета, расход должен быть null');
       expect(result[1].consumption, isNull,
-          reason: 'Первая зарядка АКБ не имеет базы отсчета, расход должен быть null');
+          reason:
+              'Первая зарядка АКБ не имеет базы отсчета, расход должен быть null');
     });
 
     // ── Тест 2: Защита от перелива бака ──────────────────────────────────────
-    test('test_overflow_tank_validation: Попытка сохранить 65 л при баке 48 л возвращает ошибку валидации', () {
+    test(
+        'test_overflow_tank_validation: Попытка сохранить 65 л при баке 48 л возвращает ошибку валидации',
+        () {
       const vehicle = Vehicle(
         name: 'BYD',
         model: 'Chazor',
@@ -52,7 +58,8 @@ void main() {
         vehicle: vehicle,
       );
 
-      expect(error, isNotNull, reason: '65 л превышает бак 48 л с учетом горловины');
+      expect(error, isNotNull,
+          reason: '65 л превышает бак 48 л с учетом горловины');
       expect(error, contains('превышает емкость бака с учетом горловины'));
 
       // Валидный объем 45 л
@@ -65,7 +72,9 @@ void main() {
     });
 
     // ── Тест 3: Защита от перезаряда батареи ─────────────────────────────────
-    test('test_overflow_battery_validation: Попытка сохранить 45 кВт·ч при батарее 18.3 кВт·ч возвращает ошибку валидации', () {
+    test(
+        'test_overflow_battery_validation: Попытка сохранить 45 кВт·ч при батарее 18.3 кВт·ч возвращает ошибку валидации',
+        () {
       const vehicle = Vehicle(
         name: 'BYD',
         model: 'Chazor',
@@ -82,7 +91,8 @@ void main() {
         vehicle: vehicle,
       );
 
-      expect(error, isNotNull, reason: '45 кВт·ч превышает АКБ 18.3 кВт·ч с потерями');
+      expect(error, isNotNull,
+          reason: '45 кВт·ч превышает АКБ 18.3 кВт·ч с потерями');
       expect(error, contains('превышает физическую емкость батареи'));
 
       // Валидная зарядка 16 кВт·ч
@@ -91,11 +101,14 @@ void main() {
         entryType: 'charge',
         vehicle: vehicle,
       );
-      expect(valid, isNull, reason: '16 кВт·ч укладывается в физическую емкость батареи');
+      expect(valid, isNull,
+          reason: '16 кВт·ч укладывается в физическую емкость батареи');
     });
 
     // ── Тест 4: Защита от микропробегов ──────────────────────────────────────
-    test('test_micro_distance_no_infinite_consumption: Пробег 1 км и заправка 10 л возвращает null вместо 1000 л/100 км', () {
+    test(
+        'test_micro_distance_no_infinite_consumption: Пробег 1 км и заправка 10 л возвращает null вместо 1000 л/100 км',
+        () {
       final entries = [
         FuelEntry(
           vehicleId: 1,
@@ -118,11 +131,13 @@ void main() {
       final result = FuelEntryController.computeEntriesWithConsumption(entries);
 
       expect(result[1].consumption, isNull,
-          reason: 'Дельта 1 км < 15 км блокирует расчет аномального расхода (1000 л/100 км)');
+          reason:
+              'Дельта 1 км < 15 км блокирует расчет аномального расхода (1000 л/100 км)');
     });
 
     // ── Тест 5: Изоляция цепочек PHEV ────────────────────────────────────────
-    test('test_isolated_chains_phev: Изоляция цепочек бензина и электричества', () {
+    test('test_isolated_chains_phev: Изоляция цепочек бензина и электричества',
+        () {
       final entries = [
         // Бензин: Полный бак (1000 км, 40 л)
         FuelEntry(
@@ -168,7 +183,8 @@ void main() {
       expect(result[0].consumption, isNull, reason: 'Первая заправка бензина');
       expect(result[3].consumption, isNotNull);
       expect(result[3].consumption!, closeTo(5.0, 0.001),
-          reason: 'Дельта бензина = 400 км, расход = 5.0 л/100 км. Электричество не смешалось с бензином');
+          reason:
+              'Дельта бензина = 400 км, расход = 5.0 л/100 км. Электричество не смешалось с бензином');
 
       // Проверка электричества:
       // Первая зарядка (1050 км) -> null
@@ -180,7 +196,9 @@ void main() {
     });
 
     // ── Тест 6: Накопление промежуточных дозаправок ──────────────────────────
-    test('test_partial_fillups_chain_accumulation: Накопление объема частичных заправок до полного бака', () {
+    test(
+        'test_partial_fillups_chain_accumulation: Накопление объема частичных заправок до полного бака',
+        () {
       final entries = [
         // 1000 км: Полный бак (40 л)
         FuelEntry(
@@ -223,15 +241,20 @@ void main() {
       final result = FuelEntryController.computeEntriesWithConsumption(entries);
 
       expect(result[0].consumption, isNull, reason: 'Базовый полный бак');
-      expect(result[1].consumption, isNull, reason: 'Дозаправка 1 — расход null');
-      expect(result[2].consumption, isNull, reason: 'Дозаправка 2 — расход null');
+      expect(result[1].consumption, isNull,
+          reason: 'Дозаправка 1 — расход null');
+      expect(result[2].consumption, isNull,
+          reason: 'Дозаправка 2 — расход null');
       expect(result[3].consumption, isNotNull);
       expect(result[3].consumption!, closeTo(10.0, 0.001),
-          reason: 'Дельта = 500 км, объем = 10 + 15 + 25 = 50 л, расход = 10.0 л/100 км');
+          reason:
+              'Дельта = 500 км, объем = 10 + 15 + 25 = 50 л, расход = 10.0 л/100 км');
     });
 
     // ── Тест 7: Заправка при нулевой дельте пробега ───────────────────────────
-    test('test_zero_distance_fuel_burn: Заправка при неизменном одометре возвращает null без деления на ноль', () {
+    test(
+        'test_zero_distance_fuel_burn: Заправка при неизменном одометре возвращает null без деления на ноль',
+        () {
       final entries = [
         FuelEntry(
           vehicleId: 1,
@@ -259,7 +282,9 @@ void main() {
     });
 
     // ── Тест 8: Синхронизация цен и авторасчет ────────────────────────────────
-    test('test_price_synchronization: Проверка авторасчета totalCost и пересчета цены за литр при вводе чека', () {
+    test(
+        'test_price_synchronization: Проверка авторасчета totalCost и пересчета цены за литр при вводе чека',
+        () {
       // 1. Авторасчет totalCost = volume * unitPrice
       final calcTotal = FuelEntryController.calculatePriceSync(
         volume: 50.0,

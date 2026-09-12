@@ -29,7 +29,8 @@ class VehicleController extends GetxController {
         final updated = list.firstWhereOrNull(
           (v) => v.id == selectedVehicle.value!.id,
         );
-        selectedVehicle.value = updated ?? (list.isNotEmpty ? list.first : null);
+        selectedVehicle.value =
+            updated ?? (list.isNotEmpty ? list.first : null);
       }
     } finally {
       isLoading.value = false;

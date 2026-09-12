@@ -28,7 +28,8 @@ class AppTranslationsKk extends Translations {
     // ── Басты экран ──
     'select_vehicle': 'Көлік таңдаңыз',
     'add_vehicle_prompt': 'Көлік қосыңыз',
-    'add_vehicle_subtitle': '«Гараж» қосымшасына өтіп,\nбірінші көлігіңізді қосыңыз',
+    'add_vehicle_subtitle':
+        '«Гараж» қосымшасына өтіп,\nбірінші көлігіңізді қосыңыз',
     'refuel_fab': 'Жанармай',
     'charge_fab': 'Зарядтау',
     'last_refuels': 'Соңғы жазбалар',
@@ -169,7 +170,8 @@ class AppTranslationsKk extends Translations {
     'settings_about': 'Қолданба туралы',
     'settings_version': 'Нұсқа',
     'settings_restore_done': 'Дайын',
-    'settings_restore_msg': 'Дерекқор қалпына келтірілді. Қолданбаны қайта іске қосыңыз.',
+    'settings_restore_msg':
+        'Дерекқор қалпына келтірілді. Қолданбаны қайта іске қосыңыз.',
     'volume_liters': 'Литр (L)',
     'volume_gallons': 'Галлон (gal)',
 
@@ -183,10 +185,12 @@ class AppTranslationsKk extends Translations {
     // ── Жаңа кілттер (Гараж, Тарих, Статистика) ──
     'add_vehicle_fab': 'Көлік қосу',
     'garage_empty_title': 'Гараж бос',
-    'garage_empty_subtitle': 'Есепке алуды бастау үшін\nбірінші көлікті қосыңыз',
+    'garage_empty_subtitle':
+        'Есепке алуды бастау үшін\nбірінші көлікті қосыңыз',
     'stats_no_data_title': 'Деректер жоқ',
     'stats_no_entries_title': 'Жазбалар жоқ',
-    'stats_no_entries_subtitle': 'Статистиканы есептеу үшін\nкем дегенде 2 жазба қосыңыз',
+    'stats_no_entries_subtitle':
+        'Статистиканы есептеу үшін\nкем дегенде 2 жазба қосыңыз',
     'stats_summary_prefix': 'Қорытынды: ',
     'stats_total_volume': 'Барлығы құйылды/зарядталды',
     'stats_total_entries': 'Барлық жазбалар',
@@ -200,21 +204,27 @@ class AppTranslationsKk extends Translations {
 
     // ── Аномалия ескертулері ──
     'warn_odo_decreased_title': 'Одометр азайды',
-    'warn_odo_decreased_body': 'Одометр көрсеткіші алдыңғыдан аз. Деректерді тексеріңіз — жазба сақталмайды.',
+    'warn_odo_decreased_body':
+        'Одометр көрсеткіші алдыңғыдан аз. Деректерді тексеріңіз — жазба сақталмайды.',
     'warn_dist_small_title': 'Өте қішкентай қашықтық',
-    'warn_dist_small_body': 'Қашықтық 10 км-ден аз. Шығын есептелмейді. Шығынсыз сақтау?',
+    'warn_dist_small_body':
+        'Қашықтық 10 км-ден аз. Шығын есептелмейді. Шығынсыз сақтау?',
     'warn_dist_small_short': 'Қашықтық < 10 км — шығын есептелмейді',
     'warn_dist_large_title': 'Өте ұлан қашықтық',
-    'warn_dist_large_body': 'Қашықтық 3000 км-ден асады. Одометрді қате енгізген шығар шығар. Жалғастыру?',
+    'warn_dist_large_body':
+        'Қашықтық 3000 км-ден асады. Одометрді қате енгізген шығар шығар. Жалғастыру?',
     'warn_dist_large_short': 'Қашықтық > 3000 км — одометрді тексеріңіз',
     'warn_vol_large_title': 'Өте көп көлем',
-    'warn_vol_large_body': 'Енгізілген көлем өте ұлан болып көрінеді. Деректерді тексеріңіз. Бұрын сақтау?',
+    'warn_vol_large_body':
+        'Енгізілген көлем өте ұлан болып көрінеді. Деректерді тексеріңіз. Бұрын сақтау?',
     'warn_vol_large_short': 'Көлем өте ұлан болып көрінеді',
     'warn_consumption_title': 'Аномалды шығын',
-    'warn_consumption_body': 'Есептелген шығын рұқсат шегаралардан шығып кетті. Жазба аномалды ретінде белгіленеді.',
+    'warn_consumption_body':
+        'Есептелген шығын рұқсат шегаралардан шығып кетті. Жазба аномалды ретінде белгіленеді.',
     'warn_consumption_short': 'Аномалды шығын — деректерді тексеріңіз',
     'save_anyway': 'Сақтау',
-    'anomaly_will_be_marked': 'Жазба аномалды ретінде белгіленеді және орташаға әсер етпейді.',
+    'anomaly_will_be_marked':
+        'Жазба аномалды ретінде белгіленеді және орташаға әсер етпейді.',
     'anomaly_note': 'Аномалды — статистикага эсер етпейді',
     'preview_consumption_label': 'Шамаманды шығын',
 
@@ -230,7 +240,8 @@ class AppTranslationsKk extends Translations {
     'swipe_edit': 'Өзгерту',
     'undo': 'Болдырмау',
     'item_deleted': 'Жазба жойылды',
-    'delete_confirm': 'Жойған соң шығын қайта есептеледі. Бұл әрекетті қайтару мүмкін емес.',
+    'delete_confirm':
+        'Жойған соң шығын қайта есептеледі. Бұл әрекетті қайтару мүмкін емес.',
     'location_generic_hint': 'Мысалы: №1 ЖҚС',
     'fuel_subtype_label': 'Жанармай маркасы',
     'fuel_92': 'АИ-92',

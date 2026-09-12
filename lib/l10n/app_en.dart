@@ -186,7 +186,8 @@ class AppTranslationsEn extends Translations {
     'garage_empty_subtitle': 'Add your first vehicle\nto start tracking',
     'stats_no_data_title': 'No data',
     'stats_no_entries_title': 'No entries',
-    'stats_no_entries_subtitle': 'Add at least 2 fill-ups\nto calculate statistics',
+    'stats_no_entries_subtitle':
+        'Add at least 2 fill-ups\nto calculate statistics',
     'stats_summary_prefix': 'Summary: ',
     'stats_total_volume': 'Total fueled/charged',
     'stats_total_entries': 'Total entries',
@@ -200,21 +201,27 @@ class AppTranslationsEn extends Translations {
 
     // ── Anomaly warnings ──
     'warn_odo_decreased_title': 'Odometer decreased',
-    'warn_odo_decreased_body': 'The odometer reading is less than the previous entry. Please check the data — this entry cannot be saved.',
+    'warn_odo_decreased_body':
+        'The odometer reading is less than the previous entry. Please check the data — this entry cannot be saved.',
     'warn_dist_small_title': 'Very short distance',
-    'warn_dist_small_body': 'Distance is less than 10 km. Consumption will not be calculated — data is unreliable. Save entry without consumption?',
+    'warn_dist_small_body':
+        'Distance is less than 10 km. Consumption will not be calculated — data is unreliable. Save entry without consumption?',
     'warn_dist_small_short': 'Distance < 10 km — consumption not calculated',
     'warn_dist_large_title': 'Very large distance',
-    'warn_dist_large_body': 'Distance exceeds 3000 km. You may have entered the odometer incorrectly. Continue?',
+    'warn_dist_large_body':
+        'Distance exceeds 3000 km. You may have entered the odometer incorrectly. Continue?',
     'warn_dist_large_short': 'Distance > 3000 km — check odometer',
     'warn_vol_large_title': 'Unusually large volume',
-    'warn_vol_large_body': 'The entered volume seems unrealistically large. Please check the data. Save anyway?',
+    'warn_vol_large_body':
+        'The entered volume seems unrealistically large. Please check the data. Save anyway?',
     'warn_vol_large_short': 'Volume looks too large',
     'warn_consumption_title': 'Anomalous consumption',
-    'warn_consumption_body': 'The calculated fuel consumption is outside reasonable limits. This may be a data entry error. The entry will be marked as anomalous.',
+    'warn_consumption_body':
+        'The calculated fuel consumption is outside reasonable limits. This may be a data entry error. The entry will be marked as anomalous.',
     'warn_consumption_short': 'Anomalous consumption — check data',
     'save_anyway': 'Save anyway',
-    'anomaly_will_be_marked': 'This entry will be marked as anomalous and will not affect average statistics.',
+    'anomaly_will_be_marked':
+        'This entry will be marked as anomalous and will not affect average statistics.',
     'anomaly_note': 'Anomalous — excluded from statistics',
     'preview_consumption_label': 'Estimated consumption',
 

@@ -31,7 +31,8 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      settings: const InitializationSettings(
+          android: androidSettings, iOS: iosSettings),
     );
     _initialized = true;
   }
@@ -40,17 +41,15 @@ class NotificationService {
   /// Возвращает true если разрешение получено.
   Future<bool> requestPermission() async {
     // Android 13+
-    final androidImpl = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
     if (androidImpl != null) {
       return await androidImpl.requestNotificationsPermission() ?? false;
     }
 
     // iOS
-    final iosImpl = _plugin
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
+    final iosImpl = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
     if (iosImpl != null) {
       return await iosImpl.requestPermissions(
             alert: true,

@@ -59,9 +59,7 @@ class FuelEntryTile extends StatelessWidget {
       margin: margin,
       clipBehavior: Clip.antiAlias,
       // Лёгкая подсветка аномальной записи
-      color: isAnomalous
-          ? Colors.orange.withAlpha(12)
-          : null,
+      color: isAnomalous ? Colors.orange.withAlpha(12) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isAnomalous
@@ -147,12 +145,15 @@ class FuelEntryTile extends StatelessWidget {
                   children: [
                     _Metric(
                       label: 'odometer_label'.tr,
-                      value: '${entry.odometer.toStringAsFixed(0)} ${'km_unit'.tr}',
+                      value:
+                          '${entry.odometer.toStringAsFixed(0)} ${'km_unit'.tr}',
                       icon: Icons.speed_rounded,
                     ),
                     _Divider(),
                     _Metric(
-                      label: isCharge ? 'volume_label_charge'.tr : 'volume_label_fuel'.tr,
+                      label: isCharge
+                          ? 'volume_label_charge'.tr
+                          : 'volume_label_fuel'.tr,
                       value:
                           '${entry.volume.toStringAsFixed(2)} ${entry.volumeUnit}',
                       icon: isCharge
@@ -243,8 +244,8 @@ class FuelEntryTile extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'anomaly_note'.tr,
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.orange),
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.orange),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -332,16 +333,14 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final color = anomaly
-        ? Colors.orange
-        : (highlight ? cs.primary : cs.onSurface);
+    final color =
+        anomaly ? Colors.orange : (highlight ? cs.primary : cs.onSurface);
 
     return Expanded(
       child: Column(
         children: [
           Icon(icon,
-              size: 14,
-              color: anomaly ? Colors.orange : cs.onSurfaceVariant),
+              size: 14, color: anomaly ? Colors.orange : cs.onSurfaceVariant),
           const SizedBox(height: 2),
           Text(
             value,

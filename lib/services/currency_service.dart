@@ -8,14 +8,14 @@ class CurrencyService {
 
   static const _cacheKey = 'currency_rates_cache';
   static const _timestampKey = 'currency_rates_timestamp';
-  
+
   Map<String, dynamic>? _rates; // Base: USD
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_cacheKey);
     final timestamp = prefs.getInt(_timestampKey) ?? 0;
-    
+
     if (cached != null) {
       _rates = jsonDecode(cached) as Map<String, dynamic>;
     }
@@ -35,10 +35,11 @@ class CurrencyService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _rates = data['rates'] as Map<String, dynamic>;
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_cacheKey, jsonEncode(_rates));
-        await prefs.setInt(_timestampKey, DateTime.now().millisecondsSinceEpoch);
+        await prefs.setInt(
+            _timestampKey, DateTime.now().millisecondsSinceEpoch);
       }
     } catch (e) {
       // Ignored. Fallback to cached rates or fallback static rates if needed.
@@ -47,7 +48,7 @@ class CurrencyService {
 
   double convert(double amount, String fromCurrency, String toCurrency) {
     if (fromCurrency == toCurrency) return amount;
-    
+
     // Fallback static rates if no data
     final fallbackRates = {
       'USD': 1.0,
@@ -57,9 +58,11 @@ class CurrencyService {
     };
 
     final ratesMap = _rates ?? fallbackRates;
-    
-    final fromRate = (ratesMap[fromCurrency] as num?)?.toDouble() ?? fallbackRates[fromCurrency]!;
-    final toRate = (ratesMap[toCurrency] as num?)?.toDouble() ?? fallbackRates[toCurrency]!;
+
+    final fromRate = (ratesMap[fromCurrency] as num?)?.toDouble() ??
+        fallbackRates[fromCurrency]!;
+    final toRate = (ratesMap[toCurrency] as num?)?.toDouble() ??
+        fallbackRates[toCurrency]!;
 
     // Convert from -> USD -> to
     final amountInUsd = amount / fromRate;

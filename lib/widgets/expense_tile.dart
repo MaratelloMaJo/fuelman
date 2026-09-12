@@ -26,7 +26,8 @@ class ExpenseTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final settings = Get.find<SettingsController>();
-    final locale = settings.language.value == 'kk' ? 'ru' : settings.language.value;
+    final locale =
+        settings.language.value == 'kk' ? 'ru' : settings.language.value;
     final dateFmt = DateFormat('dd MMM yyyy', locale);
     final (_, categoryColor) = ExpenseCategoryIcon.dataFor(expense.category);
 
@@ -45,23 +46,24 @@ class ExpenseTile extends StatelessWidget {
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text('delete'.tr),
-            content: Text(expense.title),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text('cancel'.tr),
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text('delete'.tr),
+                content: Text(expense.title),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text('cancel'.tr),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: cs.error),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text('delete'.tr),
+                  ),
+                ],
               ),
-              FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: cs.error),
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text('delete'.tr),
-              ),
-            ],
-          ),
-        ) ?? false;
+            ) ??
+            false;
       },
       onDismissed: (_) => onDelete?.call(),
       child: Card(
@@ -99,14 +101,18 @@ class ExpenseTile extends StatelessWidget {
                         children: [
                           Text(
                             dateFmt.format(expense.date),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                    ),
                           ),
                           if (expense.placeName != null) ...[
                             Text(
                               ' · ${expense.placeName}',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: cs.onSurfaceVariant,
                                   ),
                               maxLines: 1,
@@ -116,7 +122,10 @@ class ExpenseTile extends StatelessWidget {
                           if (expense.odometer != null) ...[
                             Text(
                               ' · ${expense.odometer!.toStringAsFixed(0)} км',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: cs.onSurfaceVariant,
                                   ),
                             ),
@@ -126,7 +135,8 @@ class ExpenseTile extends StatelessWidget {
                       // GPS чип
                       if (expense.hasLocation)
                         GestureDetector(
-                          onTap: () => _openMap(expense.latitude!, expense.longitude!),
+                          onTap: () =>
+                              _openMap(expense.latitude!, expense.longitude!),
                           child: Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Row(

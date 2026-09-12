@@ -381,9 +381,8 @@ class ChargingEntryController extends GetxController {
 
     // Бензиновый эквивалент: предпочитаем EV-одометр, иначе общий
     final kwhBasis = kwhPer100kmEv ?? kwhPer100kmTotal;
-    final literEquivalent = kwhBasis != null
-        ? kwhBasis / kGasolineEquivalentKwhPerLiter
-        : null;
+    final literEquivalent =
+        kwhBasis != null ? kwhBasis / kGasolineEquivalentKwhPerLiter : null;
 
     return TimelineMetrics(
       totalFuelCost: totalFuelCost,
@@ -440,7 +439,8 @@ class ChargingEntryController extends GetxController {
       // Температурная поправка: при T < 10°C добавляем 2% к «ожидаемым потерям»
       // (холод увеличивает внутреннее сопротивление → снижает кажущийся КПД)
       double corrected = ratio;
-      if (entry.temperatureCelsius != null && entry.temperatureCelsius! < 10.0) {
+      if (entry.temperatureCelsius != null &&
+          entry.temperatureCelsius! < 10.0) {
         final tempPenalty = (10.0 - entry.temperatureCelsius!).clamp(0.0, 30.0);
         corrected = ratio + (tempPenalty * 0.067); // ~2% на 30°C диапазон
       }
@@ -474,15 +474,13 @@ class ChargingEntryController extends GetxController {
       metrics.value.kwhPer100kmEv ?? metrics.value.kwhPer100kmTotal;
 
   /// Текущий л-экв/100 км.
-  double? get literEquivalentPer100km =>
-      metrics.value.literEquivalentPer100km;
+  double? get literEquivalentPer100km => metrics.value.literEquivalentPer100km;
 
   /// Общее количество зарядных сессий для текущего авто.
   int get sessionCount => entries.length;
 
   /// Суммарная заряженная энергия (кВт·ч) за всё время.
-  double get totalKwhCharged =>
-      entries.fold(0.0, (sum, e) => sum + e.kwhAdded);
+  double get totalKwhCharged => entries.fold(0.0, (sum, e) => sum + e.kwhAdded);
 
   /// Суммарная стоимость всех зарядок.
   double get totalChargingCost =>

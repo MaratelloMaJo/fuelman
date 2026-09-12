@@ -28,15 +28,12 @@ class GlassContainer extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
 
-    final glassColor = isDark
-        ? cs.surface.withAlpha(160)
-        : cs.surface.withAlpha(210);
-    final borderColor = isDark
-        ? Colors.white.withAlpha(20)
-        : Colors.white.withAlpha(180);
-    final tintColor = isDark
-        ? cs.primary.withAlpha(10)
-        : cs.primary.withAlpha(8);
+    final glassColor =
+        isDark ? cs.surface.withAlpha(160) : cs.surface.withAlpha(210);
+    final borderColor =
+        isDark ? Colors.white.withAlpha(20) : Colors.white.withAlpha(180);
+    final tintColor =
+        isDark ? cs.primary.withAlpha(10) : cs.primary.withAlpha(8);
 
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.zero,

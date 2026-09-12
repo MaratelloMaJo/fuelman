@@ -68,10 +68,9 @@ class _HistoryTabState extends State<HistoryTab>
     if (_period == _Period.custom && _customRange != null) {
       return all
           .where((e) =>
-              e.date.isAfter(_customRange!.start
-                  .subtract(const Duration(seconds: 1))) &&
-              e.date.isBefore(
-                  _customRange!.end.add(const Duration(days: 1))))
+              e.date.isAfter(
+                  _customRange!.start.subtract(const Duration(seconds: 1))) &&
+              e.date.isBefore(_customRange!.end.add(const Duration(days: 1))))
           .toList();
     }
     final cutoff = _getCutoff();
@@ -83,10 +82,9 @@ class _HistoryTabState extends State<HistoryTab>
     if (_period == _Period.custom && _customRange != null) {
       return all
           .where((e) =>
-              e.date.isAfter(_customRange!.start
-                  .subtract(const Duration(seconds: 1))) &&
-              e.date.isBefore(
-                  _customRange!.end.add(const Duration(days: 1))))
+              e.date.isAfter(
+                  _customRange!.start.subtract(const Duration(seconds: 1))) &&
+              e.date.isBefore(_customRange!.end.add(const Duration(days: 1))))
           .toList();
     }
     final cutoff = _getCutoff();
@@ -156,11 +154,9 @@ class _HistoryTabState extends State<HistoryTab>
               onSelected: (val) async {
                 try {
                   if (val == 'export_fuel') {
-                    await _entryCtrl.exportToCsv(
-                        vehicle.id!, vehicle.name);
+                    await _entryCtrl.exportToCsv(vehicle.id!, vehicle.name);
                   } else if (val == 'export_expenses') {
-                    await _expenseCtrl.exportToCsv(
-                        vehicle.id!, vehicle.name);
+                    await _expenseCtrl.exportToCsv(vehicle.id!, vehicle.name);
                   }
                 } catch (e) {
                   Get.snackbar(
@@ -416,9 +412,8 @@ class _FuelHistoryList extends StatelessWidget {
               itemCount: filtered.length,
               itemBuilder: (_, i) {
                 final entry = filtered[i];
-                final double? prevOdo = (i + 1 < filtered.length)
-                    ? filtered[i + 1].odometer
-                    : null;
+                final double? prevOdo =
+                    (i + 1 < filtered.length) ? filtered[i + 1].odometer : null;
                 return FuelEntryTile(
                   entry: entry,
                   avgConsumption: avgConsumption,
@@ -480,9 +475,7 @@ class _CareHistoryListState extends State<_CareHistoryList> {
 
       final filtered = _categoryFilter == 'all'
           ? periodFiltered
-          : periodFiltered
-              .where((e) => e.category == _categoryFilter)
-              .toList();
+          : periodFiltered.where((e) => e.category == _categoryFilter).toList();
 
       // Конвертируем суммы в текущую валюту
       final total = filtered.fold<double>(0, (s, e) {
@@ -497,8 +490,7 @@ class _CareHistoryListState extends State<_CareHistoryList> {
           SizedBox(
             height: 44,
             child: ListView.separated(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
               separatorBuilder: (_, __) => const SizedBox(width: 6),
@@ -509,16 +501,13 @@ class _CareHistoryListState extends State<_CareHistoryList> {
                   label: Text('cat_$cat'.tr),
                   selected: isActive,
                   showCheckmark: false,
-                  onSelected: (_) =>
-                      setState(() => _categoryFilter = cat),
+                  onSelected: (_) => setState(() => _categoryFilter = cat),
                   selectedColor: cs.primaryContainer,
                   backgroundColor: cs.surfaceContainerHighest,
                   labelStyle: TextStyle(
                     fontSize: 12,
-                    fontWeight:
-                        isActive ? FontWeight.w700 : FontWeight.normal,
-                    color:
-                        isActive ? cs.onPrimaryContainer : cs.onSurface,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                    color: isActive ? cs.onPrimaryContainer : cs.onSurface,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                 );
@@ -568,11 +557,10 @@ class _CareHistoryListState extends State<_CareHistoryList> {
                         expense: expense,
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         onTap: () async {
-                          await Get.to(() =>
-                              AddExpenseScreen(editExpense: expense));
+                          await Get.to(
+                              () => AddExpenseScreen(editExpense: expense));
                         },
-                        onDelete: () =>
-                            expenseCtrl.deleteExpense(expense.id!),
+                        onDelete: () => expenseCtrl.deleteExpense(expense.id!),
                       );
                     },
                   ),

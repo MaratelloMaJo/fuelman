@@ -53,8 +53,7 @@ class VehiclesTab extends StatelessWidget {
                 vehicle: v,
                 isSelected: selected?.id == v.id,
                 onTap: () => vehicleCtrl.selectVehicle(v),
-                onEdit: () =>
-                    Get.to(() => AddVehicleScreen(editVehicle: v)),
+                onEdit: () => Get.to(() => AddVehicleScreen(editVehicle: v)),
                 onDelete: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
