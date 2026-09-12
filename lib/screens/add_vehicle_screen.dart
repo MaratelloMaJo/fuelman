@@ -103,6 +103,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 

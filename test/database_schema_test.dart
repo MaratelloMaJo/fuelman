@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fuelman/database/fuel_database.dart';
 import 'dart:io';
 
 void main() {
