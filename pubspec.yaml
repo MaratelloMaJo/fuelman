@@ -71,3 +71,5 @@ flutter_native_splash:
   ios: true
   web: false
 
+dependency_overrides:
+  meta: ^1.17.0

@@ -469,17 +469,15 @@ class FuelEntryController extends GetxController {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
     final calculated = computeEntriesWithConsumption(all);
 
-    final toUpdate = <FuelEntry>[];
+    final allMap = {for (final e in all) e.id: e};
+
     for (final entry in calculated) {
       if (entry.id != null) {
-        final original = all.firstWhere((e) => e.id == entry.id);
-        if (original.consumption != entry.consumption) {
-          toUpdate.add(entry);
+        final original = allMap[entry.id];
+        if (original != null && original.consumption != entry.consumption) {
+          await FuelDatabase.instance.updateEntry(entry);
         }
       }
-    }
-    if (toUpdate.isNotEmpty) {
-      await FuelDatabase.instance.updateEntriesBatch(toUpdate);
     }
   }
 
