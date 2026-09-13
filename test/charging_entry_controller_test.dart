@@ -155,9 +155,10 @@ void main() {
     test('Скачок > 10000 км фильтруется', () {
       final items = [
         _makeTimelineItem(odo: 1000.0),
-        _makeTimelineItem(odo: 12000.0), // +11000 > 10000 → аномальный скачок, пропускаем
-        _makeTimelineItem(odo: 1500.0),  // +500 от 1000 → нормально, сохраняем
-        _makeTimelineItem(odo: 1200.0),  // -300 → убывание, пропускаем
+        _makeTimelineItem(
+            odo: 12000.0), // +11000 > 10000 → аномальный скачок, пропускаем
+        _makeTimelineItem(odo: 1500.0), // +500 от 1000 → нормально, сохраняем
+        _makeTimelineItem(odo: 1200.0), // -300 → убывание, пропускаем
       ];
       final filtered = filterAnomalies(items);
       // Сохраняются: 1000 (база) и 1500 (нормальный прирост от последней точки)
@@ -267,7 +268,8 @@ void main() {
     });
 
     test('Неизвестная строка → acSlow', () {
-      expect(ChargerType.fromDbString('unknown_type'), equals(ChargerType.acSlow));
+      expect(
+          ChargerType.fromDbString('unknown_type'), equals(ChargerType.acSlow));
     });
   });
 
@@ -282,8 +284,8 @@ void main() {
     }
 
     test('null → homeSocket', () {
-      expect(
-          ChargerStandard.fromDbString(null), equals(ChargerStandard.homeSocket));
+      expect(ChargerStandard.fromDbString(null),
+          equals(ChargerStandard.homeSocket));
     });
   });
 

@@ -132,14 +132,14 @@ class FuelEntryController extends GetxController {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
-      ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+      _workers.add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
+      _workers.add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
   }
 
@@ -336,16 +336,28 @@ class FuelEntryController extends GetxController {
     CurrencyService? currencySvc,
     String targetCurrency = 'RUB',
   }) {
-    return calculateOverallStats(
-      entries,
-      currencySvc: currencySvc,
-      targetCurrency: targetCurrency,
-    ).costPerKm;
+    if (entries.length < 2) return null;
+    final cSvc = currencySvc ?? CurrencyService.instance;
+
+    double totalCost = 0.0;
+    double minOdo = double.infinity;
+    double maxOdo = 0.0;
+
+    for (final e in entries) {
+      if (e.odometer < minOdo) minOdo = e.odometer;
+      if (e.odometer > maxOdo) maxOdo = e.odometer;
+      final cost = e.totalCost ?? 0.0;
+      totalCost += cSvc.convert(cost, e.currency, targetCurrency);
+    }
+
+    final distance = maxOdo - minOdo;
+    if (distance <= 0) return null;
+    return totalCost / distance;
   }
 
   Future<List<Map<String, dynamic>>> getMonthlyStats(int vehicleId) async {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
-    final settings = Get.isRegistered<SettingsController>() ? Get.find<SettingsController>() : null;
+    final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
     final Map<String, _MonthStat> map = {};
@@ -360,11 +372,8 @@ class FuelEntryController extends GetxController {
       final stat = map.putIfAbsent(month, () => _MonthStat(month));
 
       if (e.entryType == 'fuel') {
-        double vol = e.volume;
-        if (settings != null) {
-          vol = settings.convertVolume(
-              e.volume, e.volumeUnit, settings.volumeUnit.value);
-        }
+        double vol = settings.convertVolume(
+            e.volume, e.volumeUnit, settings.volumeUnit.value);
         stat.totalVolume += vol;
       } else if (e.entryType == 'charge') {
         stat.totalEvVolume += e.volume;
@@ -373,7 +382,7 @@ class FuelEntryController extends GetxController {
       if (e.totalCost != null) {
         double cost = e.totalCost!;
         double convertedCost =
-            currencySvc.convert(cost, e.currency, settings?.currency.value ?? 'RUB');
+            currencySvc.convert(cost, e.currency, settings.currency.value);
         stat.totalCost += convertedCost;
       }
 
@@ -381,11 +390,8 @@ class FuelEntryController extends GetxController {
         final isAnomaly = isAnomalousValue(e.consumption!, e.entryType);
         if (!isAnomaly) {
           if (e.entryType == 'fuel') {
-            double cons = e.consumption!;
-            if (settings != null) {
-              cons = settings.convertVolume(
-                  e.consumption!, e.volumeUnit, settings.volumeUnit.value);
-            }
+            double cons = settings.convertVolume(
+                e.consumption!, e.volumeUnit, settings.volumeUnit.value);
             stat.sumConsumption += cons;
             stat.calcEntries++;
           } else if (e.entryType == 'charge') {
@@ -463,6 +469,9 @@ class FuelEntryController extends GetxController {
           await FuelDatabase.instance.updateEntry(entry);
         }
       }
+    }
+    if (toUpdate.isNotEmpty) {
+      await FuelDatabase.instance.updateEntriesBatch(toUpdate);
     }
   }
 
@@ -835,10 +844,12 @@ class FuelEntryController extends GetxController {
 
   Future<void> checkAllReminders() async {
     final vehicles = _vehicleCtrl?.vehicles ?? [];
+    final futures = <Future<void>>[];
     for (final vehicle in vehicles) {
       if (vehicle.reminderDays == null || vehicle.id == null) continue;
-      await _checkReminder(vehicle.id!);
+      futures.add(_checkReminder(vehicle.id!));
     }
+    await Future.wait(futures);
   }
 
   Future<void> _checkReminder(int vehicleId) async {
