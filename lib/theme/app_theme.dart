@@ -14,8 +14,8 @@ abstract final class AppTheme {
 
   // Дополнительные цвета для визуализации эффективности.
   static const Color efficiencyGood = Color(0xFF2E7D32); // тёмно-зелёный
-  static const Color efficiencyMid = Color(0xFFF57C00);  // янтарный
-  static const Color efficiencyBad = Color(0xFFC62828);  // тёмно-красный
+  static const Color efficiencyMid = Color(0xFFF57C00); // янтарный
+  static const Color efficiencyBad = Color(0xFFC62828); // тёмно-красный
 
   // Цвет для графиков
   static const Color chartPrimary = Color(0xFF26C6DA);
@@ -27,19 +27,19 @@ abstract final class AppTheme {
           seedColor: _lightSeed,
           brightness: Brightness.light,
           // Тёплые оттенки для светлой темы — профессиональный топливный стиль
-          primary: const Color(0xFFBF360C),       // глубокий оранжево-красный
+          primary: const Color(0xFFBF360C), // глубокий оранжево-красный
           onPrimary: Colors.white,
           primaryContainer: const Color(0xFFFFCCBC),
           onPrimaryContainer: const Color(0xFF7B1A00),
-          secondary: const Color(0xFF795548),     // коричневый
+          secondary: const Color(0xFF795548), // коричневый
           onSecondary: Colors.white,
           secondaryContainer: const Color(0xFFD7CCC8),
           onSecondaryContainer: const Color(0xFF3E2723),
-          tertiary: const Color(0xFF00695C),      // изумрудный акцент
+          tertiary: const Color(0xFF00695C), // изумрудный акцент
           onTertiary: Colors.white,
           tertiaryContainer: const Color(0xFFB2DFDB),
           onTertiaryContainer: const Color(0xFF00352C),
-          surface: const Color(0xFFFAF8F5),       // тёплый белый
+          surface: const Color(0xFFFAF8F5), // тёплый белый
           onSurface: const Color(0xFF1C1A17),
           surfaceContainerHighest: const Color(0xFFEDE9E3),
           surfaceContainerHigh: const Color(0xFFF3EFE9),
