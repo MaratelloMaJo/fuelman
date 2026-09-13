@@ -87,8 +87,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                     SegmentedButton<_ChartMode>(
                       showSelectedIcon: false,
                       style: SegmentedButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         visualDensity: VisualDensity.compact,
                       ),
                       segments: [
@@ -111,7 +110,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
             ),
 
             // ── Легенда (только для графика расхода) ──
-            if (_mode == _ChartMode.consumption && widget.entries.any((e) => e.consumption != null))
+            if (_mode == _ChartMode.consumption &&
+                widget.entries.any((e) => e.consumption != null))
               Padding(
                 padding: const EdgeInsets.only(left: 8, bottom: 8),
                 child: Wrap(
@@ -119,13 +119,13 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _LegendDot(color: cs.primary, label: 'consumption_label'.tr),
+                    _LegendDot(
+                        color: cs.primary, label: 'consumption_label'.tr),
                     _LegendDot(
                         color: cs.primary.withAlpha(120),
                         label: 'avg_consumption'.tr,
                         dashed: true),
-                    _LegendDot(
-                        color: Colors.orange, label: 'anomaly_note'.tr),
+                    _LegendDot(color: Colors.orange, label: 'anomaly_note'.tr),
                   ],
                 ),
               ),
@@ -169,7 +169,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
     final dateFmt = DateFormat('dd.MM');
     final entryCtrl = Get.find<FuelEntryController>();
 
-    final lineEntries = widget.entries.where((e) => e.consumption != null).toList();
+    final lineEntries =
+        widget.entries.where((e) => e.consumption != null).toList();
 
     // Строим spots — аномальные и обычные раздельно
     final List<FlSpot> normalSpots = [];
@@ -224,7 +225,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   radius: isAnomaly ? 5 : 4,
                   color: isAnomaly ? Colors.orange : cs.primary,
                   strokeWidth: isAnomaly ? 2.5 : 2,
-                  strokeColor: isAnomaly ? Colors.orange.withAlpha(80) : cs.surface,
+                  strokeColor:
+                      isAnomaly ? Colors.orange.withAlpha(80) : cs.surface,
                 );
               },
             ),
@@ -283,8 +285,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     dateFmt.format(lineEntries[idx].date),
-                    style: TextStyle(
-                        fontSize: 9, color: cs.onSurfaceVariant),
+                    style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
                   ),
                 );
               },
@@ -320,8 +321,8 @@ class _ConsumptionChartState extends State<ConsumptionChart>
               }
               final entry = lineEntries[s.spotIndex];
               final dateFmtFull = DateFormat('dd.MM.yyyy');
-              final isAnomaly = Get.find<FuelEntryController>()
-                  .isEntryAnomalous(entry.id);
+              final isAnomaly =
+                  Get.find<FuelEntryController>().isEntryAnomalous(entry.id);
               return LineTooltipItem(
                 '${dateFmtFull.format(entry.date)}\n',
                 TextStyle(
@@ -429,8 +430,7 @@ class _ConsumptionChartState extends State<ConsumptionChart>
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     dateFmt.format(costEntries[idx].date),
-                    style: TextStyle(
-                        fontSize: 9, color: cs.onSurfaceVariant),
+                    style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
                   ),
                 );
               },
@@ -508,7 +508,9 @@ class _LegendDot extends StatelessWidget {
                     height: 2,
                     decoration: BoxDecoration(
                       color: dashed ? Colors.transparent : color,
-                      border: dashed ? Border(bottom: BorderSide(color: color, width: 2)) : null,
+                      border: dashed
+                          ? Border(bottom: BorderSide(color: color, width: 2))
+                          : null,
                     ),
                   ),
                   if (!dashed) ...[
