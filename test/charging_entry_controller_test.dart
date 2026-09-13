@@ -1,8 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'package:fuelman/models/charging_entry.dart';
 import 'package:fuelman/models/vehicle.dart';
 import 'package:fuelman/controllers/charging_entry_controller.dart';
+import 'package:fuelman/controllers/vehicle_controller.dart';
+import 'package:fuelman/database/fuel_database.dart';
+
+class _MockDb extends Mock implements Database {}
 
 /// Unit-тесты бизнес-логики подсистемы учёта электроэнергии EV/PHEV.
 ///
@@ -319,6 +326,80 @@ void main() {
 
     test('false если batteryCapacityKwh == 0', () {
       expect(_makeVehicle(batteryKwh: 0.0).hasBatteryData, isFalse);
+    });
+  });
+
+  group('ChargingEntryController _rebuildTimeline catch block', () {
+    test('falls back to FuelDatabase when FuelEntryController lookup throws', () async {
+      Get.testMode = true;
+      final mockDb = _MockDb();
+      FuelDatabase.setMockDatabase(mockDb);
+
+      when(() => mockDb.query('vehicles', orderBy: any(named: 'orderBy')))
+          .thenAnswer((_) async => []);
+
+      final vehCtrl = VehicleController();
+      vehCtrl.selectedVehicle.value = const Vehicle(id: 1, name: 'EV', model: 'M', bodyType: 'sedan', engineType: 'electric');
+      Get.put<VehicleController>(vehCtrl);
+
+      // Make sure FuelEntryController is NOT registered or throws on lookup
+      expect(Get.isRegistered<dynamic>(tag: 'FuelEntryController'), isFalse);
+
+      when(() => mockDb.query(
+            'charging_entries',
+            where: any(named: 'where'),
+            whereArgs: any(named: 'whereArgs'),
+            orderBy: any(named: 'orderBy'),
+          )).thenAnswer((_) async => [
+            {
+              'id': 1,
+              'vehicle_id': 1,
+              'date': '2025-01-01T10:00:00.000',
+              'odometer': 10000.0,
+              'kwh_added': 30.0,
+              'total_cost': 150.0,
+            }
+          ]);
+
+      when(() => mockDb.query(
+            'fuel_entries',
+            where: any(named: 'where'),
+            whereArgs: any(named: 'whereArgs'),
+            orderBy: any(named: 'orderBy'),
+          )).thenAnswer((_) async => [
+            {
+              'id': 10,
+              'vehicle_id': 1,
+              'date': '2025-01-01T08:00:00.000',
+              'odometer': 9500.0,
+              'volume': 40.0,
+              'price_per_liter': 50.0,
+              'total_cost': 2000.0,
+              'is_full_tank': 1,
+              'entry_type': 'fuel',
+              'volume_unit': 'L',
+              'currency': 'RUB',
+            }
+          ]);
+
+      final controller = ChargingEntryController();
+      Get.put<ChargingEntryController>(controller);
+
+      await controller.loadEntries(1);
+
+      expect(controller.entries.length, 1);
+      expect(controller.timeline.length, 2);
+      expect(controller.timeline.any((item) => item.type == 'fuel'), isTrue);
+
+      verify(() => mockDb.query(
+            'fuel_entries',
+            where: 'vehicle_id = ?',
+            whereArgs: [1],
+            orderBy: 'date ASC',
+          )).called(greaterThanOrEqualTo(1));
+
+      Get.reset();
+      FuelDatabase.setMockDatabase(null);
     });
   });
 }
