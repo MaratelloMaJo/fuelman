@@ -25,8 +25,8 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
     setState(() {
-      _version = info.buildNumber.isNotEmpty 
-          ? '${info.version}+${info.buildNumber}' 
+      _version = info.buildNumber.isNotEmpty
+          ? '${info.version}+${info.buildNumber}'
           : info.version;
     });
   }
@@ -48,22 +48,31 @@ class _SettingsTabState extends State<SettingsTab> {
           _SectionHeader(title: 'settings_appearance'.tr),
           Obx(() {
             final mode = themeCtrl.themeMode;
-            final isDark = mode == ThemeMode.dark || (mode == ThemeMode.system && Theme.of(context).brightness == Brightness.dark);
+            final isDark = mode == ThemeMode.dark ||
+                (mode == ThemeMode.system &&
+                    Theme.of(context).brightness == Brightness.dark);
             return ListTile(
               leading: Icon(
                 mode == ThemeMode.system
                     ? Icons.brightness_auto_rounded
-                    : (mode == ThemeMode.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded),
+                    : (mode == ThemeMode.dark
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded),
                 color: isDark ? Colors.amber : cs.primary,
               ),
-              title: Text('settings_theme'.tr, style: const TextStyle(fontWeight: FontWeight.w500)),
+              title: Text('settings_theme'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
               trailing: DropdownButtonHideUnderline(
                 child: DropdownButton<ThemeMode>(
                   value: mode,
                   items: [
-                    DropdownMenuItem(value: ThemeMode.system, child: Text('theme_system'.tr)),
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('theme_light'.tr)),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('theme_dark'.tr)),
+                    DropdownMenuItem(
+                        value: ThemeMode.system,
+                        child: Text('theme_system'.tr)),
+                    DropdownMenuItem(
+                        value: ThemeMode.light, child: Text('theme_light'.tr)),
+                    DropdownMenuItem(
+                        value: ThemeMode.dark, child: Text('theme_dark'.tr)),
                   ],
                   onChanged: (v) {
                     if (v != null) themeCtrl.setThemeMode(v);
@@ -130,8 +139,10 @@ class _SettingsTabState extends State<SettingsTab> {
                   child: DropdownButton<String>(
                     value: settingsCtrl.volumeUnit.value,
                     items: [
-                      DropdownMenuItem(value: 'L', child: Text('volume_liters'.tr)),
-                      DropdownMenuItem(value: 'gal', child: Text('volume_gallons'.tr)),
+                      DropdownMenuItem(
+                          value: 'L', child: Text('volume_liters'.tr)),
+                      DropdownMenuItem(
+                          value: 'gal', child: Text('volume_gallons'.tr)),
                     ],
                     onChanged: (v) {
                       if (v != null) settingsCtrl.setVolumeUnit(v);
@@ -211,7 +222,6 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 }
-
 
 // ─────────────────────────────────── Section header ──
 
