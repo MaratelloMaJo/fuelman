@@ -132,9 +132,7 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing
-              ? 'edit_charging_title'.tr
-              : 'new_charging_title'.tr,
+          _isEditing ? 'edit_charging_title'.tr : 'new_charging_title'.tr,
         ),
         actions: [
           if (_isEditing)
@@ -209,8 +207,7 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
 
             // ── Дополнительно ──
             _SectionHeader(
-                label: 'charger_power_kw'.tr,
-                icon: Icons.settings_outlined),
+                label: 'charger_power_kw'.tr, icon: Icons.settings_outlined),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -320,16 +317,14 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
         Expanded(
           child: TextFormField(
             controller: _tariffCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
             ],
             decoration: InputDecoration(
               labelText: 'tariff_per_kwh'.tr,
               hintText: 'tariff_hint'.tr,
-              prefixIcon:
-                  Icon(Icons.price_change_outlined, color: cs.tertiary),
+              prefixIcon: Icon(Icons.price_change_outlined, color: cs.tertiary),
             ),
             onChanged: (_) {
               if (!_useTariff) {
@@ -466,9 +461,8 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
       ChargerStandard.gbtDc,
       ChargerStandard.type2, // Некоторые DC-зарядки Type 2
     ];
-    final standards = _chargerType == ChargerType.acSlow
-        ? acStandards
-        : dcStandards;
+    final standards =
+        _chargerType == ChargerType.acSlow ? acStandards : dcStandards;
 
     // Убеждаемся что текущий выбор допустим
     if (!standards.contains(_chargerStandard)) {
@@ -521,8 +515,8 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
   Widget _buildTemperatureField() {
     return TextFormField(
       controller: _temperatureCtrl,
-      keyboardType: const TextInputType.numberWithOptions(
-          decimal: false, signed: true),
+      keyboardType:
+          const TextInputType.numberWithOptions(decimal: false, signed: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*')),
       ],
@@ -578,13 +572,11 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final odometer =
-          double.parse(_odometerCtrl.text.replaceAll(',', '.'));
+      final odometer = double.parse(_odometerCtrl.text.replaceAll(',', '.'));
       final evOdo = _evOdometerCtrl.text.isNotEmpty
           ? double.tryParse(_evOdometerCtrl.text.replaceAll(',', '.'))
           : null;
-      final kwh =
-          double.parse(_kwhCtrl.text.replaceAll(',', '.'));
+      final kwh = double.parse(_kwhCtrl.text.replaceAll(',', '.'));
 
       // Определяем итоговую стоимость
       double totalCost = 0.0;
@@ -605,9 +597,8 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
       final tempC = _temperatureCtrl.text.isNotEmpty
           ? double.tryParse(_temperatureCtrl.text)
           : null;
-      final stationName = _stationCtrl.text.trim().isNotEmpty
-          ? _stationCtrl.text.trim()
-          : null;
+      final stationName =
+          _stationCtrl.text.trim().isNotEmpty ? _stationCtrl.text.trim() : null;
 
       final entry = ChargingEntry(
         id: widget.editEntry?.id,

@@ -14,17 +14,18 @@ class ExpenseCategoryIcon extends StatelessWidget {
   });
 
   static const _data = <String, (IconData, Color)>{
-    'service':    (Icons.build_rounded,           Color(0xFF1E88E5)),
-    'oil_change': (Icons.opacity_rounded,          Color(0xFF00897B)),
-    'wash':       (Icons.local_car_wash_rounded,   Color(0xFF00ACC1)),
-    'tires':      (Icons.tire_repair_rounded,      Color(0xFF7B1FA2)),
-    'tax':        (Icons.account_balance_rounded,  Color(0xFFF4511E)),
-    'parts':      (Icons.settings_rounded,         Color(0xFF6D4C41)),
-    'other':      (Icons.more_horiz_rounded,       Color(0xFF757575)),
+    'service': (Icons.build_rounded, Color(0xFF1E88E5)),
+    'oil_change': (Icons.opacity_rounded, Color(0xFF00897B)),
+    'wash': (Icons.local_car_wash_rounded, Color(0xFF00ACC1)),
+    'tires': (Icons.tire_repair_rounded, Color(0xFF7B1FA2)),
+    'tax': (Icons.account_balance_rounded, Color(0xFFF4511E)),
+    'parts': (Icons.settings_rounded, Color(0xFF6D4C41)),
+    'other': (Icons.more_horiz_rounded, Color(0xFF757575)),
   };
 
   static (IconData, Color) dataFor(String category) {
-    return _data[category] ?? (Icons.more_horiz_rounded, const Color(0xFF757575));
+    return _data[category] ??
+        (Icons.more_horiz_rounded, const Color(0xFF757575));
   }
 
   @override
