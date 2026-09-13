@@ -123,9 +123,19 @@ class FuelEntryController extends GetxController {
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
 
+  final List<Worker> _workers = [];
+
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
       ? Get.find<VehicleController>()
       : null;
+
+  @override
+  void onClose() {
+    for (var w in _workers) {
+      w.dispose();
+    }
+    super.onClose();
+  }
 
   @override
   void onInit() {
@@ -469,9 +479,6 @@ class FuelEntryController extends GetxController {
           await FuelDatabase.instance.updateEntry(entry);
         }
       }
-    }
-    if (toUpdate.isNotEmpty) {
-      await FuelDatabase.instance.updateEntriesBatch(toUpdate);
     }
   }
 
