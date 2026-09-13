@@ -87,8 +87,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         _priceCtrl.text = widget.editEntry!.pricePerLiter!.toStringAsFixed(2);
       }
       if (widget.editEntry!.totalCost != null) {
-        _totalPriceCtrl.text =
-            widget.editEntry!.totalCost!.toStringAsFixed(2);
+        _totalPriceCtrl.text = widget.editEntry!.totalCost!.toStringAsFixed(2);
       }
     } else {
       _volumeUnit = _settingsCtrl.volumeUnit.value;
@@ -188,10 +187,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   /// Обновляет предпросмотр расхода и предупреждение.
   void _updatePreview() {
-    final odometer =
-        double.tryParse(_odometerCtrl.text.replaceAll(',', '.'));
-    final volume =
-        double.tryParse(_volumeCtrl.text.replaceAll(',', '.'));
+    final odometer = double.tryParse(_odometerCtrl.text.replaceAll(',', '.'));
+    final volume = double.tryParse(_volumeCtrl.text.replaceAll(',', '.'));
     final prev = _lastFullOdometer;
 
     if (odometer == null || volume == null || volume <= 0) {
@@ -391,8 +388,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             icon: Icon(icon,
                 color: isBlocker ? cs.error : Colors.orange, size: 36),
             title: Text(title,
-                style:
-                    TextStyle(color: isBlocker ? cs.error : Colors.orange)),
+                style: TextStyle(color: isBlocker ? cs.error : Colors.orange)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,8 +422,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'anomaly_will_be_marked'.tr,
-                    style: TextStyle(
-                        fontSize: 12, color: cs.onSurfaceVariant),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                   ),
                 ],
               ],
@@ -439,8 +434,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               ),
               if (!isBlocker)
                 FilledButton(
-                  style: FilledButton.styleFrom(
-                      backgroundColor: Colors.orange),
+                  style: FilledButton.styleFrom(backgroundColor: Colors.orange),
                   onPressed: () => Navigator.pop(ctx, true),
                   child: Text('save_anyway'.tr),
                 ),
@@ -477,12 +471,17 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         );
       case AnomalyWarning.volumeTooLarge:
         final vehicle = _vehicleCtrl.selectedVehicle.value;
-        final nominal = FuelEntryController.getNominalCapacity(_entryType, vehicle: vehicle);
-        final maxAllowed = FuelEntryController.getMaxAllowedVolume(_entryType, vehicle: vehicle);
-        final unitStr = _entryType == 'charge' ? 'кВт·ч' : (_volumeUnit.isEmpty ? 'л' : _volumeUnit);
+        final nominal = FuelEntryController.getNominalCapacity(_entryType,
+            vehicle: vehicle);
+        final maxAllowed = FuelEntryController.getMaxAllowedVolume(_entryType,
+            vehicle: vehicle);
+        final unitStr = _entryType == 'charge'
+            ? 'кВт·ч'
+            : (_volumeUnit.isEmpty ? 'л' : _volumeUnit);
         String body = 'warn_vol_large_body'.tr;
         if (nominal != null && nominal > 0) {
-          body += '\n\n${'tank_capacity'.tr}: ${nominal.toStringAsFixed(1)} $unitStr (макс. с учетом запаса: ${maxAllowed.toStringAsFixed(1)} $unitStr)';
+          body +=
+              '\n\n${'tank_capacity'.tr}: ${nominal.toStringAsFixed(1)} $unitStr (макс. с учетом запаса: ${maxAllowed.toStringAsFixed(1)} $unitStr)';
         }
         return (
           'warn_vol_large_title'.tr,
@@ -519,308 +518,311 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Form(
-          key: _formKey,
-          child: Obx(() {
-            final vehicle = _vehicleCtrl.selectedVehicle.value;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Карточка выбранного авто ──
-                if (vehicle != null)
-                  _VehicleInfoCard(vehicle: vehicle, cs: cs),
-                const SizedBox(height: 16),
+            key: _formKey,
+            child: Obx(() {
+              final vehicle = _vehicleCtrl.selectedVehicle.value;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Карточка выбранного авто ──
+                  if (vehicle != null)
+                    _VehicleInfoCard(vehicle: vehicle, cs: cs),
+                  const SizedBox(height: 16),
 
-                // ── Переключатель топливо/зарядка ──
-                if (vehicle != null &&
-                    vehicle.canCharge &&
-                    vehicle.canRefuel &&
-                    !vehicle.isSelfChargingHybrid) ...[
-                  _EntryTypePicker(
-                    selected: _entryType,
-                    onChanged: (t) => setState(() {
-                      _entryType = t;
-                      _volumeUnit = t == 'charge'
-                          ? 'kWh'
-                          : _settingsCtrl.volumeUnit.value;
-                      _updatePreview();
+                  // ── Переключатель топливо/зарядка ──
+                  if (vehicle != null &&
+                      vehicle.canCharge &&
+                      vehicle.canRefuel &&
+                      !vehicle.isSelfChargingHybrid) ...[
+                    _EntryTypePicker(
+                      selected: _entryType,
+                      onChanged: (t) => setState(() {
+                        _entryType = t;
+                        _volumeUnit = t == 'charge'
+                            ? 'kWh'
+                            : _settingsCtrl.volumeUnit.value;
+                        _updatePreview();
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // ── Дата ──
+                  Text('date_label'.tr,
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: _pickDate,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.calendar_today_rounded),
+                        suffixIcon: Icon(Icons.arrow_drop_down_rounded),
+                      ),
+                      child: Text(dateFmt.format(_date)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Одометр ──
+                  Text('odometer_label'.tr,
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _odometerCtrl,
+                    focusNode: _odometerFocus,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.speed_rounded),
+                      hintText: _lastRecordedOdometer != null
+                          ? '${'odometer_label'.tr}: ${_lastRecordedOdometer!.toStringAsFixed(0)}'
+                          : '50000',
+                      suffixText: 'odometer_suffix'.tr,
+                      helperText: _lastRecordedOdometer != null
+                          ? '${'prev_odometer_hint'.tr}: ${_lastRecordedOdometer!.toStringAsFixed(0)} км'
+                          : null,
+                      helperStyle:
+                          TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'odometer_required'.tr;
+                      final val = double.tryParse(v.replaceAll(',', '.'));
+                      if (val == null) return 'odometer_invalid'.tr;
+                      final err = FuelEntryController.validateOdometer(
+                        odometer: val,
+                        lastOdometer: _lastRecordedOdometer,
+                      );
+                      if (err != null) return err;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Объём ──
+                  Text(
+                    _entryType == 'charge'
+                        ? 'volume_label_charge'.tr
+                        : 'volume_label_fuel'.tr,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _volumeCtrl,
+                    focusNode: _volumeFocus,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(_entryType == 'charge'
+                          ? Icons.bolt_rounded
+                          : Icons.water_drop_rounded),
+                      hintText: _entryType == 'charge' ? '45.0' : '40.0',
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _volumeUnit,
+                            isDense: true,
+                            items: (_entryType == 'charge'
+                                    ? ['kWh']
+                                    : ['L', 'gal'])
+                                .map((u) =>
+                                    DropdownMenuItem(value: u, child: Text(u)))
+                                .toList(),
+                            onChanged: _entryType == 'charge'
+                                ? null
+                                : (v) {
+                                    if (v != null) {
+                                      setState(() => _volumeUnit = v);
+                                      _updatePreview();
+                                    }
+                                  },
+                          ),
+                        ),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'volume_required'.tr;
+                      final val = double.tryParse(v.replaceAll(',', '.'));
+                      if (val == null || val <= 0) return 'volume_invalid'.tr;
+                      final vehicle = _vehicleCtrl.selectedVehicle.value;
+                      final err = FuelEntryController.validateEntryVolume(
+                        volume: val,
+                        entryType: _entryType,
+                        vehicle: vehicle,
+                      );
+                      if (err != null) return err;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Цена за единицу ──
+                  Text('price_label'.tr,
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _priceCtrl,
+                    focusNode: _priceFocus,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.sell_rounded),
+                      hintText: _entryType == 'charge' ? '15.0' : '60.0',
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _currency,
+                            isDense: true,
+                            items: ['RUB', 'KZT', 'USD', 'EUR']
+                                .map((c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) setState(() => _currency = v);
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return null;
+                      final val = double.tryParse(v.replaceAll(',', '.'));
+                      if (val == null || val <= 0) return 'price_invalid'.tr;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Общая стоимость ──
+                  Text('total_price_label'.tr,
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _totalPriceCtrl,
+                    focusNode: _totalPriceFocus,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.attach_money_rounded),
+                      hintText: '1000.0',
+                      suffixText: _currency,
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return null;
+                      final val = double.tryParse(v.replaceAll(',', '.'));
+                      if (val == null || val <= 0) return 'price_invalid'.tr;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ── Название станции / места зарядки ──
+                  Text('station_name_label'.tr,
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _stationNameCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.local_gas_station_rounded),
+                      hintText: 'station_name_hint'.tr,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── GPS ──
+                  _FuelGpsSection(
+                    latitude: _latitude,
+                    longitude: _longitude,
+                    isGetting: _isGettingLocation,
+                    onGetLocation: _getLocation,
+                    onClear: () => setState(() {
+                      _latitude = null;
+                      _longitude = null;
                     }),
                   ),
                   const SizedBox(height: 16),
+
+                  // ── Полный бак / Полная зарядка ──
+                  Card(
+                    child: SwitchListTile(
+                      value: _isFullTank,
+                      onChanged: (v) => setState(() {
+                        _isFullTank = v;
+                        _updatePreview();
+                      }),
+                      title: Text(_entryType == 'charge'
+                          ? 'full_charge'.tr
+                          : 'full_tank'.tr),
+                      subtitle: Text(
+                        _isFullTank
+                            ? 'full_tank_subtitle'.tr
+                            : 'partial_subtitle'.tr,
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
+                      secondary: Icon(
+                        _isFullTank
+                            ? (_entryType == 'charge'
+                                ? Icons.battery_full_rounded
+                                : Icons.local_gas_station_rounded)
+                            : Icons.battery_4_bar_rounded,
+                        color: _isFullTank ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Карточка предпросмотра расхода ──
+                  _ConsumptionPreviewCard(
+                    previewConsumption: _previewConsumption,
+                    warning: _warning,
+                    entryType: _entryType,
+                    volumeUnit: _volumeUnit,
+                    prevOdometer: _lastFullOdometer,
+                    currentOdometer: double.tryParse(
+                        _odometerCtrl.text.replaceAll(',', '.')),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Кнопка сохранения ──
+                  FilledButton.icon(
+                    onPressed: _isSaving ? null : _save,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_rounded),
+                    label: Text(_isSaving ? 'saving'.tr : 'save_entry'.tr),
+                  ),
+                  const SizedBox(height: 16),
                 ],
-
-                // ── Дата ──
-                Text('date_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.calendar_today_rounded),
-                      suffixIcon: Icon(Icons.arrow_drop_down_rounded),
-                    ),
-                    child: Text(dateFmt.format(_date)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ── Одометр ──
-                Text('odometer_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _odometerCtrl,
-                  focusNode: _odometerFocus,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-                  ],
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.speed_rounded),
-                    hintText: _lastRecordedOdometer != null
-                        ? '${'odometer_label'.tr}: ${_lastRecordedOdometer!.toStringAsFixed(0)}'
-                        : '50000',
-                    suffixText: 'odometer_suffix'.tr,
-                    helperText: _lastRecordedOdometer != null
-                        ? '${'prev_odometer_hint'.tr}: ${_lastRecordedOdometer!.toStringAsFixed(0)} км'
-                        : null,
-                    helperStyle:
-                        TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'odometer_required'.tr;
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null) return 'odometer_invalid'.tr;
-                    final err = FuelEntryController.validateOdometer(
-                      odometer: val,
-                      lastOdometer: _lastRecordedOdometer,
-                    );
-                    if (err != null) return err;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // ── Объём ──
-                Text(
-                  _entryType == 'charge'
-                      ? 'volume_label_charge'.tr
-                      : 'volume_label_fuel'.tr,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _volumeCtrl,
-                  focusNode: _volumeFocus,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-                  ],
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(_entryType == 'charge'
-                        ? Icons.bolt_rounded
-                        : Icons.water_drop_rounded),
-                    hintText: _entryType == 'charge' ? '45.0' : '40.0',
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _volumeUnit,
-                          isDense: true,
-                          items: (_entryType == 'charge'
-                                  ? ['kWh']
-                                  : ['L', 'gal'])
-                              .map((u) =>
-                                  DropdownMenuItem(value: u, child: Text(u)))
-                              .toList(),
-                          onChanged: _entryType == 'charge'
-                              ? null
-                              : (v) {
-                                  if (v != null) {
-                                    setState(() => _volumeUnit = v);
-                                    _updatePreview();
-                                  }
-                                },
-                        ),
-                      ),
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'volume_required'.tr;
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null || val <= 0) return 'volume_invalid'.tr;
-                    final vehicle = _vehicleCtrl.selectedVehicle.value;
-                    final err = FuelEntryController.validateEntryVolume(
-                      volume: val,
-                      entryType: _entryType,
-                      vehicle: vehicle,
-                    );
-                    if (err != null) return err;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // ── Цена за единицу ──
-                Text('price_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _priceCtrl,
-                  focusNode: _priceFocus,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-                  ],
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.sell_rounded),
-                    hintText: _entryType == 'charge' ? '15.0' : '60.0',
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _currency,
-                          isDense: true,
-                          items: ['RUB', 'KZT', 'USD', 'EUR']
-                              .map((c) =>
-                                  DropdownMenuItem(value: c, child: Text(c)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _currency = v);
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return null;
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null || val <= 0) return 'price_invalid'.tr;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // ── Общая стоимость ──
-                Text('total_price_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _totalPriceCtrl,
-                  focusNode: _totalPriceFocus,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-                  ],
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.attach_money_rounded),
-                    hintText: '1000.0',
-                    suffixText: _currency,
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return null;
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null || val <= 0) return 'price_invalid'.tr;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // ── Название станции / места зарядки ──
-                Text('station_name_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _stationNameCtrl,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.local_gas_station_rounded),
-                    hintText: 'station_name_hint'.tr,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ── GPS ──
-                _FuelGpsSection(
-                  latitude: _latitude,
-                  longitude: _longitude,
-                  isGetting: _isGettingLocation,
-                  onGetLocation: _getLocation,
-                  onClear: () => setState(() { _latitude = null; _longitude = null; }),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Полный бак / Полная зарядка ──
-                Card(
-                  child: SwitchListTile(
-                    value: _isFullTank,
-                    onChanged: (v) => setState(() {
-                      _isFullTank = v;
-                      _updatePreview();
-                    }),
-                    title: Text(_entryType == 'charge'
-                        ? 'full_charge'.tr
-                        : 'full_tank'.tr),
-                    subtitle: Text(
-                      _isFullTank
-                          ? 'full_tank_subtitle'.tr
-                          : 'partial_subtitle'.tr,
-                      style: TextStyle(color: cs.onSurfaceVariant),
-                    ),
-                    secondary: Icon(
-                      _isFullTank
-                          ? (_entryType == 'charge'
-                              ? Icons.battery_full_rounded
-                              : Icons.local_gas_station_rounded)
-                          : Icons.battery_4_bar_rounded,
-                      color: _isFullTank ? cs.primary : cs.onSurfaceVariant,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Карточка предпросмотра расхода ──
-                _ConsumptionPreviewCard(
-                  previewConsumption: _previewConsumption,
-                  warning: _warning,
-                  entryType: _entryType,
-                  volumeUnit: _volumeUnit,
-                  prevOdometer: _lastFullOdometer,
-                  currentOdometer:
-                      double.tryParse(_odometerCtrl.text.replaceAll(',', '.')),
-                ),
-
-                const SizedBox(height: 32),
-
-                // ── Кнопка сохранения ──
-                FilledButton.icon(
-                  onPressed: _isSaving ? null : _save,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save_rounded),
-                  label: Text(_isSaving ? 'saving'.tr : 'save_entry'.tr),
-                ),
-                const SizedBox(height: 16),
-              ],
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 // ─────────────────────── Fuel GPS Section ──
@@ -866,12 +868,16 @@ class _FuelGpsSection extends StatelessWidget {
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
-                      final uri = Uri.parse('geo:$latitude,$longitude?q=$latitude,$longitude');
+                      final uri = Uri.parse(
+                          'geo:$latitude,$longitude?q=$latitude,$longitude');
                       if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
                       } else {
-                        final webUri = Uri.parse('https://maps.google.com/?q=$latitude,$longitude');
-                        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                        final webUri = Uri.parse(
+                            'https://maps.google.com/?q=$latitude,$longitude');
+                        await launchUrl(webUri,
+                            mode: LaunchMode.externalApplication);
                       }
                     },
                     child: Text(
@@ -886,7 +892,8 @@ class _FuelGpsSection extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onClear,
-                  icon: Icon(Icons.close_rounded, size: 18, color: cs.onSurfaceVariant),
+                  icon: Icon(Icons.close_rounded,
+                      size: 18, color: cs.onSurfaceVariant),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -897,7 +904,10 @@ class _FuelGpsSection extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: isGetting ? null : onGetLocation,
             icon: isGetting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.my_location_rounded, size: 18),
             label: Text(isGetting ? 'gps_getting'.tr : 'gps_button'.tr),
           ),
@@ -993,8 +1003,7 @@ class _ConsumptionPreviewCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon,
-              size: 20,
-              color: warning != null ? borderColor : cs.primary),
+              size: 20, color: warning != null ? borderColor : cs.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -1022,8 +1031,7 @@ class _ConsumptionPreviewCard extends StatelessWidget {
                 if (distance != null && distance > 0)
                   Text(
                     '${'distance_traveled'.tr}: ${distance.toStringAsFixed(0)} км',
-                    style: TextStyle(
-                        fontSize: 11, color: cs.onSurfaceVariant),
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                   ),
               ],
             ),
@@ -1054,8 +1062,7 @@ class _VehicleInfoCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Icon(_engineIcon(vehicle.engineType),
-                color: cs.onPrimaryContainer),
+            Icon(_engineIcon(vehicle.engineType), color: cs.onPrimaryContainer),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1073,8 +1080,7 @@ class _VehicleInfoCard extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,
-                        color:
-                            cs.onPrimaryContainer.withValues(alpha: 0.75),
+                        color: cs.onPrimaryContainer.withValues(alpha: 0.75),
                       ),
                     ),
                 ],
@@ -1171,9 +1177,8 @@ class _Tab extends StatelessWidget {
                 ? activeColor.withValues(alpha: 0.15)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: isActive
-                ? Border.all(color: activeColor, width: 1.5)
-                : null,
+            border:
+                isActive ? Border.all(color: activeColor, width: 1.5) : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1186,8 +1191,7 @@ class _Tab extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight:
-                      isActive ? FontWeight.w700 : FontWeight.normal,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
                   color: isActive ? activeColor : cs.onSurfaceVariant,
                 ),
               ),

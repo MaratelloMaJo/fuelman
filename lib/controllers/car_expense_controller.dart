@@ -16,14 +16,24 @@ class CarExpenseController extends GetxController {
   final expenses = <CarExpense>[].obs;
   final expenseStats = <String, double>{}.obs;
   final isLoading = false.obs;
+  final _workers = <Worker>[];
 
   final _vehicleCtrl = Get.find<VehicleController>();
 
   @override
   void onInit() {
     super.onInit();
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
+  }
+
+  @override
+  void onClose() {
+    for (var w in _workers) {
+      w.dispose();
+    }
+    _workers.clear();
+    super.onClose();
   }
 
   void _onVehicleChanged() {
@@ -43,20 +53,21 @@ class CarExpenseController extends GetxController {
     try {
       final list = await FuelDatabase.instance.getExpenses(vehicleId);
       expenses.assignAll(list);
-      await _loadStats(vehicleId);
+      await _loadStats(vehicleId, loadedExpenses: list);
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _loadStats(int vehicleId) async {
+  Future<void> _loadStats(int vehicleId, {List<CarExpense>? loadedExpenses}) async {
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
-    final all = await FuelDatabase.instance.getExpenses(vehicleId);
+    final all = loadedExpenses ?? await FuelDatabase.instance.getExpenses(vehicleId);
 
     final Map<String, double> stats = {};
     for (final e in all) {
-      final converted = currencySvc.convert(e.amount, e.currency, settings.currency.value);
+      final converted =
+          currencySvc.convert(e.amount, e.currency, settings.currency.value);
       stats[e.category] = (stats[e.category] ?? 0.0) + converted;
     }
     expenseStats.assignAll(stats);
@@ -95,7 +106,8 @@ class CarExpenseController extends GetxController {
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
     return expenses.fold(0.0, (sum, e) {
-      return sum + currencySvc.convert(e.amount, e.currency, settings.currency.value);
+      return sum +
+          currencySvc.convert(e.amount, e.currency, settings.currency.value);
     });
   }
 
@@ -145,13 +157,20 @@ class CarExpenseController extends GetxController {
 
   String _categoryLabel(String cat) {
     switch (cat) {
-      case 'service': return 'Сервис';
-      case 'oil_change': return 'Замена масла';
-      case 'wash': return 'Мойка';
-      case 'tires': return 'Шины';
-      case 'tax': return 'Налог/страховка';
-      case 'parts': return 'Запчасти';
-      default: return 'Другое';
+      case 'service':
+        return 'Сервис';
+      case 'oil_change':
+        return 'Замена масла';
+      case 'wash':
+        return 'Мойка';
+      case 'tires':
+        return 'Шины';
+      case 'tax':
+        return 'Налог/страховка';
+      case 'parts':
+        return 'Запчасти';
+      default:
+        return 'Другое';
     }
   }
 }

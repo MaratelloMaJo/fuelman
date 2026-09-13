@@ -169,8 +169,7 @@ class Vehicle {
 
   /// Является ли самозаряжающимся гибридом (не pluggable).
   bool get isSelfChargingHybrid =>
-      engineType == 'hybrid' &&
-      (hybridType == 'HEV' || hybridType == 'MHEV');
+      engineType == 'hybrid' && (hybridType == 'HEV' || hybridType == 'MHEV');
 
   /// Имеет ли автомобиль заданную ёмкость АКБ для расчётов КПД зарядки.
   bool get hasBatteryData =>
@@ -267,7 +266,8 @@ class Vehicle {
         bodyType: bodyType ?? this.bodyType,
         engineType: engineType ?? this.engineType,
         hybridType: clearHybridType ? null : (hybridType ?? this.hybridType),
-        fuelSubtype: clearFuelSubtype ? null : (fuelSubtype ?? this.fuelSubtype),
+        fuelSubtype:
+            clearFuelSubtype ? null : (fuelSubtype ?? this.fuelSubtype),
         fuelGoal: clearFuelGoal ? null : (fuelGoal ?? this.fuelGoal),
         evGoal: clearEvGoal ? null : (evGoal ?? this.evGoal),
         reminderDays:
