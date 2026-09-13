@@ -562,19 +562,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                       child: Text(dateFmt.format(_date)),
                     ),
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'odometer_required'.tr;
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null || val < 0) return 'odometer_invalid'.tr;
-                    final err = FuelEntryController.validateOdometer(
-                      odometer: val,
-                      lastOdometer: _lastRecordedOdometer,
-                    );
-                    if (err != null) return err;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // ── Одометр ──
                   Text('odometer_label'.tr,

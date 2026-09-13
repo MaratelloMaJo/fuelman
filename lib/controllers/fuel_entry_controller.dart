@@ -124,8 +124,6 @@ class FuelEntryController extends GetxController {
   final anomalousIds = <int>{}.obs;
   final List<Worker> _workers = [];
 
-  final List<Worker> _workers = [];
-
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
       ? Get.find<VehicleController>()
       : null;
@@ -152,14 +150,6 @@ class FuelEntryController extends GetxController {
       _workers.add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
       _workers.add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
-  }
-
-  @override
-  void onClose() {
-    for (final w in _workers) {
-      w.dispose();
-    }
-    super.onClose();
   }
 
   void _recalcStatsCurrentVehicle() {

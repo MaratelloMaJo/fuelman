@@ -16,8 +16,6 @@ class CarExpenseController extends GetxController {
   final expenses = <CarExpense>[].obs;
   final expenseStats = <String, double>{}.obs;
   final isLoading = false.obs;
-  final _workers = <Worker>[];
-
   final _vehicleCtrl = Get.find<VehicleController>();
   final List<Worker> _workers = [];
 
