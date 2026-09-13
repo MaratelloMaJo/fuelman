@@ -9,7 +9,20 @@ class CurrencyService {
   static const _cacheKey = 'currency_rates_cache';
   static const _timestampKey = 'currency_rates_timestamp';
 
-  Map<String, dynamic>? _rates; // Base: USD
+  static final Uri ratesUri = Uri.parse('https://open.er-api.com/v6/latest/USD');
+
+  http.Client? _client;
+  Map<String, dynamic>? rates; // Base: USD
+
+  /// Sets a custom [http.Client] (e.g. with custom SecurityContext / pinned certificates or for testing).
+  void setClient(http.Client? client) {
+    _client = client;
+  }
+
+  /// Verifies that the endpoint is HTTPS and points to the allowed API host.
+  static bool isSecureEndpoint(Uri uri) {
+    return uri.isScheme('https') && uri.host == 'open.er-api.com';
+  }
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -17,29 +30,45 @@ class CurrencyService {
     final timestamp = prefs.getInt(_timestampKey) ?? 0;
 
     if (cached != null) {
-      _rates = jsonDecode(cached) as Map<String, dynamic>;
+      rates = jsonDecode(cached) as Map<String, dynamic>;
     }
 
     // Refresh if older than 24h
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (_rates == null || now - timestamp > 24 * 60 * 60 * 1000) {
+    if (rates == null || now - timestamp > 24 * 60 * 60 * 1000) {
       await fetchRates();
     }
   }
 
   Future<void> fetchRates() async {
     try {
-      final response = await http
-          .get(Uri.parse('https://open.er-api.com/v6/latest/USD'))
-          .timeout(const Duration(seconds: 5));
+      if (!isSecureEndpoint(ratesUri)) {
+        throw const FormatException('Insecure or untrusted endpoint');
+      }
+
+      final client = _client ?? http.Client();
+      final bool shouldClose = _client == null;
+      http.Response response;
+      try {
+        response = await client
+            .get(ratesUri)
+            .timeout(const Duration(seconds: 5));
+      } finally {
+        if (shouldClose) {
+          client.close();
+        }
+      }
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _rates = data['rates'] as Map<String, dynamic>;
+        if (data is Map<String, dynamic> && data['rates'] is Map) {
+          rates = Map<String, dynamic>.from(data['rates'] as Map);
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_cacheKey, jsonEncode(_rates));
-        await prefs.setInt(
-            _timestampKey, DateTime.now().millisecondsSinceEpoch);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_cacheKey, jsonEncode(rates));
+          await prefs.setInt(
+              _timestampKey, DateTime.now().millisecondsSinceEpoch);
+        }
       }
     } catch (e) {
       // Ignored. Fallback to cached rates or fallback static rates if needed.
@@ -57,7 +86,7 @@ class CurrencyService {
       'KZT': 450.0,
     };
 
-    final ratesMap = _rates ?? fallbackRates;
+    final ratesMap = rates ?? fallbackRates;
 
     final fromRate = (ratesMap[fromCurrency] as num?)?.toDouble() ??
         fallbackRates[fromCurrency]!;

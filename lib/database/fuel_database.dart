@@ -508,27 +508,69 @@ class FuelDatabase {
   // ─────────────────────────────────────────────── Backup ──
 
   Future<void> exportBackup() async {
-    final dbPath = await getDatabasesPath();
-    final path = p.join(dbPath, 'fuelman.db');
-    final file = File(path);
-    if (await file.exists()) {
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path, mimeType: 'application/octet-stream')],
-          subject: 'FuelMan_Backup.db',
-        ),
-      );
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = p.join(dbPath, 'fuelman.db');
+      final file = File(path);
+      if (await file.exists()) {
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path, mimeType: 'application/octet-stream')],
+            subject: 'FuelMan_Backup.db',
+          ),
+        );
+      }
+    } catch (_) {
+      // Ignored: handle file system or sharing errors gracefully
     }
   }
 
-  Future<bool> importBackup() async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-      );
+  /// SQLite header magic string: "SQLite format 3\x00" (16 bytes)
+  static const List<int> sqliteHeaderBytes = [
+    0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66,
+    0x6F, 0x72, 0x6D, 0x61, 0x74, 0x20, 0x33, 0x00,
+  ];
 
-      if (result.isNotEmpty && result.first.path != null) {
-        final backupFile = File(result.first.path!);
+  /// Проверяет, является ли файл валидной базой SQLite.
+  static Future<bool> isValidSqliteFile(File file) async {
+    try {
+      if (!await file.exists()) return false;
+      final length = await file.length();
+      if (length < 16) return false;
+
+      final handle = await file.open(mode: FileMode.read);
+      try {
+        final header = await handle.read(16);
+        if (header.length < 16) return false;
+        for (var i = 0; i < 16; i++) {
+          if (header[i] != sqliteHeaderBytes[i]) return false;
+        }
+        return true;
+      } finally {
+        await handle.close();
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> importBackup({String? pickedFilePath}) async {
+    try {
+      String? filePath = pickedFilePath;
+      if (filePath == null) {
+        final result = await FilePicker.pickFiles(
+          type: FileType.any,
+        );
+        if (result.isNotEmpty && result.first.path != null) {
+          filePath = result.first.path!;
+        }
+      }
+
+      if (filePath != null) {
+        final backupFile = File(filePath);
+        if (!await isValidSqliteFile(backupFile)) {
+          return false;
+        }
 
         await close();
 
