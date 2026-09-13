@@ -122,7 +122,6 @@ class FuelEntryController extends GetxController {
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
-
   final List<Worker> _workers = [];
 
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
@@ -179,7 +178,7 @@ class FuelEntryController extends GetxController {
       final list = await FuelDatabase.instance.getEntries(vehicleId);
       entries.assignAll(list);
       _rebuildAnomalousSet(list);
-      await _loadStats(vehicleId);
+      await _loadStats(vehicleId, preloadedEntries: list);
     } finally {
       isLoading.value = false;
     }
@@ -214,8 +213,8 @@ class FuelEntryController extends GetxController {
 
   // ─────────────────────────────── Stats ──
 
-  Future<void> _loadStats(int vehicleId) async {
-    final all = await FuelDatabase.instance.getEntries(vehicleId);
+  Future<void> _loadStats(int vehicleId, {List<FuelEntry>? preloadedEntries}) async {
+    final all = preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
@@ -309,7 +308,7 @@ class FuelEntryController extends GetxController {
 
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
-      if (distance > 0) {
+      if (distance > 0 && distance.isFinite) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }
@@ -470,17 +469,15 @@ class FuelEntryController extends GetxController {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
     final calculated = computeEntriesWithConsumption(all);
 
-    final toUpdate = <FuelEntry>[];
+    final allMap = {for (final e in all) e.id: e};
+
     for (final entry in calculated) {
       if (entry.id != null) {
-        final original = all.firstWhere((e) => e.id == entry.id);
-        if (original.consumption != entry.consumption) {
-          toUpdate.add(entry);
+        final original = allMap[entry.id];
+        if (original != null && original.consumption != entry.consumption) {
+          await FuelDatabase.instance.updateEntry(entry);
         }
       }
-    }
-    if (toUpdate.isNotEmpty) {
-      await FuelDatabase.instance.updateEntriesBatch(toUpdate);
     }
   }
 
