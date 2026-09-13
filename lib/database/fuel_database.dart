@@ -28,6 +28,11 @@ class FuelDatabase {
 
   static Database? _db;
 
+  // FOR TESTING ONLY
+  static void setMockDatabase(Database? db) {
+    _db = db;
+  }
+
   Future<Database> get database async {
     _db ??= await _initDb();
     return _db!;
