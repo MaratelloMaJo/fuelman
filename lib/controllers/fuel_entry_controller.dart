@@ -122,7 +122,6 @@ class FuelEntryController extends GetxController {
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
-
   final List<Worker> _workers = [];
 
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
@@ -309,7 +308,7 @@ class FuelEntryController extends GetxController {
 
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
-      if (distance > 0) {
+      if (distance > 0 && distance.isFinite) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }

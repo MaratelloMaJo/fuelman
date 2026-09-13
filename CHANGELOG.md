@@ -1,5 +1,12 @@
-# Changelog
 
+## [Unreleased]
+### Security & Hardening
+- **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.
+- **Fix**: Hardened `calculateOverallStats` and `_processIndexedChain` against mathematical edge cases like division-by-zero, `NaN`, and `Infinity` caused by micro-distances or rapid duplicate inputs.
+- **Fix**: Enforced stricter validation in `AddEntryScreen` and `AddChargingScreen` restricting negative odometer inputs.
+- **Test**: Introduced `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping).
+
+# Changelog
 ## [Unreleased]
 - Интеграция BLE/OBD2 телеметрии.
 

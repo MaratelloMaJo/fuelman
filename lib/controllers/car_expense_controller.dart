@@ -16,9 +16,8 @@ class CarExpenseController extends GetxController {
   final expenses = <CarExpense>[].obs;
   final expenseStats = <String, double>{}.obs;
   final isLoading = false.obs;
-  final _workers = <Worker>[];
-
   final _vehicleCtrl = Get.find<VehicleController>();
+  final List<Worker> _workers = [];
 
   @override
   void onInit() {
@@ -29,10 +28,9 @@ class CarExpenseController extends GetxController {
 
   @override
   void onClose() {
-    for (var w in _workers) {
+    for (final w in _workers) {
       w.dispose();
     }
-    _workers.clear();
     super.onClose();
   }
 
