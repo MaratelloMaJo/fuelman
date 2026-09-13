@@ -267,6 +267,20 @@ class FuelDatabase {
     );
   }
 
+  Future<void> updateEntriesBatch(List<FuelEntry> entries) async {
+    final db = await database;
+    final batch = db.batch();
+    for (final entry in entries) {
+      batch.update(
+        'fuel_entries',
+        entry.toMap(),
+        where: 'id = ?',
+        whereArgs: [entry.id],
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
   Future<void> deleteEntry(int id) async {
     final db = await database;
     await db.delete('fuel_entries', where: 'id = ?', whereArgs: [id]);
