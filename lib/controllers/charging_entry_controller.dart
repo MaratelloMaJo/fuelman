@@ -137,6 +137,8 @@ class TimelineMetrics {
 ///   — Детектор деградации/потерь АКБ (Battery Health Ratio)
 ///   — Защита от деления на ноль и аномальных скачков одометра
 class ChargingEntryController extends GetxController {
+  final List<Worker> _workers = [];
+
   /// Реактивный список сессий зарядки для текущего автомобиля.
   final entries = <ChargingEntry>[].obs;
 
@@ -157,7 +159,7 @@ class ChargingEntryController extends GetxController {
   void onInit() {
     super.onInit();
     // Перезагружаем данные при смене активного автомобиля.
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
@@ -495,6 +497,16 @@ class ChargingEntryController extends GetxController {
     final totalKwh = totalKwhCharged;
     if (totalKwh <= 0) return 0.0;
     return totalChargingCost / totalKwh;
+  }
+
+  /// Освобождает ресурсы и отменяет подписки на изменения состояния (Workers).
+  /// Предотвращает утечки памяти при пересоздании контроллера.
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    super.onClose();
   }
 }
 

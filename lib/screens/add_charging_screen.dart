@@ -567,6 +567,11 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
   // ─────────────────────────── Actions ──
 
   Future<void> _save() async {
+    if (_isSaving) return;
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('error'.tr, 'Дата не может быть в будущем');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     final vehicle = _vehicleCtrl.selectedVehicle.value;
@@ -579,12 +584,12 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
 
     try {
       final odometer =
-          double.parse(_odometerCtrl.text.replaceAll(',', '.'));
+          double.tryParse(_odometerCtrl.text.replaceAll(',', '.')) ?? 0.0;
       final evOdo = _evOdometerCtrl.text.isNotEmpty
           ? double.tryParse(_evOdometerCtrl.text.replaceAll(',', '.'))
           : null;
       final kwh =
-          double.parse(_kwhCtrl.text.replaceAll(',', '.'));
+          double.tryParse(_kwhCtrl.text.replaceAll(',', '.')) ?? 0.0;
 
       // Определяем итоговую стоимость
       double totalCost = 0.0;

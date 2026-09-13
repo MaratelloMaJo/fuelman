@@ -13,6 +13,8 @@ import '../services/currency_service.dart';
 
 /// Контроллер расходов на уход за автомобилем.
 class CarExpenseController extends GetxController {
+  final List<Worker> _workers = [];
+
   final expenses = <CarExpense>[].obs;
   final expenseStats = <String, double>{}.obs;
   final isLoading = false.obs;
@@ -22,7 +24,7 @@ class CarExpenseController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
@@ -153,5 +155,15 @@ class CarExpenseController extends GetxController {
       case 'parts': return 'Запчасти';
       default: return 'Другое';
     }
+  }
+
+  /// Освобождает ресурсы и отменяет подписки на изменения состояния (Workers).
+  /// Предотвращает утечки памяти при пересоздании контроллера.
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    super.onClose();
   }
 }

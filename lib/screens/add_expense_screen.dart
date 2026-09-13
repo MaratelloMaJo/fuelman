@@ -111,6 +111,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('error'.tr, 'Дата не может быть в будущем');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     final vehicle = _vehicleCtrl.selectedVehicle.value;
     if (vehicle == null) return;
@@ -123,7 +128,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       date: _date,
       category: _category,
       title: _titleCtrl.text.trim(),
-      amount: double.parse(_amountCtrl.text.replaceAll(',', '.')),
+      amount: double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0,
       currency: _currency,
       odometer: _odometerCtrl.text.isEmpty
           ? null

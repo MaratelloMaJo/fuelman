@@ -116,6 +116,8 @@ class PhevOverallStats {
 ///   — Корректность пересчета цен и затрат
 ///   — Комбинированная сводная статистика (TCO, L/100km, kWh/100km)
 class FuelEntryController extends GetxController {
+  final List<Worker> _workers = [];
+
   final entries = <FuelEntry>[].obs;
   final stats = <String, double?>{}.obs;
   final isLoading = false.obs;
@@ -131,14 +133,14 @@ class FuelEntryController extends GetxController {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
-      ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+      _workers.add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
+      _workers.add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
   }
 
@@ -946,6 +948,16 @@ class FuelEntryController extends GetxController {
     }
     if (lastFullIdx == -1) return filtered;
     return filtered.sublist(lastFullIdx + 1);
+  }
+
+  /// Освобождает ресурсы и отменяет подписки на изменения состояния (Workers).
+  /// Предотвращает утечки памяти при пересоздании контроллера.
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    super.onClose();
   }
 }
 

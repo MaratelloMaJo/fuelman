@@ -518,6 +518,9 @@ class FuelDatabase {
         final dbPath = await getDatabasesPath();
         final path = p.join(dbPath, 'fuelman.db');
 
+                final isDbValid = await _validateBackupDb(backupFile.path);
+        if (!isDbValid) return false;
+
         await backupFile.copy(path);
 
         _db = await _initDb();
@@ -528,4 +531,18 @@ class FuelDatabase {
     }
     return false;
   }
+
+  /// Проверяет, что файл является корректной SQLite БД,
+  /// открывая его в режиме readOnly и делая простой запрос.
+  Future<bool> _validateBackupDb(String filePath) async {
+    try {
+      final testDb = await openDatabase(filePath, readOnly: true);
+      await testDb.rawQuery('SELECT 1 FROM sqlite_master');
+      await testDb.close();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
 }
