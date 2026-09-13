@@ -567,11 +567,17 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
   // ─────────────────────────── Actions ──
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final vehicle = _vehicleCtrl.selectedVehicle.value;
     if (vehicle == null || vehicle.id == null) {
       Get.snackbar('no_vehicle'.tr, 'select_vehicle_hint'.tr);
+      return;
+    }
+
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('Ошибка', 'Нельзя добавлять записи в будущем', snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
