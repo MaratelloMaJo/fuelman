@@ -258,8 +258,7 @@ class ChargingEntry {
         vehicleId: vehicleId ?? this.vehicleId,
         date: date ?? this.date,
         odometer: odometer ?? this.odometer,
-        evOdometer:
-            clearEvOdometer ? null : (evOdometer ?? this.evOdometer),
+        evOdometer: clearEvOdometer ? null : (evOdometer ?? this.evOdometer),
         kwhAdded: kwhAdded ?? this.kwhAdded,
         startSocPercent:
             clearStartSoc ? null : (startSocPercent ?? this.startSocPercent),

@@ -56,7 +56,8 @@ class CarExpenseController extends GetxController {
 
     final Map<String, double> stats = {};
     for (final e in all) {
-      final converted = currencySvc.convert(e.amount, e.currency, settings.currency.value);
+      final converted =
+          currencySvc.convert(e.amount, e.currency, settings.currency.value);
       stats[e.category] = (stats[e.category] ?? 0.0) + converted;
     }
     expenseStats.assignAll(stats);
@@ -95,7 +96,8 @@ class CarExpenseController extends GetxController {
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
     return expenses.fold(0.0, (sum, e) {
-      return sum + currencySvc.convert(e.amount, e.currency, settings.currency.value);
+      return sum +
+          currencySvc.convert(e.amount, e.currency, settings.currency.value);
     });
   }
 
@@ -145,13 +147,20 @@ class CarExpenseController extends GetxController {
 
   String _categoryLabel(String cat) {
     switch (cat) {
-      case 'service': return 'Сервис';
-      case 'oil_change': return 'Замена масла';
-      case 'wash': return 'Мойка';
-      case 'tires': return 'Шины';
-      case 'tax': return 'Налог/страховка';
-      case 'parts': return 'Запчасти';
-      default: return 'Другое';
+      case 'service':
+        return 'Сервис';
+      case 'oil_change':
+        return 'Замена масла';
+      case 'wash':
+        return 'Мойка';
+      case 'tires':
+        return 'Шины';
+      case 'tax':
+        return 'Налог/страховка';
+      case 'parts':
+        return 'Запчасти';
+      default:
+        return 'Другое';
     }
   }
 }
