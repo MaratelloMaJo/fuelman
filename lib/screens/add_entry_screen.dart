@@ -282,9 +282,15 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   // ─────────────────────────────────── Save ──
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
     final vehicle = _vehicleCtrl.selectedVehicle.value;
     if (vehicle == null) return;
+
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('Ошибка', 'Нельзя добавлять записи в будущем', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
 
     // Если есть аномалия — спрашиваем пользователя
     if (_warning != null) {
