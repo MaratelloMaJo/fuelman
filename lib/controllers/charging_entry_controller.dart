@@ -158,7 +158,8 @@ class ChargingEntryController extends GetxController {
   void onInit() {
     super.onInit();
     // Перезагружаем данные при смене активного автомобиля.
-    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
+    final w = ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(w);
     _onVehicleChanged();
   }
 
