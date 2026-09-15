@@ -10,7 +10,8 @@ class CurrencyService {
   static const _cacheKey = 'currency_rates_cache';
   static const _timestampKey = 'currency_rates_timestamp';
 
-  static final Uri ratesUri = Uri.parse('https://open.er-api.com/v6/latest/USD');
+  static final Uri ratesUri =
+      Uri.parse('https://open.er-api.com/v6/latest/USD');
 
   http.Client? _client;
   Map<String, dynamic>? rates; // Base: USD
@@ -51,9 +52,8 @@ class CurrencyService {
       final bool shouldClose = _client == null;
       http.Response response;
       try {
-        response = await client
-            .get(ratesUri)
-            .timeout(const Duration(seconds: 5));
+        response =
+            await client.get(ratesUri).timeout(const Duration(seconds: 5));
       } finally {
         if (shouldClose) {
           client.close();
@@ -71,9 +71,13 @@ class CurrencyService {
               _timestampKey, DateTime.now().millisecondsSinceEpoch);
         }
       }
-    } catch (e, stack) {
-      developer.log('Ошибка при загрузке курсов валют', error: e, stackTrace: stack, name: 'CurrencyService');
-      // Ignored. Fallback to cached rates or fallback static rates if needed.
+    } catch (e, stackTrace) {
+      developer.log(
+        'Failed to fetch currency rates. Falling back to cached or static rates.',
+        error: e,
+        stackTrace: stackTrace,
+        name: 'CurrencyService',
+      );
     }
   }
 
