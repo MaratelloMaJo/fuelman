@@ -122,33 +122,27 @@ class FuelEntryController extends GetxController {
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
-  final List<Worker> _workers = [];
+
 
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
       ? Get.find<VehicleController>()
       : null;
 
-  @override
-  void onClose() {
-    for (var w in _workers) {
-      w.dispose();
-    }
-    super.onClose();
-  }
+
 
   @override
   void onInit() {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
+      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      _workers.add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
-      _workers.add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
+      ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
+      ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
     }
   }
 
