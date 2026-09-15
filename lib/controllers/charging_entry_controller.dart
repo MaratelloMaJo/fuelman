@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:get/get.dart';
 
 import '../database/fuel_database.dart';
@@ -251,7 +252,8 @@ class ChargingEntryController extends GetxController {
           : (Get.find<dynamic>(tag: 'FuelEntryController').entries
                   as List<FuelEntry>?) ??
               await FuelDatabase.instance.getEntries(vehicleId);
-    } catch (_) {
+    } catch (e, stack) {
+      developer.log('Ошибка при получении записей из FuelEntryController', error: e, stackTrace: stack, name: 'ChargingEntryController');
       fuelEntries = await FuelDatabase.instance.getEntries(vehicleId);
     }
 
