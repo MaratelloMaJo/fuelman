@@ -141,8 +141,10 @@ class FuelEntryController extends GetxController {
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
-      ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+      _workers
+          .add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
+      _workers
+          .add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
   }
 
@@ -207,8 +209,10 @@ class FuelEntryController extends GetxController {
 
   // ─────────────────────────────── Stats ──
 
-  Future<void> _loadStats(int vehicleId, {List<FuelEntry>? preloadedEntries}) async {
-    final all = preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
+  Future<void> _loadStats(int vehicleId,
+      {List<FuelEntry>? preloadedEntries}) async {
+    final all =
+        preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
@@ -465,13 +469,18 @@ class FuelEntryController extends GetxController {
 
     final allMap = {for (final e in all) e.id: e};
 
+    final entriesToUpdate = <FuelEntry>[];
     for (final entry in calculated) {
       if (entry.id != null) {
         final original = allMap[entry.id];
         if (original != null && original.consumption != entry.consumption) {
-          await FuelDatabase.instance.updateEntry(entry);
+          entriesToUpdate.add(entry);
         }
       }
+    }
+
+    if (entriesToUpdate.isNotEmpty) {
+      await FuelDatabase.instance.updateEntriesBatch(entriesToUpdate);
     }
   }
 
