@@ -25,7 +25,8 @@ void main() {
   });
 
   group('LocationService.getCurrentLocation', () {
-    test('returns coordinates when GPS enabled and permission is granted', () async {
+    test('returns coordinates when GPS enabled and permission is granted',
+        () async {
       when(() => mockPlatform.isLocationServiceEnabled())
           .thenAnswer((_) async => true);
 
@@ -79,7 +80,8 @@ void main() {
       verifyNever(() => mockPlatform.requestPermission());
     });
 
-    test('requests permission when denied, returns coordinates if granted', () async {
+    test('requests permission when denied, returns coordinates if granted',
+        () async {
       when(() => mockPlatform.isLocationServiceEnabled())
           .thenAnswer((_) async => true);
 
@@ -129,7 +131,21 @@ void main() {
       expect(result, isNull);
     });
 
-    test('catch block returns null on exception during getCurrentPosition', () async {
+    test('catch block returns null on exception during checkPermission',
+        () async {
+      when(() => mockPlatform.isLocationServiceEnabled())
+          .thenAnswer((_) async => true);
+
+      when(() => mockPlatform.checkPermission())
+          .thenThrow(Exception('Check permission failure'));
+
+      final result = await LocationService.instance.getCurrentLocation();
+
+      expect(result, isNull);
+    });
+
+    test('catch block returns null on exception during getCurrentPosition',
+        () async {
       when(() => mockPlatform.isLocationServiceEnabled())
           .thenAnswer((_) async => true);
 
@@ -139,6 +155,17 @@ void main() {
       when(() => mockPlatform.getCurrentPosition(
             locationSettings: any(named: 'locationSettings'),
           )).thenThrow(Exception('Location hardware failure'));
+
+      final result = await LocationService.instance.getCurrentLocation();
+
+      expect(result, isNull);
+    });
+
+    test(
+        'catch block returns null on exception during isLocationServiceEnabled',
+        () async {
+      when(() => mockPlatform.isLocationServiceEnabled())
+          .thenThrow(Exception('Service enabled check failure'));
 
       final result = await LocationService.instance.getCurrentLocation();
 

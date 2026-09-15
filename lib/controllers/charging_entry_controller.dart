@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:get/get.dart';
 
 import '../database/fuel_database.dart';
@@ -152,23 +153,17 @@ class ChargingEntryController extends GetxController {
   final timeline = <TimelineItem>[].obs;
 
   final _vehicleCtrl = Get.find<VehicleController>();
-  final List<Worker> _workers = [];
+
 
   @override
   void onInit() {
     super.onInit();
     // Перезагружаем данные при смене активного автомобиля.
-    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
+    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
     _onVehicleChanged();
   }
 
-  @override
-  void onClose() {
-    for (final w in _workers) {
-      w.dispose();
-    }
-    super.onClose();
-  }
+
 
   void _onVehicleChanged() {
     final v = _vehicleCtrl.selectedVehicle.value;
@@ -251,7 +246,8 @@ class ChargingEntryController extends GetxController {
           : (Get.find<dynamic>(tag: 'FuelEntryController').entries
                   as List<FuelEntry>?) ??
               await FuelDatabase.instance.getEntries(vehicleId);
-    } catch (_) {
+    } catch (e, stack) {
+      developer.log('Ошибка при получении записей из FuelEntryController', error: e, stackTrace: stack, name: 'ChargingEntryController');
       fuelEntries = await FuelDatabase.instance.getEntries(vehicleId);
     }
 

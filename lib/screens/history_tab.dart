@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -158,7 +159,8 @@ class _HistoryTabState extends State<HistoryTab>
                   } else if (val == 'export_expenses') {
                     await _expenseCtrl.exportToCsv(vehicle.id!, vehicle.name);
                   }
-                } catch (e) {
+                } catch (e, stack) {
+                  developer.log('Ошибка при экспорте', error: e, stackTrace: stack, name: 'HistoryTab');
                   Get.snackbar(
                     'Ошибка',
                     e.toString(),
