@@ -22,7 +22,8 @@ class CarExpenseController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    final w = ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(w);
     _onVehicleChanged();
   }
 

@@ -135,16 +135,17 @@ class FuelEntryController extends GetxController {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      final w = ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(w);
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      _workers
-          .add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
-      _workers
-          .add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
+      final w1 = ever(settings.currency, (_) => _recalcStatsCurrentVehicle());
+      final w2 = ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle());
+      _workers.add(w1);
+      _workers.add(w2);
     }
   }
 
