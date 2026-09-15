@@ -17,7 +17,7 @@ class CarExpenseController extends GetxController {
   final expenseStats = <String, double>{}.obs;
   final isLoading = false.obs;
   final _vehicleCtrl = Get.find<VehicleController>();
-  final List<Worker> _workers = [];
+
 
   @override
   void onInit() {
@@ -27,13 +27,7 @@ class CarExpenseController extends GetxController {
     _onVehicleChanged();
   }
 
-  @override
-  void onClose() {
-    for (final w in _workers) {
-      w.dispose();
-    }
-    super.onClose();
-  }
+
 
   void _onVehicleChanged() {
     final v = _vehicleCtrl.selectedVehicle.value;

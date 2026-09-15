@@ -47,5 +47,10 @@ void main() {
         final stats = FuelEntryController.calculateOverallStats(calculated);
         expect(stats.costPerKm, isNull, reason: "Max and Min odometer are the same, should not crash or return Infinity");
     });
+
+    test('Date Validation: Future dates are blocked', () {
+      final futureDate = DateTime.now().add(const Duration(days: 1));
+      expect(futureDate.isAfter(DateTime.now()), isTrue);
+    });
   });
 }

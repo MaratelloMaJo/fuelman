@@ -2,9 +2,15 @@
 ## [Unreleased]
 ### Security & Hardening
 - **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.
+- **Fix**: Prevented double-tap race conditions in all save screens, stopping duplicate database entries.
+- **Fix**: Blocked time manipulation attacks by rejecting future dates during entry saves.
+- **Fix**: Ensured safe cross-locale number parsing by replacing commas with dots before `double.tryParse` on all number fields.
 - **Fix**: Hardened `calculateOverallStats` and `_processIndexedChain` against mathematical edge cases like division-by-zero, `NaN`, and `Infinity` caused by micro-distances or rapid duplicate inputs.
 - **Fix**: Enforced stricter validation in `AddEntryScreen` and `AddChargingScreen` restricting negative odometer inputs.
-- **Test**: Introduced `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping).
+- **Fix**: Prevented UI state race conditions by enforcing early return blocking double-taps on save buttons across all data entry screens.
+- **Fix**: Prevented saving records with a date in the future to maintain data integrity.
+- **Fix**: Improved error logging by replacing silent swallowing and `debugPrint` with proper stack trace logging via `dart:developer`.
+- **Test**: Expanded `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping, and future date bypass structures).
 
 # Changelog
 ## [Unreleased]

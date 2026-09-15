@@ -122,19 +122,13 @@ class FuelEntryController extends GetxController {
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
-  final List<Worker> _workers = [];
+
 
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
       ? Get.find<VehicleController>()
       : null;
 
-  @override
-  void onClose() {
-    for (var w in _workers) {
-      w.dispose();
-    }
-    super.onClose();
-  }
+
 
   @override
   void onInit() {
@@ -216,8 +210,10 @@ class FuelEntryController extends GetxController {
 
   // ─────────────────────────────── Stats ──
 
-  Future<void> _loadStats(int vehicleId, {List<FuelEntry>? preloadedEntries}) async {
-    final all = preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
+  Future<void> _loadStats(int vehicleId,
+      {List<FuelEntry>? preloadedEntries}) async {
+    final all =
+        preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
@@ -474,13 +470,18 @@ class FuelEntryController extends GetxController {
 
     final allMap = {for (final e in all) e.id: e};
 
+    final entriesToUpdate = <FuelEntry>[];
     for (final entry in calculated) {
       if (entry.id != null) {
         final original = allMap[entry.id];
         if (original != null && original.consumption != entry.consumption) {
-          await FuelDatabase.instance.updateEntry(entry);
+          entriesToUpdate.add(entry);
         }
       }
+    }
+
+    if (entriesToUpdate.isNotEmpty) {
+      await FuelDatabase.instance.updateEntriesBatch(entriesToUpdate);
     }
   }
 
