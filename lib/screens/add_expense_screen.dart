@@ -116,9 +116,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
     final vehicle = _vehicleCtrl.selectedVehicle.value;
     if (vehicle == null) return;
+
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('Ошибка', 'Дата не может быть в будущем',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
 
     setState(() => _isSaving = true);
 

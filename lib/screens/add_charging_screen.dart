@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -561,11 +562,18 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
   // ─────────────────────────── Actions ──
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final vehicle = _vehicleCtrl.selectedVehicle.value;
     if (vehicle == null || vehicle.id == null) {
       Get.snackbar('no_vehicle'.tr, 'select_vehicle_hint'.tr);
+      return;
+    }
+
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('Ошибка', 'Дата не может быть в будущем',
+          snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
@@ -634,7 +642,8 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
           snackPosition: SnackPosition.BOTTOM,
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      developer.log('Ошибка при сохранении сессии зарядки', error: e, stackTrace: stack, name: 'AddChargingScreen');
       Get.snackbar('Ошибка', e.toString());
     } finally {
       if (mounted) setState(() => _isSaving = false);
