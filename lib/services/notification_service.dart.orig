@@ -20,7 +20,7 @@ class NotificationService {
     _instance = mock ?? NotificationService._();
   }
 
-  final FlutterLocalNotificationsPlugin _plugin;
+  late final FlutterLocalNotificationsPlugin _plugin;
 
   bool _initialized = false;
 
