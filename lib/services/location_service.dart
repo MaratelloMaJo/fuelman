@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:geolocator/geolocator.dart';
 
 /// Сервис для получения текущего местоположения через GPS.
@@ -31,7 +32,8 @@ class LocationService {
       );
 
       return (latitude: position.latitude, longitude: position.longitude);
-    } catch (_) {
+    } catch (e, stack) {
+      developer.log('Ошибка при получении геолокации', error: e, stackTrace: stack, name: 'LocationService');
       return null;
     }
   }

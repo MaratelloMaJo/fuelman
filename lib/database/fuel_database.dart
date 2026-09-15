@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
@@ -520,7 +521,8 @@ class FuelDatabase {
           ),
         );
       }
-    } catch (_) {
+    } catch (e, stack) {
+      developer.log('Ошибка при экспорте бэкапа', error: e, stackTrace: stack, name: 'FuelDatabase');
       // Ignored: handle file system or sharing errors gracefully
     }
   }
@@ -549,7 +551,8 @@ class FuelDatabase {
       } finally {
         await handle.close();
       }
-    } catch (_) {
+    } catch (e, stack) {
+      developer.log('Ошибка при валидации SQLite файла', error: e, stackTrace: stack, name: 'FuelDatabase');
       return false;
     }
   }
@@ -582,8 +585,8 @@ class FuelDatabase {
         _db = await _initDb();
         return true;
       }
-    } catch (_) {
-      // ignore
+    } catch (e, stack) {
+      developer.log('Ошибка при импорте бэкапа', error: e, stackTrace: stack, name: 'FuelDatabase');
     }
     return false;
   }

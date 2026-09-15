@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -70,7 +71,8 @@ class CurrencyService {
               _timestampKey, DateTime.now().millisecondsSinceEpoch);
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      developer.log('Ошибка при загрузке курсов валют', error: e, stackTrace: stack, name: 'CurrencyService');
       // Ignored. Fallback to cached rates or fallback static rates if needed.
     }
   }
