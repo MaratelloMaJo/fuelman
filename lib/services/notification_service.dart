@@ -9,18 +9,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 /// Уведомления НЕ планируются заранее — проверка происходит при каждом
 /// открытии приложения, что корректно работает для непостоянного режима езды.
 class NotificationService {
-  NotificationService({FlutterLocalNotificationsPlugin? plugin}) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
-  NotificationService._({FlutterLocalNotificationsPlugin? plugin}) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  NotificationService._();
+  static final NotificationService instance = NotificationService._();
 
-  static NotificationService _instance = NotificationService._();
-  static NotificationService get instance => _instance;
-
-  // FOR TESTING ONLY
-  static void setMockInstance(NotificationService? mock) {
-    _instance = mock ?? NotificationService._();
-  }
-
-  final FlutterLocalNotificationsPlugin _plugin;
+  final _plugin = FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
 
@@ -39,8 +31,7 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      settings: const InitializationSettings(
-          android: androidSettings, iOS: iosSettings),
+      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
     _initialized = true;
   }
@@ -49,15 +40,17 @@ class NotificationService {
   /// Возвращает true если разрешение получено.
   Future<bool> requestPermission() async {
     // Android 13+
-    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidImpl = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
     if (androidImpl != null) {
       return await androidImpl.requestNotificationsPermission() ?? false;
     }
 
     // iOS
-    final iosImpl = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final iosImpl = _plugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
     if (iosImpl != null) {
       return await iosImpl.requestPermissions(
             alert: true,

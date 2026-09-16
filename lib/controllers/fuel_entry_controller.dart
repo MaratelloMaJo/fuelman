@@ -116,6 +116,8 @@ class PhevOverallStats {
 ///   — Корректность пересчета цен и затрат
 ///   — Комбинированная сводная статистика (TCO, L/100km, kWh/100km)
 class FuelEntryController extends GetxController {
+  final List<Worker> _workers = [];
+
   final entries = <FuelEntry>[].obs;
   final stats = <String, double?>{}.obs;
   final isLoading = false.obs;
@@ -123,28 +125,22 @@ class FuelEntryController extends GetxController {
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
 
-
-  VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
-      ? Get.find<VehicleController>()
-      : null;
-
-
+  VehicleController? get _vehicleCtrl =>
+      Get.isRegistered<VehicleController>() ? Get.find<VehicleController>() : null;
 
   @override
   void onInit() {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
     if (Get.isRegistered<SettingsController>()) {
       final settings = Get.find<SettingsController>();
-      _workers
-          .add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
-      _workers
-          .add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
+      _workers.add(ever(settings.currency, (_) => _recalcStatsCurrentVehicle()));
+      _workers.add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
   }
 
@@ -174,7 +170,7 @@ class FuelEntryController extends GetxController {
       final list = await FuelDatabase.instance.getEntries(vehicleId);
       entries.assignAll(list);
       _rebuildAnomalousSet(list);
-      await _loadStats(vehicleId, preloadedEntries: list);
+      await _loadStats(vehicleId);
     } finally {
       isLoading.value = false;
     }
@@ -209,10 +205,8 @@ class FuelEntryController extends GetxController {
 
   // ─────────────────────────────── Stats ──
 
-  Future<void> _loadStats(int vehicleId,
-      {List<FuelEntry>? preloadedEntries}) async {
-    final all =
-        preloadedEntries ?? await FuelDatabase.instance.getEntries(vehicleId);
+  Future<void> _loadStats(int vehicleId) async {
+    final all = await FuelDatabase.instance.getEntries(vehicleId);
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
 
@@ -306,7 +300,7 @@ class FuelEntryController extends GetxController {
 
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
-      if (distance > 0 && distance.isFinite) {
+      if (distance > 0) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }
@@ -343,28 +337,16 @@ class FuelEntryController extends GetxController {
     CurrencyService? currencySvc,
     String targetCurrency = 'RUB',
   }) {
-    if (entries.length < 2) return null;
-    final cSvc = currencySvc ?? CurrencyService.instance;
-
-    double totalCost = 0.0;
-    double minOdo = double.infinity;
-    double maxOdo = 0.0;
-
-    for (final e in entries) {
-      if (e.odometer < minOdo) minOdo = e.odometer;
-      if (e.odometer > maxOdo) maxOdo = e.odometer;
-      final cost = e.totalCost ?? 0.0;
-      totalCost += cSvc.convert(cost, e.currency, targetCurrency);
-    }
-
-    final distance = maxOdo - minOdo;
-    if (distance <= 0) return null;
-    return totalCost / distance;
+    return calculateOverallStats(
+      entries,
+      currencySvc: currencySvc,
+      targetCurrency: targetCurrency,
+    ).costPerKm;
   }
 
   Future<List<Map<String, dynamic>>> getMonthlyStats(int vehicleId) async {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
-    final settings = Get.find<SettingsController>();
+    final settings = Get.isRegistered<SettingsController>() ? Get.find<SettingsController>() : null;
     final currencySvc = CurrencyService.instance;
 
     final Map<String, _MonthStat> map = {};
@@ -379,8 +361,11 @@ class FuelEntryController extends GetxController {
       final stat = map.putIfAbsent(month, () => _MonthStat(month));
 
       if (e.entryType == 'fuel') {
-        double vol = settings.convertVolume(
-            e.volume, e.volumeUnit, settings.volumeUnit.value);
+        double vol = e.volume;
+        if (settings != null) {
+          vol = settings.convertVolume(
+              e.volume, e.volumeUnit, settings.volumeUnit.value);
+        }
         stat.totalVolume += vol;
       } else if (e.entryType == 'charge') {
         stat.totalEvVolume += e.volume;
@@ -389,7 +374,7 @@ class FuelEntryController extends GetxController {
       if (e.totalCost != null) {
         double cost = e.totalCost!;
         double convertedCost =
-            currencySvc.convert(cost, e.currency, settings.currency.value);
+            currencySvc.convert(cost, e.currency, settings?.currency.value ?? 'RUB');
         stat.totalCost += convertedCost;
       }
 
@@ -397,8 +382,11 @@ class FuelEntryController extends GetxController {
         final isAnomaly = isAnomalousValue(e.consumption!, e.entryType);
         if (!isAnomaly) {
           if (e.entryType == 'fuel') {
-            double cons = settings.convertVolume(
-                e.consumption!, e.volumeUnit, settings.volumeUnit.value);
+            double cons = e.consumption!;
+            if (settings != null) {
+              cons = settings.convertVolume(
+                  e.consumption!, e.volumeUnit, settings.volumeUnit.value);
+            }
             stat.sumConsumption += cons;
             stat.calcEntries++;
           } else if (e.entryType == 'charge') {
@@ -412,19 +400,16 @@ class FuelEntryController extends GetxController {
     final list = map.values.toList()
       ..sort((a, b) => a.month.compareTo(b.month));
 
-    return list
-        .map((s) => {
-              'month': s.month,
-              'avg_consumption':
-                  s.calcEntries > 0 ? s.sumConsumption / s.calcEntries : null,
-              'avg_ev_consumption': s.calcEvEntries > 0
-                  ? s.sumEvConsumption / s.calcEvEntries
-                  : null,
-              'total_volume': s.totalVolume,
-              'total_ev_volume': s.totalEvVolume,
-              'total_cost': s.totalCost,
-            })
-        .toList();
+    return list.map((s) => {
+          'month': s.month,
+          'avg_consumption':
+              s.calcEntries > 0 ? s.sumConsumption / s.calcEntries : null,
+          'avg_ev_consumption':
+              s.calcEvEntries > 0 ? s.sumEvConsumption / s.calcEvEntries : null,
+          'total_volume': s.totalVolume,
+          'total_ev_volume': s.totalEvVolume,
+          'total_cost': s.totalCost,
+        }).toList();
   }
 
   // ───────────────────────────────────────── Add / Update / Delete ──
@@ -467,20 +452,13 @@ class FuelEntryController extends GetxController {
     final all = await FuelDatabase.instance.getEntries(vehicleId);
     final calculated = computeEntriesWithConsumption(all);
 
-    final allMap = {for (final e in all) e.id: e};
-
-    final entriesToUpdate = <FuelEntry>[];
     for (final entry in calculated) {
       if (entry.id != null) {
-        final original = allMap[entry.id];
-        if (original != null && original.consumption != entry.consumption) {
-          entriesToUpdate.add(entry);
+        final original = all.firstWhere((e) => e.id == entry.id);
+        if (original.consumption != entry.consumption) {
+          await FuelDatabase.instance.updateEntry(entry);
         }
       }
-    }
-
-    if (entriesToUpdate.isNotEmpty) {
-      await FuelDatabase.instance.updateEntriesBatch(entriesToUpdate);
     }
   }
 
@@ -497,8 +475,7 @@ class FuelEntryController extends GetxController {
   ///   4. Zero & Micro-delta guard: если deltaDistance <= 0 или deltaDistance < 15 км —
   ///      consumption = null (защита от деления на 0 и нереальных цифр).
   ///   5. Буфер накопления сбрасывается после каждой полной заправки.
-  static List<FuelEntry> computeEntriesWithConsumption(
-      List<FuelEntry> entries) {
+  static List<FuelEntry> computeEntriesWithConsumption(List<FuelEntry> entries) {
     if (entries.isEmpty) return [];
 
     final consumptions = List<double?>.filled(entries.length, null);
@@ -510,8 +487,9 @@ class FuelEntryController extends GetxController {
     }
 
     for (final vehicleIndices in byVehicle.values) {
-      final fuelIndices =
-          vehicleIndices.where((i) => entries[i].entryType == 'fuel').toList();
+      final fuelIndices = vehicleIndices
+          .where((i) => entries[i].entryType == 'fuel')
+          .toList();
       final chargeIndices = vehicleIndices
           .where((i) => entries[i].entryType == 'charge')
           .toList();
@@ -594,8 +572,7 @@ class FuelEntryController extends GetxController {
 
     if (entryType == 'charge') {
       // 1. Задано пользователем в профиле
-      if (vehicle.batteryCapacityKwh != null &&
-          vehicle.batteryCapacityKwh! > 0) {
+      if (vehicle.batteryCapacityKwh != null && vehicle.batteryCapacityKwh! > 0) {
         return vehicle.batteryCapacityKwh!;
       }
       if (vehicle.usableCapacityKwh != null && vehicle.usableCapacityKwh! > 0) {
@@ -767,9 +744,7 @@ class FuelEntryController extends GetxController {
         totalCost: totalCost,
       );
     }
-    if (totalCost != null &&
-        totalCost > 0 &&
-        (unitPrice == null || unitPrice <= 0)) {
+    if (totalCost != null && totalCost > 0 && (unitPrice == null || unitPrice <= 0)) {
       return (
         unitPrice: totalCost / volume,
         totalCost: totalCost,
@@ -798,7 +773,8 @@ class FuelEntryController extends GetxController {
     final distance = odometer - prevOdometer;
     if (distance <= 0 || distance < kMinDistanceKm) return null;
 
-    final totalVolume = tailPartials.fold(0.0, (s, e) => s + e.volume) + volume;
+    final totalVolume =
+        tailPartials.fold(0.0, (s, e) => s + e.volume) + volume;
     return (totalVolume / distance) * 100;
   }
 
@@ -853,20 +829,19 @@ class FuelEntryController extends GetxController {
 
   Future<void> checkAllReminders() async {
     final vehicles = _vehicleCtrl?.vehicles ?? [];
-    final futures = <Future<void>>[];
     for (final vehicle in vehicles) {
       if (vehicle.reminderDays == null || vehicle.id == null) continue;
-      futures.add(_checkReminder(vehicle.id!));
+      await _checkReminder(vehicle.id!);
     }
-    await Future.wait(futures);
   }
 
   Future<void> _checkReminder(int vehicleId) async {
-    final vehicle =
-        _vehicleCtrl?.vehicles.firstWhereOrNull((v) => v.id == vehicleId);
+    final vehicle = _vehicleCtrl?.vehicles
+        .firstWhereOrNull((v) => v.id == vehicleId);
     if (vehicle == null || vehicle.reminderDays == null) return;
 
-    final lastDate = await FuelDatabase.instance.getLastEntryDate(vehicleId);
+    final lastDate =
+        await FuelDatabase.instance.getLastEntryDate(vehicleId);
     if (lastDate == null) return;
 
     final days = DateTime.now().difference(lastDate).inDays;
@@ -936,7 +911,8 @@ class FuelEntryController extends GetxController {
   List<FuelEntry> get entriesWithConsumption =>
       entries.where((e) => e.consumption != null).toList();
 
-  double? get lastOdometer => entries.isNotEmpty ? entries.last.odometer : null;
+  double? get lastOdometer =>
+      entries.isNotEmpty ? entries.last.odometer : null;
 
   /// Возвращает максимальный одометр среди всех записей для текущего автомобиля.
   double? getLastRecordedOdometer({int? excludeEntryId}) {
@@ -949,8 +925,9 @@ class FuelEntryController extends GetxController {
 
   /// Возвращает последнюю полную заправку/зарядку для данного типа энергии.
   FuelEntry? getLastFullEntry(String entryType) {
-    final filtered =
-        entries.where((e) => e.entryType == entryType && e.isFullTank).toList();
+    final filtered = entries
+        .where((e) => e.entryType == entryType && e.isFullTank)
+        .toList();
     if (filtered.isEmpty) return null;
     return filtered.last;
   }
@@ -958,7 +935,8 @@ class FuelEntryController extends GetxController {
   /// Возвращает хвостовые частичные заправки после последней полной
   /// (для предпросмотра расхода при добавлении новой полной заправки).
   List<FuelEntry> getTailPartials(String entryType) {
-    final filtered = entries.where((e) => e.entryType == entryType).toList();
+    final filtered =
+        entries.where((e) => e.entryType == entryType).toList();
     if (filtered.isEmpty) return [];
 
     int lastFullIdx = -1;
@@ -970,6 +948,16 @@ class FuelEntryController extends GetxController {
     }
     if (lastFullIdx == -1) return filtered;
     return filtered.sublist(lastFullIdx + 1);
+  }
+
+  /// Освобождает ресурсы и отменяет подписки на изменения состояния (Workers).
+  /// Предотвращает утечки памяти при пересоздании контроллера.
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    super.onClose();
   }
 }
 

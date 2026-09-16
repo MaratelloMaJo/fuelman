@@ -287,8 +287,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 ),
                 // ── Емкости бака и батареи ──
                 if (_isTankRequired || _engineType != 'electric') ...[
-                  _SectionLabel(
-                      '${'tank_capacity_label'.tr}${_isTankRequired ? ' *' : ''}'),
+                  _SectionLabel('${'tank_capacity_label'.tr}${_isTankRequired ? ' *' : ''}'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _tankCapacityCtrl,
@@ -331,8 +330,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     (_engineType == 'hybrid' &&
                         (_hybridType == 'PHEV' ||
                             _hybridType == 'BEV_REX'))) ...[
-                  _SectionLabel(
-                      '${'battery_capacity_label'.tr}${_isBatteryRequired ? ' *' : ''}'),
+                  _SectionLabel('${'battery_capacity_label'.tr}${_isBatteryRequired ? ' *' : ''}'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _batteryCapacityCtrl,
@@ -342,8 +340,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
                     ],
                     decoration: InputDecoration(
-                      prefixIcon:
-                          const Icon(Icons.battery_charging_full_rounded),
+                      prefixIcon: const Icon(Icons.battery_charging_full_rounded),
                       hintText: 'battery_capacity_hint'.tr,
                       suffixText: 'battery_capacity_suffix'.tr,
                     ),
@@ -808,8 +805,8 @@ class _FuelSubtypePicker extends StatelessWidget {
   final String engineType;
   final ValueChanged<String> onChanged;
 
-  const _FuelSubtypePicker(
-      {required this.selected,
+  const _FuelSubtypePicker({
+      required this.selected,
       required this.engineType,
       required this.onChanged});
 

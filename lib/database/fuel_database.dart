@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:developer' as developer;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
@@ -28,11 +27,6 @@ class FuelDatabase {
   static final FuelDatabase instance = FuelDatabase._();
 
   static Database? _db;
-
-  // FOR TESTING ONLY
-  static void setMockDatabase(Database? db) {
-    _db = db;
-  }
 
   Future<Database> get database async {
     _db ??= await _initDb();
@@ -193,10 +187,10 @@ class FuelDatabase {
     }
     if (oldVersion < 7) {
       // Новые поля ёмкости АКБ для EV/PHEV (nullable → backwards-compatible)
-      await db
-          .execute('ALTER TABLE vehicles ADD COLUMN battery_capacity_kwh REAL');
-      await db
-          .execute('ALTER TABLE vehicles ADD COLUMN usable_capacity_kwh REAL');
+      await db.execute(
+          'ALTER TABLE vehicles ADD COLUMN battery_capacity_kwh REAL');
+      await db.execute(
+          'ALTER TABLE vehicles ADD COLUMN usable_capacity_kwh REAL');
 
       // Новая таблица сессий зарядки
       await db.execute(_createChargingEntriesSQL);
@@ -271,18 +265,6 @@ class FuelDatabase {
       where: 'id = ?',
       whereArgs: [entry.id],
     );
-  }
-
-  Future<void> updateEntriesBatch(List<FuelEntry> entries) async {
-    final db = await database;
-    final batch = db.batch();
-    for (final entry in entries) {
-      if (entry.id != null) {
-        batch.update('fuel_entries', entry.toMap(),
-            where: 'id = ?', whereArgs: [entry.id]);
-      }
-    }
-    await batch.commit(noResult: true);
   }
 
   Future<void> deleteEntry(int id) async {
@@ -509,85 +491,58 @@ class FuelDatabase {
   // ─────────────────────────────────────────────── Backup ──
 
   Future<void> exportBackup() async {
-    try {
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, 'fuelman.db');
-      final file = File(path);
-      if (await file.exists()) {
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(file.path, mimeType: 'application/octet-stream')],
-            subject: 'FuelMan_Backup.db',
-          ),
-        );
-      }
-    } catch (e, stack) {
-      developer.log('Ошибка при экспорте бэкапа', error: e, stackTrace: stack, name: 'FuelDatabase');
-      // Ignored: handle file system or sharing errors gracefully
+    final dbPath = await getDatabasesPath();
+    final path = p.join(dbPath, 'fuelman.db');
+    final file = File(path);
+    if (await file.exists()) {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/octet-stream')],
+          subject: 'FuelMan_Backup.db',
+        ),
+      );
     }
   }
 
-  /// SQLite header magic string: "SQLite format 3\x00" (16 bytes)
-  static const List<int> sqliteHeaderBytes = [
-    0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66,
-    0x6F, 0x72, 0x6D, 0x61, 0x74, 0x20, 0x33, 0x00,
-  ];
-
-  /// Проверяет, является ли файл валидной базой SQLite.
-  static Future<bool> isValidSqliteFile(File file) async {
+  Future<bool> importBackup() async {
     try {
-      if (!await file.exists()) return false;
-      final length = await file.length();
-      if (length < 16) return false;
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+      );
 
-      final handle = await file.open(mode: FileMode.read);
-      try {
-        final header = await handle.read(16);
-        if (header.length < 16) return false;
-        for (var i = 0; i < 16; i++) {
-          if (header[i] != sqliteHeaderBytes[i]) return false;
-        }
-        return true;
-      } finally {
-        await handle.close();
-      }
-    } catch (e, stack) {
-      developer.log('Ошибка при валидации SQLite файла', error: e, stackTrace: stack, name: 'FuelDatabase');
-      return false;
-    }
-  }
-
-  Future<bool> importBackup({String? pickedFilePath}) async {
-    try {
-      String? filePath = pickedFilePath;
-      if (filePath == null) {
-        final result = await FilePicker.pickFiles(
-          type: FileType.any,
-        );
-        if (result.isNotEmpty && result.first.path != null) {
-          filePath = result.first.path!;
-        }
-      }
-
-      if (filePath != null) {
-        final backupFile = File(filePath);
-        if (!await isValidSqliteFile(backupFile)) {
-          return false;
-        }
+      if (result.isNotEmpty && result.first.path != null) {
+        final backupFile = File(result.first.path!);
 
         await close();
 
         final dbPath = await getDatabasesPath();
         final path = p.join(dbPath, 'fuelman.db');
 
+                final isDbValid = await _validateBackupDb(backupFile.path);
+        if (!isDbValid) return false;
+
         await backupFile.copy(path);
 
         _db = await _initDb();
         return true;
       }
-    } catch (e, stack) {
-      developer.log('Ошибка при импорте бэкапа', error: e, stackTrace: stack, name: 'FuelDatabase');
+    } catch (_) {
+      // ignore
     }
     return false;
   }
+
+  /// Проверяет, что файл является корректной SQLite БД,
+  /// открывая его в режиме readOnly и делая простой запрос.
+  Future<bool> _validateBackupDb(String filePath) async {
+    try {
+      final testDb = await openDatabase(filePath, readOnly: true);
+      await testDb.rawQuery('SELECT 1 FROM sqlite_master');
+      await testDb.close();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
 }

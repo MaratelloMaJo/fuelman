@@ -1,20 +1,15 @@
-
-## [Unreleased]
-### Security & Hardening
-- **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.
-- **Fix**: Prevented double-tap race conditions in all save screens, stopping duplicate database entries.
-- **Fix**: Blocked time manipulation attacks by rejecting future dates during entry saves.
-- **Fix**: Ensured safe cross-locale number parsing by replacing commas with dots before `double.tryParse` on all number fields.
-- **Fix**: Hardened `calculateOverallStats` and `_processIndexedChain` against mathematical edge cases like division-by-zero, `NaN`, and `Infinity` caused by micro-distances or rapid duplicate inputs.
-- **Fix**: Enforced stricter validation in `AddEntryScreen` and `AddChargingScreen` restricting negative odometer inputs.
-- **Fix**: Prevented UI state race conditions by enforcing early return blocking double-taps on save buttons across all data entry screens.
-- **Fix**: Prevented saving records with a date in the future to maintain data integrity.
-- **Fix**: Improved error logging by replacing silent swallowing and `debugPrint` with proper stack trace logging via `dart:developer`.
-- **Test**: Expanded `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping, and future date bypass structures).
-
 # Changelog
+
 ## [Unreleased]
 - Интеграция BLE/OBD2 телеметрии.
+
+
+## [1.1.1] - Security & Resilience Patch
+- Fixed Race Conditions causing duplicate database entries on rapid save button taps.
+- Added strict time-manipulation checks (future dates are no longer allowed).
+- Hardened database import to prevent app crashes from corrupted or malicious DB files.
+- Resolved memory leaks in GetX state management by explicitly disposing of state listeners (`ever()` workers) in `onClose()`.
+- Improved number parsing to gracefully handle localized separators, whitespace, and emoji garbage without crashing.
 
 ## [1.1.0] - 2026-09
 - Добавлена модель `ChargingEntry` и таблица зарядок в SQLite.
@@ -23,7 +18,3 @@
 
 ## [1.0.0] - 2026-06
 - Первоначальный релиз: учет заправок бензиновых авто, GetX архитектура, мультиязычность (ru, en, kk).
-
-## [Unreleased]
-### Added
-- Added unit tests for `ChargingEntry` data model to verify calculation logic and serialization.

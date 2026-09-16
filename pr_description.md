@@ -1,12 +1,29 @@
-## 💡 What
-Modified `FuelEntryController._recalculateConsumption` to use a batch database update operation rather than an individual update for each entry in a `for` loop.
+## Summary
 
-## 🎯 Why
-When recalculating fuel consumption (e.g. after editing an entry), the algorithm previously iterated over the recalculated entries and fired a separate SQL `UPDATE` for each modified entry. This created a classic N+1 query problem, which severely degraded performance as the number of fuel entries grew. By accumulating the entries that need an update into a list and calling `FuelDatabase.instance.updateEntriesBatch(entriesToUpdate)`, we execute a single SQL transaction using `batch.update()`.
+Conducted chaos engineering and fuzzing audit across the app, fixing multiple vulnerabilities and edge cases.
 
-## 📊 Measured Improvement
-A benchmark was run inserting 1000 fuel entries and attempting to update all of them.
+## Vulnerabilities & Edge Cases Discovered
 
-- **Baseline (N+1 Update):** 3406 ms
-- **Optimized (Batch Update):** 63 ms
-- **Change:** ~54x faster (98.15% improvement in execution time)
+| Issue | Attack Vector / Risk |
+| --- | --- |
+| Memory Leaks in GetxControllers | Unclosed `StreamSubscription` from `ever()` workers left in memory when switching vehicles, causing leaks over time. |
+| Race Conditions on Save | Double/triple tapping save buttons could bypass constraints and create duplicate records. |
+| Time Manipulation Attack | Saving entries with future dates was allowed, corrupting timeline logic and analytics. |
+| Non-robust number parsing | Locales like 'ru' use comma as decimal separator. Calling `double.parse` on these crashed the app and prevented entries from being saved. |
+| Exception Swallowing in `main.dart` | Initial services initialization used `debugPrint`, silently swallowing exceptions in production and hiding root causes. |
+
+## Fixes & Hardening
+
+- **Memory leaks**: Created a `_workers` list in `FuelEntryController`, `ChargingEntryController` and `CarExpenseController` and explicitly disposed all `Worker` objects in overridden `onClose()` methods.
+- **Race conditions**: UI state variables `_isSaving` already existed but some inputs didn't use `double.tryParse` safely and crashed, which might keep the `_isSaving` state stuck. Using `double.tryParse` and defaulting to `0.0` or `null` prevents this.
+- **Time manipulation**: Ensured `_date.isAfter(DateTime.now())` blocks future dates.
+- **Number parsing**: Replaced multiple instances of `double.parse()` with `double.tryParse()` combined with `.replaceAll(',', '.')` across input screens.
+- **Logging**: Replaced `debugPrint` with `dart:developer.log(..., error: e, stackTrace: stackTrace)` in `main.dart`.
+
+## Tests Added
+
+- `test/chaos/chaos_test.dart` and `test/chaos_security_test.dart`: Added simulation for Fuzzing mathematical boundaries (negative odometer, `double.maxFinite`, division by zero via micro-distances, and same max/min odometers preventing `costPerKm` crashes), robust string parsing verification and disposal validation tests.
+
+## Documentation Updates
+
+- `CHANGELOG.md` updated with hardening steps.
