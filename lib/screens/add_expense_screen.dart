@@ -57,9 +57,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _currency = e.currency;
       _date = e.date;
       if (e.placeName != null) _placeCtrl.text = e.placeName!;
-      if (e.odometer != null) {
-        _odometerCtrl.text = e.odometer!.toStringAsFixed(0);
-      }
+      if (e.odometer != null) _odometerCtrl.text = e.odometer!.toStringAsFixed(0);
       if (e.notes != null) _notesCtrl.text = e.notes!;
       _latitude = e.latitude;
       _longitude = e.longitude;
@@ -96,14 +94,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (loc != null) {
         _latitude = loc.latitude;
         _longitude = loc.longitude;
-        Get.snackbar('gps_saved'.tr,
-            '${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2));
+        Get.snackbar('gps_saved'.tr, '${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}',
+            snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
       } else {
         Get.snackbar('gps_error'.tr, 'GPS недоступен или запрещён',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 2));
+            snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
       }
     });
   }
@@ -117,15 +112,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   Future<void> _save() async {
     if (_isSaving) return;
+    if (_date.isAfter(DateTime.now())) {
+      Get.snackbar('error'.tr, 'Дата не может быть в будущем');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     final vehicle = _vehicleCtrl.selectedVehicle.value;
     if (vehicle == null) return;
-
-    if (_date.isAfter(DateTime.now())) {
-      Get.snackbar('Ошибка', 'Дата не может быть в будущем',
-          snackPosition: SnackPosition.BOTTOM);
-      return;
-    }
 
     setState(() => _isSaving = true);
 
@@ -135,7 +128,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       date: _date,
       category: _category,
       title: _titleCtrl.text.trim(),
-      amount: double.parse(_amountCtrl.text.replaceAll(',', '.')),
+      amount: double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0,
       currency: _currency,
       odometer: _odometerCtrl.text.isEmpty
           ? null
@@ -168,199 +161,186 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final locale = _settingsCtrl.language.value == 'kk'
-        ? 'ru'
-        : _settingsCtrl.language.value;
+    final locale = _settingsCtrl.language.value == 'kk' ? 'ru' : _settingsCtrl.language.value;
     final dateFmt = DateFormat('dd MMMM yyyy', locale);
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(_isEditing ? 'edit_expense_title'.tr : 'new_expense_title'.tr),
+        title: Text(_isEditing ? 'edit_expense_title'.tr : 'new_expense_title'.tr),
         centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Выбор категории ──
-                Text(
-                  'cat_service'.tr,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 10),
-                _CategoryPicker(
-                  selected: _category,
-                  onChanged: (c) => setState(() => _category = c),
-                ),
-                const SizedBox(height: 24),
-
-                // ── Название ──
-                Text('expense_title_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _titleCtrl,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    prefixIcon:
-                        ExpenseCategoryIcon(category: _category, size: 20),
-                    hintText: 'expense_title_hint'.tr,
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'expense_title_required'.tr
-                      : null,
-                ),
-                const SizedBox(height: 20),
-
-                // ── Дата ──
-                Text('date_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.calendar_today_rounded),
-                      suffixIcon: Icon(Icons.arrow_drop_down_rounded),
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Выбор категории ──
+              Text(
+                'cat_service'.tr,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: Text(dateFmt.format(_date)),
-                  ),
-                ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 10),
+              _CategoryPicker(
+                selected: _category,
+                onChanged: (c) => setState(() => _category = c),
+              ),
+              const SizedBox(height: 24),
 
-                // ── Сумма ──
-                Text('expense_amount_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _amountCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-                  ],
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.payments_rounded),
-                    hintText: '500.0',
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _currency,
-                          isDense: true,
-                          items: ['RUB', 'KZT', 'USD', 'EUR']
-                              .map((c) =>
-                                  DropdownMenuItem(value: c, child: Text(c)))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _currency = v);
-                          },
-                        ),
+              // ── Название ──
+              Text('expense_title_label'.tr,
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  prefixIcon: ExpenseCategoryIcon(category: _category, size: 20),
+                  hintText: 'expense_title_hint'.tr,
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'expense_title_required'.tr : null,
+              ),
+              const SizedBox(height: 20),
+
+              // ── Дата ──
+              Text('date_label'.tr,
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: _pickDate,
+                borderRadius: BorderRadius.circular(12),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.calendar_today_rounded),
+                    suffixIcon: Icon(Icons.arrow_drop_down_rounded),
+                  ),
+                  child: Text(dateFmt.format(_date)),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Сумма ──
+              Text('expense_amount_label'.tr,
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _amountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+                ],
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.payments_rounded),
+                  hintText: '500.0',
+                  suffixIcon: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _currency,
+                        isDense: true,
+                        items: ['RUB', 'KZT', 'USD', 'EUR']
+                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) setState(() => _currency = v);
+                        },
                       ),
                     ),
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'expense_amount_required'.tr;
-                    }
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null || val <= 0) {
-                      return 'expense_amount_invalid'.tr;
-                    }
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 20),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'expense_amount_required'.tr;
+                  final val = double.tryParse(v.replaceAll(',', '.'));
+                  if (val == null || val <= 0) return 'expense_amount_invalid'.tr;
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
 
-                // ── Место ──
-                Text('expense_place_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _placeCtrl,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.store_rounded),
-                    hintText: 'expense_place_hint'.tr,
-                  ),
+              // ── Место ──
+              Text('expense_place_label'.tr,
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _placeCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.store_rounded),
+                  hintText: 'expense_place_hint'.tr,
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
 
-                // ── Одометр (необязательно) ──
-                Text('odometer_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _odometerCtrl,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d]'))
-                  ],
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.speed_rounded),
-                    hintText: '50000',
-                    suffixText: 'odometer_suffix'.tr,
-                    helperText: 'Необязательно',
-                    helperStyle: TextStyle(color: cs.onSurfaceVariant),
-                  ),
+              // ── Одометр (необязательно) ──
+              Text('odometer_label'.tr,
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _odometerCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d]'))],
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.speed_rounded),
+                  hintText: '50000',
+                  suffixText: 'odometer_suffix'.tr,
+                  helperText: 'Необязательно',
+                  helperStyle: TextStyle(color: cs.onSurfaceVariant),
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
 
-                // ── GPS ──
-                _GpsSection(
-                  latitude: _latitude,
-                  longitude: _longitude,
-                  isGetting: _isGettingLocation,
-                  onGetLocation: _getLocation,
-                  onClearLocation: _clearLocation,
-                ),
-                const SizedBox(height: 20),
+              // ── GPS ──
+              _GpsSection(
+                latitude: _latitude,
+                longitude: _longitude,
+                isGetting: _isGettingLocation,
+                onGetLocation: _getLocation,
+                onClearLocation: _clearLocation,
+              ),
+              const SizedBox(height: 20),
 
-                // ── Заметки ──
-                Text('expense_notes_label'.tr,
-                    style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _notesCtrl,
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.notes_rounded),
-                    hintText: 'expense_notes_hint'.tr,
-                    alignLabelWithHint: true,
-                  ),
+              // ── Заметки ──
+              Text('expense_notes_label'.tr,
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _notesCtrl,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.notes_rounded),
+                  hintText: 'expense_notes_hint'.tr,
+                  alignLabelWithHint: true,
                 ),
-                const SizedBox(height: 32),
+              ),
+              const SizedBox(height: 32),
 
-                // ── Кнопка ──
-                FilledButton.icon(
-                  onPressed: _isSaving ? null : _save,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save_rounded),
-                  label: Text(_isSaving ? 'saving'.tr : 'save_expense'.tr),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
+              // ── Кнопка ──
+              FilledButton.icon(
+                onPressed: _isSaving ? null : _save,
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_rounded),
+                label: Text(_isSaving ? 'saving'.tr : 'save_expense'.tr),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─────────────────────────── Category Picker ──
@@ -372,13 +352,7 @@ class _CategoryPicker extends StatelessWidget {
   const _CategoryPicker({required this.selected, required this.onChanged});
 
   static const _categories = [
-    'service',
-    'oil_change',
-    'wash',
-    'tires',
-    'tax',
-    'parts',
-    'other',
+    'service', 'oil_change', 'wash', 'tires', 'tax', 'parts', 'other',
   ];
 
   @override
@@ -418,7 +392,8 @@ class _CategoryPicker extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 9.5,
                     color: isActive ? color : cs.onSurfaceVariant,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.normal,
+                    fontWeight:
+                        isActive ? FontWeight.w700 : FontWeight.normal,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,

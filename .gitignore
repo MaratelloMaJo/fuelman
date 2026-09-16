@@ -70,7 +70,6 @@ cmake_install.cmake
 .cursor/
 .windsurf/
 .cline/
-GEMINI.MD
 
 # ==============================================================================
 # System & Temporary Files

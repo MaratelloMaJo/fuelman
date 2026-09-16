@@ -64,7 +64,8 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(32)),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
@@ -102,7 +103,10 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     Text(
                       'add_what'.tr,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                     ),
@@ -202,13 +206,14 @@ class _MainScreenState extends State<MainScreen> {
                 destinations: [
                   NavigationDestination(
                     icon: const Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded, color: cs.primary),
+                    selectedIcon: Icon(Icons.home_rounded,
+                        color: cs.primary),
                     label: 'nav_home'.tr,
                   ),
                   NavigationDestination(
                     icon: const Icon(Icons.history_outlined),
-                    selectedIcon:
-                        Icon(Icons.history_rounded, color: cs.primary),
+                    selectedIcon: Icon(Icons.history_rounded,
+                        color: cs.primary),
                     label: 'nav_history'.tr,
                   ),
 
@@ -220,16 +225,18 @@ class _MainScreenState extends State<MainScreen> {
 
                   NavigationDestination(
                     icon: const Icon(Icons.bar_chart_outlined),
-                    selectedIcon:
-                        Icon(Icons.bar_chart_rounded, color: cs.primary),
+                    selectedIcon: Icon(Icons.bar_chart_rounded,
+                        color: cs.primary),
                     label: 'nav_statistics'.tr,
                   ),
                   NavigationDestination(
                     icon: Badge(
-                      isLabelVisible: !hasVehicles && _index != 3,
+                      isLabelVisible:
+                          !hasVehicles && _index != 3,
                       child: const Icon(Icons.garage_outlined),
                     ),
-                    selectedIcon: Icon(Icons.garage_rounded, color: cs.primary),
+                    selectedIcon: Icon(Icons.garage_rounded,
+                        color: cs.primary),
                     label: 'nav_garage'.tr,
                   ),
                 ],
@@ -309,7 +316,8 @@ class _AddOptionTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
@@ -328,13 +336,19 @@ class _AddOptionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                     ),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
                             color: cs.onSurfaceVariant,
                           ),
                     ),

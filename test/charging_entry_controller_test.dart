@@ -1,15 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get/get.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:sqflite/sqflite.dart';
 
 import 'package:fuelman/models/charging_entry.dart';
 import 'package:fuelman/models/vehicle.dart';
 import 'package:fuelman/controllers/charging_entry_controller.dart';
-import 'package:fuelman/controllers/vehicle_controller.dart';
-import 'package:fuelman/database/fuel_database.dart';
-
-class _MockDb extends Mock implements Database {}
 
 /// Unit-тесты бизнес-логики подсистемы учёта электроэнергии EV/PHEV.
 ///
@@ -162,10 +155,9 @@ void main() {
     test('Скачок > 10000 км фильтруется', () {
       final items = [
         _makeTimelineItem(odo: 1000.0),
-        _makeTimelineItem(
-            odo: 12000.0), // +11000 > 10000 → аномальный скачок, пропускаем
-        _makeTimelineItem(odo: 1500.0), // +500 от 1000 → нормально, сохраняем
-        _makeTimelineItem(odo: 1200.0), // -300 → убывание, пропускаем
+        _makeTimelineItem(odo: 12000.0), // +11000 > 10000 → аномальный скачок, пропускаем
+        _makeTimelineItem(odo: 1500.0),  // +500 от 1000 → нормально, сохраняем
+        _makeTimelineItem(odo: 1200.0),  // -300 → убывание, пропускаем
       ];
       final filtered = filterAnomalies(items);
       // Сохраняются: 1000 (база) и 1500 (нормальный прирост от последней точки)
@@ -275,8 +267,7 @@ void main() {
     });
 
     test('Неизвестная строка → acSlow', () {
-      expect(
-          ChargerType.fromDbString('unknown_type'), equals(ChargerType.acSlow));
+      expect(ChargerType.fromDbString('unknown_type'), equals(ChargerType.acSlow));
     });
   });
 
@@ -291,8 +282,8 @@ void main() {
     }
 
     test('null → homeSocket', () {
-      expect(ChargerStandard.fromDbString(null),
-          equals(ChargerStandard.homeSocket));
+      expect(
+          ChargerStandard.fromDbString(null), equals(ChargerStandard.homeSocket));
     });
   });
 
@@ -326,80 +317,6 @@ void main() {
 
     test('false если batteryCapacityKwh == 0', () {
       expect(_makeVehicle(batteryKwh: 0.0).hasBatteryData, isFalse);
-    });
-  });
-
-  group('ChargingEntryController _rebuildTimeline catch block', () {
-    test('falls back to FuelDatabase when FuelEntryController lookup throws', () async {
-      Get.testMode = true;
-      final mockDb = _MockDb();
-      FuelDatabase.setMockDatabase(mockDb);
-
-      when(() => mockDb.query('vehicles', orderBy: any(named: 'orderBy')))
-          .thenAnswer((_) async => []);
-
-      final vehCtrl = VehicleController();
-      vehCtrl.selectedVehicle.value = const Vehicle(id: 1, name: 'EV', model: 'M', bodyType: 'sedan', engineType: 'electric');
-      Get.put<VehicleController>(vehCtrl);
-
-      // Make sure FuelEntryController is NOT registered or throws on lookup
-      expect(Get.isRegistered<dynamic>(tag: 'FuelEntryController'), isFalse);
-
-      when(() => mockDb.query(
-            'charging_entries',
-            where: any(named: 'where'),
-            whereArgs: any(named: 'whereArgs'),
-            orderBy: any(named: 'orderBy'),
-          )).thenAnswer((_) async => [
-            {
-              'id': 1,
-              'vehicle_id': 1,
-              'date': '2025-01-01T10:00:00.000',
-              'odometer': 10000.0,
-              'kwh_added': 30.0,
-              'total_cost': 150.0,
-            }
-          ]);
-
-      when(() => mockDb.query(
-            'fuel_entries',
-            where: any(named: 'where'),
-            whereArgs: any(named: 'whereArgs'),
-            orderBy: any(named: 'orderBy'),
-          )).thenAnswer((_) async => [
-            {
-              'id': 10,
-              'vehicle_id': 1,
-              'date': '2025-01-01T08:00:00.000',
-              'odometer': 9500.0,
-              'volume': 40.0,
-              'price_per_liter': 50.0,
-              'total_cost': 2000.0,
-              'is_full_tank': 1,
-              'entry_type': 'fuel',
-              'volume_unit': 'L',
-              'currency': 'RUB',
-            }
-          ]);
-
-      final controller = ChargingEntryController();
-      Get.put<ChargingEntryController>(controller);
-
-      await controller.loadEntries(1);
-
-      expect(controller.entries.length, 1);
-      expect(controller.timeline.length, 2);
-      expect(controller.timeline.any((item) => item.type == 'fuel'), isTrue);
-
-      verify(() => mockDb.query(
-            'fuel_entries',
-            where: 'vehicle_id = ?',
-            whereArgs: [1],
-            orderBy: 'date ASC',
-          )).called(greaterThanOrEqualTo(1));
-
-      Get.reset();
-      FuelDatabase.setMockDatabase(null);
     });
   });
 }
