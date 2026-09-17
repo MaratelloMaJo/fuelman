@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 
 import '../database/fuel_database.dart';
 import '../models/vehicle.dart';
+import 'fuel_entry_controller.dart';
+import 'charging_entry_controller.dart';
+import 'car_expense_controller.dart';
 
 /// Управляет списком автомобилей и выбором активного авто.
 class VehicleController extends GetxController {
@@ -58,8 +61,28 @@ class VehicleController extends GetxController {
   Future<void> deleteVehicle(int id) async {
     await FuelDatabase.instance.deleteVehicle(id);
     vehicles.removeWhere((v) => v.id == id);
+
+    // Clear dependent states if the deleted vehicle was the selected one
     if (selectedVehicle.value?.id == id) {
       selectedVehicle.value = vehicles.isNotEmpty ? vehicles.first : null;
+
+      if (selectedVehicle.value == null) {
+        if (Get.isRegistered<FuelEntryController>()) {
+          final fec = Get.find<FuelEntryController>();
+          fec.entries.clear();
+          fec.stats.clear();
+        }
+        if (Get.isRegistered<ChargingEntryController>()) {
+          final cec = Get.find<ChargingEntryController>();
+          cec.entries.clear();
+          cec.timeline.clear();
+        }
+        if (Get.isRegistered<CarExpenseController>()) {
+          final cxc = Get.find<CarExpenseController>();
+          cxc.expenses.clear();
+          cxc.expenseStats.clear();
+        }
+      }
     }
   }
 

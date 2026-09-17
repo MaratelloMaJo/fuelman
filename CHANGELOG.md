@@ -10,7 +10,8 @@
 - **Fix**: Prevented UI state race conditions by enforcing early return blocking double-taps on save buttons across all data entry screens.
 - **Fix**: Prevented saving records with a date in the future to maintain data integrity.
 - **Fix**: Improved error logging by replacing silent swallowing and `debugPrint` with proper stack trace logging via `dart:developer`.
-- **Test**: Expanded `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping, and future date bypass structures).
+- **Fix**: Cascading cleanup added to `VehicleController` to explicitly flush memory cache states in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` when a vehicle is deleted.
+- **Test**: Expanded `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping, and future date bypass structures), including PHEV logic collisions (zero consumption, negative volume/recuperation) and out-of-order date entries.
 
 # Changelog
 ## [Unreleased]

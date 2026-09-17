@@ -115,10 +115,12 @@ class PhevOverallStats {
 ///   — Защита от физических аномалий емкости бака (Chazor 53 л) и батареи (22 кВт·ч)
 ///   — Корректность пересчета цен и затрат
 ///   — Комбинированная сводная статистика (TCO, L/100km, kWh/100km)
+///   — Предотвращение утечек памяти путем трекинга подписок через _workers
 class FuelEntryController extends GetxController {
   final entries = <FuelEntry>[].obs;
   final stats = <String, double?>{}.obs;
   final isLoading = false.obs;
+  final _workers = <Worker>[];
 
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
@@ -135,7 +137,7 @@ class FuelEntryController extends GetxController {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
@@ -146,6 +148,15 @@ class FuelEntryController extends GetxController {
       _workers
           .add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
+  }
+
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    _workers.clear();
+    super.onClose();
   }
 
   void _recalcStatsCurrentVehicle() {
