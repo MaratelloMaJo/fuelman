@@ -128,14 +128,14 @@ class FuelEntryController extends GetxController {
       ? Get.find<VehicleController>()
       : null;
 
-
+  final List<Worker> _workers = [];
 
   @override
   void onInit() {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
@@ -146,6 +146,15 @@ class FuelEntryController extends GetxController {
       _workers
           .add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
+  }
+
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    _workers.clear();
+    super.onClose();
   }
 
   void _recalcStatsCurrentVehicle() {

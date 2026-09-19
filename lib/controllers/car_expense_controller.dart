@@ -18,15 +18,23 @@ class CarExpenseController extends GetxController {
   final isLoading = false.obs;
   final _vehicleCtrl = Get.find<VehicleController>();
 
+  final List<Worker> _workers = [];
 
   @override
   void onInit() {
     super.onInit();
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
-
+  @override
+  void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
+    _workers.clear();
+    super.onClose();
+  }
 
   void _onVehicleChanged() {
     final v = _vehicleCtrl.selectedVehicle.value;

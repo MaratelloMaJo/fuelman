@@ -61,6 +61,10 @@ class VehicleController extends GetxController {
     if (selectedVehicle.value?.id == id) {
       selectedVehicle.value = vehicles.isNotEmpty ? vehicles.first : null;
     }
+
+    // Explicitly trigger reactive updates for controllers dependent on the vehicle
+    // so they can clear their states and not hold orphaned caches
+    // Controllers watch selectedVehicle using ever(), so setting it clears their state.
   }
 
   void selectVehicle(Vehicle vehicle) {
