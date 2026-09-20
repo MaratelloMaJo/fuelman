@@ -246,12 +246,14 @@ void main() {
         expect(ChargerStandard.gbtAc.toDbString(), 'gbtAc');
         expect(ChargerStandard.gbtDc.toDbString(), 'gbtDc');
 
-        expect(ChargerStandard.fromDbString('homeSocket'), ChargerStandard.homeSocket);
+        expect(ChargerStandard.fromDbString('homeSocket'),
+            ChargerStandard.homeSocket);
         expect(ChargerStandard.fromDbString('type2'), ChargerStandard.type2);
         expect(ChargerStandard.fromDbString('ccs2'), ChargerStandard.ccs2);
         expect(ChargerStandard.fromDbString('gbtAc'), ChargerStandard.gbtAc);
         expect(ChargerStandard.fromDbString('gbtDc'), ChargerStandard.gbtDc);
-        expect(ChargerStandard.fromDbString('unknown'), ChargerStandard.homeSocket);
+        expect(ChargerStandard.fromDbString('unknown'),
+            ChargerStandard.homeSocket);
         expect(ChargerStandard.fromDbString(null), ChargerStandard.homeSocket);
       });
     });

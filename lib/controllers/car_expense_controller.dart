@@ -18,13 +18,13 @@ class CarExpenseController extends GetxController {
   final isLoading = false.obs;
   final _vehicleCtrl = Get.find<VehicleController>();
 
-
   final _workers = <Worker>[];
 
   @override
   void onInit() {
     super.onInit();
-    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
+    _workers
+        .add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
@@ -60,10 +60,12 @@ class CarExpenseController extends GetxController {
     }
   }
 
-  Future<void> _loadStats(int vehicleId, {List<CarExpense>? loadedExpenses}) async {
+  Future<void> _loadStats(int vehicleId,
+      {List<CarExpense>? loadedExpenses}) async {
     final settings = Get.find<SettingsController>();
     final currencySvc = CurrencyService.instance;
-    final all = loadedExpenses ?? await FuelDatabase.instance.getExpenses(vehicleId);
+    final all =
+        loadedExpenses ?? await FuelDatabase.instance.getExpenses(vehicleId);
 
     final Map<String, double> stats = {};
     for (final e in all) {

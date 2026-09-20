@@ -63,7 +63,9 @@ void main() {
     });
 
     group('getters', () {
-      test('hasLocation returns true when both latitude and longitude are present', () {
+      test(
+          'hasLocation returns true when both latitude and longitude are present',
+          () {
         final entry = FuelEntry(
           vehicleId: 1,
           date: testDate,
@@ -119,7 +121,9 @@ void main() {
         expect(entry.totalCost, 100.0);
       });
 
-      test('totalCost calculates cost if storedTotalCost is null and pricePerLiter is present', () {
+      test(
+          'totalCost calculates cost if storedTotalCost is null and pricePerLiter is present',
+          () {
         final entry = FuelEntry(
           vehicleId: 1,
           date: testDate,
@@ -130,7 +134,9 @@ void main() {
         expect(entry.totalCost, 100.0);
       });
 
-      test('totalCost returns null if both storedTotalCost and pricePerLiter are null', () {
+      test(
+          'totalCost returns null if both storedTotalCost and pricePerLiter are null',
+          () {
         final entry = FuelEntry(
           vehicleId: 1,
           date: testDate,
@@ -140,7 +146,9 @@ void main() {
         expect(entry.totalCost, isNull);
       });
 
-      test('costPer100km calculates correctly when consumption and pricePerLiter are present', () {
+      test(
+          'costPer100km calculates correctly when consumption and pricePerLiter are present',
+          () {
         final entry = FuelEntry(
           vehicleId: 1,
           date: testDate,

@@ -79,11 +79,11 @@ void main() {
           )).called(1);
     });
 
-    test('requestPermission on Android calls requestNotificationsPermission', () async {
+    test('requestPermission on Android calls requestNotificationsPermission',
+        () async {
       final androidMock = MockAndroidFlutterLocalNotificationsPlugin();
       when(() => mockPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>())
-          .thenReturn(androidMock);
+          AndroidFlutterLocalNotificationsPlugin>()).thenReturn(androidMock);
       when(() => androidMock.requestNotificationsPermission())
           .thenAnswer((_) async => true);
 
@@ -97,13 +97,11 @@ void main() {
 
     test('requestPermission on iOS calls requestPermissions', () async {
       when(() => mockPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>())
-          .thenReturn(null);
+          AndroidFlutterLocalNotificationsPlugin>()).thenReturn(null);
 
       final iosMock = MockIOSFlutterLocalNotificationsPlugin();
       when(() => mockPlugin.resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>())
-          .thenReturn(iosMock);
+          IOSFlutterLocalNotificationsPlugin>()).thenReturn(iosMock);
       when(() => iosMock.requestPermissions(
             alert: any(named: 'alert'),
             badge: any(named: 'badge'),
@@ -126,11 +124,9 @@ void main() {
 
     test('requestPermission on other platforms returns true', () async {
       when(() => mockPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>())
-          .thenReturn(null);
+          AndroidFlutterLocalNotificationsPlugin>()).thenReturn(null);
       when(() => mockPlugin.resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>())
-          .thenReturn(null);
+          IOSFlutterLocalNotificationsPlugin>()).thenReturn(null);
 
       final result = await notificationService.requestPermission();
 
@@ -166,7 +162,8 @@ void main() {
     });
 
     test('cancel calls cancel on plugin', () async {
-      when(() => mockPlugin.cancel(id: any(named: 'id'))).thenAnswer((_) async {});
+      when(() => mockPlugin.cancel(id: any(named: 'id')))
+          .thenAnswer((_) async {});
 
       await notificationService.cancel(1);
 

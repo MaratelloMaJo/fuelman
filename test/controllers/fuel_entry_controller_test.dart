@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 class MockDatabase extends Mock implements Database {}
+
 class MockNotificationService extends Mock implements NotificationService {}
 
 void main() {
@@ -80,8 +81,7 @@ void main() {
           orderBy: any(named: 'orderBy'),
         )).thenAnswer((_) async => []);
 
-    when(() => mockDb.rawQuery(any(), any()))
-        .thenAnswer((_) async => []);
+    when(() => mockDb.rawQuery(any(), any())).thenAnswer((_) async => []);
   });
 
   tearDown(() {
@@ -91,7 +91,8 @@ void main() {
   });
 
   group('FuelEntryController Core Tests', () {
-    test('Loads entries and detects anomalous consumption on vehicle selection', () async {
+    test('Loads entries and detects anomalous consumption on vehicle selection',
+        () async {
       final mockData = [
         {
           'id': 101,
@@ -141,7 +142,8 @@ void main() {
       expect(controller.isEntryAnomalous(102), isTrue);
     });
 
-    test('isAnomalousConsumption verifies bounds for fuel and electric entries', () {
+    test('isAnomalousConsumption verifies bounds for fuel and electric entries',
+        () {
       final controller = FuelEntryController();
       Get.put<FuelEntryController>(controller);
 
@@ -203,7 +205,8 @@ void main() {
       verify(() => mockNotifications.showFuelReminder(
             notificationId: 1,
             vehicleName: 'Skoda Octavia',
-            daysSinceLastEntry: any(that: greaterThanOrEqualTo(9), named: 'daysSinceLastEntry'),
+            daysSinceLastEntry:
+                any(that: greaterThanOrEqualTo(9), named: 'daysSinceLastEntry'),
           )).called(1);
 
       verifyNever(() => mockNotifications.cancel(1));
@@ -221,8 +224,7 @@ void main() {
             {'last_date': twoDaysAgo.toIso8601String()}
           ]);
 
-      when(() => mockNotifications.cancel(any()))
-          .thenAnswer((_) async {});
+      when(() => mockNotifications.cancel(any())).thenAnswer((_) async {});
 
       await controller.checkAllReminders();
 
@@ -251,14 +253,20 @@ void main() {
   });
 
   group('Concurrency / State Race Conditions', () {
-    test('addEntry ignores state reload if active vehicle changes during DB insert', () async {
-      vehicleController.vehicles.assignAll([vehicleWithReminder, vehicleWithoutReminder]);
+    test(
+        'addEntry ignores state reload if active vehicle changes during DB insert',
+        () async {
+      vehicleController.vehicles
+          .assignAll([vehicleWithReminder, vehicleWithoutReminder]);
       vehicleController.selectedVehicle.value = vehicleWithReminder;
 
       final controller = FuelEntryController();
       Get.put<FuelEntryController>(controller);
 
-      when(() => mockDb.rawQuery('SELECT COUNT(*) FROM fuel_entries')).thenAnswer((_) async => [{'COUNT(*)': 1}]);
+      when(() => mockDb.rawQuery('SELECT COUNT(*) FROM fuel_entries'))
+          .thenAnswer((_) async => [
+                {'COUNT(*)': 1}
+              ]);
       when(() => mockDb.insert('fuel_entries', any())).thenAnswer((_) async {
         // Simulate user clicking on a different vehicle while insert is in flight
         vehicleController.selectedVehicle.value = vehicleWithoutReminder;
@@ -266,13 +274,12 @@ void main() {
       });
 
       final entry = FuelEntry(
-        vehicleId: 1, // For the first vehicle
-        date: DateTime.now(),
-        odometer: 1000,
-        volume: 40,
-        isFullTank: true,
-        entryType: 'fuel'
-      );
+          vehicleId: 1, // For the first vehicle
+          date: DateTime.now(),
+          odometer: 1000,
+          volume: 40,
+          isFullTank: true,
+          entryType: 'fuel');
 
       // Allow internal setup queries to complete before executing addEntry
       await Future.delayed(const Duration(milliseconds: 50));
@@ -285,7 +292,63 @@ void main() {
       // Because selectedVehicle changed to vehicle 2 during insert, it should NOT reload entries for vehicle 1.
       // Note: the controller's internal _onVehicleChanged will have triggered a loadEntries(2), but
       // the addEntry itself should not call loadEntries(1).
-      verifyNever(() => mockDb.query('fuel_entries', where: 'vehicle_id = ?', whereArgs: [1], orderBy: any(named: 'orderBy')));
+      verifyNever(() => mockDb.query('fuel_entries',
+          where: 'vehicle_id = ?',
+          whereArgs: [1],
+          orderBy: any(named: 'orderBy')));
+    });
+  });
+
+  group('calculatePriceSync 3-Way Auto-Calculation', () {
+    test('Calculates totalCost when volume and unitPrice are provided', () {
+      final res =
+          FuelEntryController.calculatePriceSync(volume: 50, unitPrice: 60);
+      expect(res.volume, 50.0);
+      expect(res.unitPrice, 60.0);
+      expect(res.totalCost, 3000.0);
+    });
+
+    test('Calculates unitPrice when volume and totalCost are provided', () {
+      final res =
+          FuelEntryController.calculatePriceSync(volume: 40, totalCost: 2400);
+      expect(res.volume, 40.0);
+      expect(res.unitPrice, 60.0);
+      expect(res.totalCost, 2400.0);
+    });
+
+    test('Calculates volume when unitPrice and totalCost are provided', () {
+      final res = FuelEntryController.calculatePriceSync(
+          unitPrice: 50, totalCost: 2500);
+      expect(res.volume, 50.0);
+      expect(res.unitPrice, 50.0);
+      expect(res.totalCost, 2500.0);
+    });
+
+    test(
+        'Recalculates unitPrice when preferTotalCost is true and all 3 are provided',
+        () {
+      final res = FuelEntryController.calculatePriceSync(
+        volume: 50,
+        unitPrice: 50,
+        totalCost: 3000,
+        preferTotalCost: true,
+      );
+      expect(res.volume, 50.0);
+      expect(res.unitPrice, 60.0);
+      expect(res.totalCost, 3000.0);
+    });
+
+    test('Handles edge cases with zero, negative, or missing inputs safely',
+        () {
+      final resZero = FuelEntryController.calculatePriceSync(
+          volume: 0, unitPrice: 0, totalCost: 0);
+      expect(resZero.volume, 0.0);
+      expect(resZero.unitPrice, 0.0);
+      expect(resZero.totalCost, 0.0);
+
+      final resNegative =
+          FuelEntryController.calculatePriceSync(volume: -10, unitPrice: 50);
+      expect(resNegative.totalCost, isNull);
     });
   });
 }

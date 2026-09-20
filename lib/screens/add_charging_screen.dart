@@ -643,7 +643,8 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
         );
       }
     } catch (e, stack) {
-      developer.log('Ошибка при сохранении сессии зарядки', error: e, stackTrace: stack, name: 'AddChargingScreen');
+      developer.log('Ошибка при сохранении сессии зарядки',
+          error: e, stackTrace: stack, name: 'AddChargingScreen');
       Get.snackbar('Ошибка', e.toString());
     } finally {
       if (mounted) setState(() => _isSaving = false);

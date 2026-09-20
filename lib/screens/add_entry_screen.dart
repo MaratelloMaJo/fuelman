@@ -26,6 +26,8 @@ class AddEntryScreen extends StatefulWidget {
   State<AddEntryScreen> createState() => _AddEntryScreenState();
 }
 
+enum _CalculationSource { volume, price, total }
+
 class _AddEntryScreenState extends State<AddEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   final _odometerCtrl = TextEditingController();
@@ -132,56 +134,73 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   // ─────────────────────────── Live Calculation ──
 
   void _onOdometerChanged() => _updatePreview();
+
   void _onVolumeChanged() {
-    if (_isCalculating || !_volumeFocus.hasFocus) return;
-    _recalcTotalOrPrice(fromVolume: true);
+    if (_isCalculating) return;
+    _recalcValues(source: _CalculationSource.volume);
     _updatePreview();
   }
 
   void _onPriceChanged() {
-    if (_isCalculating || !_priceFocus.hasFocus) return;
-    _recalcTotalOrPrice(fromPrice: true);
+    if (_isCalculating) return;
+    _recalcValues(source: _CalculationSource.price);
   }
 
   void _onTotalPriceChanged() {
-    if (_isCalculating || !_totalPriceFocus.hasFocus) return;
-    final t = double.tryParse(_totalPriceCtrl.text.replaceAll(',', '.')) ?? 0;
-    final v = double.tryParse(_volumeCtrl.text.replaceAll(',', '.')) ?? 0;
-
-    // Приоритет фактической сумме чека: автопересчёт цены за единицу
-    if (t > 0 && v > 0) {
-      _isCalculating = true;
-      _priceCtrl.text = (t / v).toStringAsFixed(2);
-      _isCalculating = false;
-    }
+    if (_isCalculating) return;
+    _recalcValues(source: _CalculationSource.total);
     _updatePreview();
   }
 
-  void _recalcTotalOrPrice({bool fromVolume = false, bool fromPrice = false}) {
+  void _recalcValues({required _CalculationSource source}) {
     final v = double.tryParse(_volumeCtrl.text.replaceAll(',', '.')) ?? 0;
     final p = double.tryParse(_priceCtrl.text.replaceAll(',', '.')) ?? 0;
     final t = double.tryParse(_totalPriceCtrl.text.replaceAll(',', '.')) ?? 0;
 
-    if (fromVolume) {
-      if (p > 0) {
-        _isCalculating = true;
-        _totalPriceCtrl.text = (v * p).toStringAsFixed(2);
-        _isCalculating = false;
-      } else if (t > 0 && v > 0) {
-        _isCalculating = true;
-        _priceCtrl.text = (t / v).toStringAsFixed(2);
-        _isCalculating = false;
-      }
-    } else if (fromPrice) {
-      if (v > 0) {
-        _isCalculating = true;
-        _totalPriceCtrl.text = (v * p).toStringAsFixed(2);
-        _isCalculating = false;
-      } else if (t > 0 && p > 0) {
-        _isCalculating = true;
-        _volumeCtrl.text = (t / p).toStringAsFixed(2);
-        _isCalculating = false;
-      }
+    switch (source) {
+      case _CalculationSource.volume:
+        if (v > 0) {
+          if (p > 0) {
+            _isCalculating = true;
+            _totalPriceCtrl.text = (v * p).toStringAsFixed(2);
+            _isCalculating = false;
+          } else if (t > 0) {
+            _isCalculating = true;
+            _priceCtrl.text = (t / v).toStringAsFixed(2);
+            _isCalculating = false;
+          }
+        }
+        break;
+      case _CalculationSource.price:
+        if (p > 0) {
+          if (v > 0) {
+            _isCalculating = true;
+            _totalPriceCtrl.text = (v * p).toStringAsFixed(2);
+            _isCalculating = false;
+          } else if (t > 0) {
+            _isCalculating = true;
+            _volumeCtrl.text = (t / p).toStringAsFixed(2);
+            _isCalculating = false;
+          }
+        }
+        break;
+      case _CalculationSource.total:
+        if (t > 0) {
+          if (p > 0 && (_volumeCtrl.text.isEmpty || _priceFocus.hasFocus)) {
+            _isCalculating = true;
+            _volumeCtrl.text = (t / p).toStringAsFixed(2);
+            _isCalculating = false;
+          } else if (v > 0) {
+            _isCalculating = true;
+            _priceCtrl.text = (t / v).toStringAsFixed(2);
+            _isCalculating = false;
+          } else if (p > 0) {
+            _isCalculating = true;
+            _volumeCtrl.text = (t / p).toStringAsFixed(2);
+            _isCalculating = false;
+          }
+        }
+        break;
     }
   }
 

@@ -48,7 +48,8 @@ void main() {
     await Get.delete<ThemeController>();
   });
 
-  test('fallback loading using the old isDarkMode boolean preference (true)', () async {
+  test('fallback loading using the old isDarkMode boolean preference (true)',
+      () async {
     SharedPreferences.setMockInitialValues({'isDarkMode': true});
     final controller = ThemeController();
     Get.put(controller);
@@ -61,7 +62,8 @@ void main() {
     await Get.delete<ThemeController>();
   });
 
-  test('fallback loading using the old isDarkMode boolean preference (false)', () async {
+  test('fallback loading using the old isDarkMode boolean preference (false)',
+      () async {
     SharedPreferences.setMockInitialValues({'isDarkMode': false});
     final controller = ThemeController();
     Get.put(controller);
@@ -74,7 +76,8 @@ void main() {
     await Get.delete<ThemeController>();
   });
 
-  test('setThemeMode updates themeMode and saves to SharedPreferences', () async {
+  test('setThemeMode updates themeMode and saves to SharedPreferences',
+      () async {
     final controller = ThemeController();
     Get.put(controller);
     await Future.delayed(Duration.zero);

@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fuelman/controllers/settings_controller.dart';
 import 'package:get/get.dart';
@@ -90,11 +89,13 @@ void main() {
       });
 
       test('convertVolume L to gal', () {
-        expect(controller.convertVolume(10, 'L', 'gal'), closeTo(2.64172, 0.0001));
+        expect(
+            controller.convertVolume(10, 'L', 'gal'), closeTo(2.64172, 0.0001));
       });
 
       test('convertVolume gal to L', () {
-        expect(controller.convertVolume(10, 'gal', 'L'), closeTo(37.8541, 0.0001));
+        expect(
+            controller.convertVolume(10, 'gal', 'L'), closeTo(37.8541, 0.0001));
       });
 
       test('convertVolume ignores kWh', () {
@@ -110,11 +111,13 @@ void main() {
       });
 
       test('convertDistance km to mi', () {
-        expect(controller.convertDistance(100, 'km', 'mi'), closeTo(62.1371, 0.0001));
+        expect(controller.convertDistance(100, 'km', 'mi'),
+            closeTo(62.1371, 0.0001));
       });
 
       test('convertDistance mi to km', () {
-        expect(controller.convertDistance(62.1371, 'mi', 'km'), closeTo(100, 0.0001));
+        expect(controller.convertDistance(62.1371, 'mi', 'km'),
+            closeTo(100, 0.0001));
       });
     });
   });

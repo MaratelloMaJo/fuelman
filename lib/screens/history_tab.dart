@@ -160,7 +160,8 @@ class _HistoryTabState extends State<HistoryTab>
                     await _expenseCtrl.exportToCsv(vehicle.id!, vehicle.name);
                   }
                 } catch (e, stack) {
-                  developer.log('Ошибка при экспорте', error: e, stackTrace: stack, name: 'HistoryTab');
+                  developer.log('Ошибка при экспорте',
+                      error: e, stackTrace: stack, name: 'HistoryTab');
                   Get.snackbar(
                     'Ошибка',
                     e.toString(),

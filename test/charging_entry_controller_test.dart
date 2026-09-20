@@ -330,7 +330,8 @@ void main() {
   });
 
   group('ChargingEntryController _rebuildTimeline catch block', () {
-    test('falls back to FuelDatabase when FuelEntryController lookup throws', () async {
+    test('falls back to FuelDatabase when FuelEntryController lookup throws',
+        () async {
       Get.testMode = true;
       final mockDb = _MockDb();
       FuelDatabase.setMockDatabase(mockDb);
@@ -339,7 +340,12 @@ void main() {
           .thenAnswer((_) async => []);
 
       final vehCtrl = VehicleController();
-      vehCtrl.selectedVehicle.value = const Vehicle(id: 1, name: 'EV', model: 'M', bodyType: 'sedan', engineType: 'electric');
+      vehCtrl.selectedVehicle.value = const Vehicle(
+          id: 1,
+          name: 'EV',
+          model: 'M',
+          bodyType: 'sedan',
+          engineType: 'electric');
       Get.put<VehicleController>(vehCtrl);
 
       // Make sure FuelEntryController is NOT registered or throws on lookup

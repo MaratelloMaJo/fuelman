@@ -302,7 +302,16 @@ void main() {
       expect(calcUnitPrice.unitPrice, equals(62.5));
       expect(calcUnitPrice.totalCost, equals(2500.0));
 
-      // 3. Проверка расчетного геттера totalCost в модели FuelEntry
+      // 3. Авторасчет volume = totalCost / unitPrice при вводе цены за литр и общей суммы
+      final calcVolume = FuelEntryController.calculatePriceSync(
+        unitPrice: 50.0,
+        totalCost: 2000.0,
+      );
+      expect(calcVolume.volume, equals(40.0));
+      expect(calcVolume.unitPrice, equals(50.0));
+      expect(calcVolume.totalCost, equals(2000.0));
+
+      // 4. Проверка расчетного геттера totalCost в модели FuelEntry
       final entryFromUnitPrice = FuelEntry(
         vehicleId: 1,
         date: DateTime(2025, 1, 1),

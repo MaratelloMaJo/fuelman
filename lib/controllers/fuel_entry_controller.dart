@@ -123,7 +123,6 @@ class FuelEntryController extends GetxController {
   /// Множество id записей, у которых расход помечен как аномальный.
   final anomalousIds = <int>{}.obs;
 
-
   VehicleController? get _vehicleCtrl => Get.isRegistered<VehicleController>()
       ? Get.find<VehicleController>()
       : null;
@@ -776,39 +775,62 @@ class FuelEntryController extends GetxController {
     return null;
   }
 
-  /// Авторасчет и синхронизация стоимости:
-  /// - totalCost = volume * unitPrice
-  /// - Если общая стоимость введена пользователем вручную: unitPrice = totalCost / volume
-  static ({double? unitPrice, double? totalCost}) calculatePriceSync({
-    required double volume,
+  /// Авторасчет и синхронизация объема топлива, цены за единицу и общей стоимости:
+  /// - Если заданы volume и unitPrice -> totalCost = volume * unitPrice
+  /// - Если заданы volume и totalCost (или preferTotalCost) -> unitPrice = totalCost / volume
+  /// - Если заданы unitPrice и totalCost (volume == null или volume <= 0) -> volume = totalCost / unitPrice
+  static ({double? volume, double? unitPrice, double? totalCost})
+      calculatePriceSync({
+    double? volume,
     double? unitPrice,
     double? totalCost,
     bool preferTotalCost = false,
   }) {
-    if (volume <= 0) {
-      return (unitPrice: unitPrice, totalCost: totalCost);
-    }
-    if (preferTotalCost && totalCost != null && totalCost > 0) {
+    final v = (volume != null && volume > 0) ? volume : null;
+    final p = (unitPrice != null && unitPrice > 0) ? unitPrice : null;
+    final t = (totalCost != null && totalCost > 0) ? totalCost : null;
+
+    if (v != null && p != null && (!preferTotalCost || t == null)) {
       return (
-        unitPrice: totalCost / volume,
-        totalCost: totalCost,
+        volume: v,
+        unitPrice: p,
+        totalCost: v * p,
       );
     }
-    if (totalCost != null &&
-        totalCost > 0 &&
-        (unitPrice == null || unitPrice <= 0)) {
+    if (v != null && t != null && (preferTotalCost || p == null)) {
       return (
-        unitPrice: totalCost / volume,
-        totalCost: totalCost,
+        volume: v,
+        unitPrice: t / v,
+        totalCost: t,
       );
     }
-    if (unitPrice != null && unitPrice > 0) {
+    if (p != null && t != null && v == null) {
       return (
-        unitPrice: unitPrice,
-        totalCost: volume * unitPrice,
+        volume: t / p,
+        unitPrice: p,
+        totalCost: t,
       );
     }
-    return (unitPrice: unitPrice, totalCost: totalCost);
+    if (v != null && p != null && t != null) {
+      if (preferTotalCost) {
+        return (
+          volume: v,
+          unitPrice: t / v,
+          totalCost: t,
+        );
+      } else {
+        return (
+          volume: v,
+          unitPrice: p,
+          totalCost: v * p,
+        );
+      }
+    }
+    return (
+      volume: volume,
+      unitPrice: unitPrice,
+      totalCost: totalCost,
+    );
   }
 
   /// Расчёт предварительного расхода для предпросмотра при вводе.

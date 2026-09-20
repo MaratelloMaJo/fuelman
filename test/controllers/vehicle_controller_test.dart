@@ -47,7 +47,8 @@ void main() {
   });
 
   group('VehicleController Tests', () {
-    test('loadVehicles initializes vehicles list and selects the first vehicle', () async {
+    test('loadVehicles initializes vehicles list and selects the first vehicle',
+        () async {
       final controller = VehicleController();
       Get.put(controller);
 
@@ -69,13 +70,14 @@ void main() {
       expect(controller.selectedVehicle.value!.name, 'Audi e-tron');
     });
 
-    test('addVehicle inserts to db, sorts list by name and selects the new vehicle', () async {
+    test(
+        'addVehicle inserts to db, sorts list by name and selects the new vehicle',
+        () async {
       final controller = VehicleController();
       Get.put(controller);
       await Future.delayed(const Duration(milliseconds: 50));
 
-      when(() => mockDb.insert('vehicles', any()))
-          .thenAnswer((_) async => 3);
+      when(() => mockDb.insert('vehicles', any())).thenAnswer((_) async => 3);
 
       const newVehicle = Vehicle(
         name: 'Alfa Romeo Giulia',
@@ -93,7 +95,8 @@ void main() {
       expect(controller.selectedVehicle.value!.id, 3);
     });
 
-    test('updateVehicle updates database, list, and selectedVehicle if matched', () async {
+    test('updateVehicle updates database, list, and selectedVehicle if matched',
+        () async {
       final controller = VehicleController();
       Get.put(controller);
       await Future.delayed(const Duration(milliseconds: 50));
@@ -108,11 +111,13 @@ void main() {
       final updated = vehicle1.copyWith(name: 'BMW 330e M-Sport');
       await controller.updateVehicle(updated);
 
-      expect(controller.vehicles.firstWhere((v) => v.id == 1).name, 'BMW 330e M-Sport');
+      expect(controller.vehicles.firstWhere((v) => v.id == 1).name,
+          'BMW 330e M-Sport');
       expect(controller.selectedVehicle.value!.name, 'BMW 330e M-Sport');
     });
 
-    test('deleteVehicle removes from list and updates selectedVehicle fallback', () async {
+    test('deleteVehicle removes from list and updates selectedVehicle fallback',
+        () async {
       final controller = VehicleController();
       Get.put(controller);
       await Future.delayed(const Duration(milliseconds: 50));
@@ -131,7 +136,8 @@ void main() {
       expect(controller.selectedVehicle.value!.id, 2);
     });
 
-    test('deleteVehicle calls _clearRelatedControllersState and resets states', () async {
+    test('deleteVehicle calls _clearRelatedControllersState and resets states',
+        () async {
       when(() => mockDb.query('vehicles', orderBy: any(named: 'orderBy')))
           .thenAnswer((_) async => [vehicle1.toMap()]);
 
@@ -151,7 +157,8 @@ void main() {
       expect(controller.selectedVehicle.value, isNull);
     });
 
-    test('deleteVehicle when all vehicles removed sets selectedVehicle to null', () async {
+    test('deleteVehicle when all vehicles removed sets selectedVehicle to null',
+        () async {
       when(() => mockDb.query('vehicles', orderBy: any(named: 'orderBy')))
           .thenAnswer((_) async => [vehicle1.toMap()]);
 

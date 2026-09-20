@@ -223,15 +223,15 @@ void main() {
           where: 'id = ?', whereArgs: [99])).called(1);
 
       await fuelDatabase.deleteEntry(99);
-      verify(() => mockDb.delete('fuel_entries',
-          where: 'id = ?', whereArgs: [99])).called(1);
+      verify(() =>
+              mockDb.delete('fuel_entries', where: 'id = ?', whereArgs: [99]))
+          .called(1);
     });
 
     test('getLastEntryDate returns parsed DateTime or null', () async {
-      when(() => mockDb.rawQuery(any(), any()))
-          .thenAnswer((_) async => [
-                {'last_date': '2025-01-15T12:00:00.000'}
-              ]);
+      when(() => mockDb.rawQuery(any(), any())).thenAnswer((_) async => [
+            {'last_date': '2025-01-15T12:00:00.000'}
+          ]);
 
       final date = await fuelDatabase.getLastEntryDate(1);
       expect(date, isNotNull);
@@ -263,8 +263,9 @@ void main() {
       expect(saved.id, 7);
 
       await fuelDatabase.deleteExpense(7);
-      verify(() => mockDb.delete('car_expenses',
-          where: 'id = ?', whereArgs: [7])).called(1);
+      verify(() =>
+              mockDb.delete('car_expenses', where: 'id = ?', whereArgs: [7]))
+          .called(1);
     });
 
     test('ChargingEntry get, insert and delete', () async {
@@ -310,7 +311,8 @@ void main() {
       expect(isValid, isFalse);
     });
 
-    test('isValidSqliteFile returns false for empty or small file (< 16 bytes)', () async {
+    test('isValidSqliteFile returns false for empty or small file (< 16 bytes)',
+        () async {
       final tempDir = await Directory.systemTemp.createTemp('fuelman_test_');
       final smallFile = File('${tempDir.path}/small.db');
       await smallFile.writeAsBytes([1, 2, 3, 4, 5]);
@@ -321,10 +323,12 @@ void main() {
       await tempDir.delete(recursive: true);
     });
 
-    test('isValidSqliteFile returns false for arbitrary text/binary file', () async {
+    test('isValidSqliteFile returns false for arbitrary text/binary file',
+        () async {
       final tempDir = await Directory.systemTemp.createTemp('fuelman_test_');
       final textFile = File('${tempDir.path}/fake.db');
-      await textFile.writeAsString('This is just a text file pretending to be sqlite!');
+      await textFile
+          .writeAsString('This is just a text file pretending to be sqlite!');
 
       final isValid = await FuelDatabase.isValidSqliteFile(textFile);
       expect(isValid, isFalse);
@@ -332,7 +336,8 @@ void main() {
       await tempDir.delete(recursive: true);
     });
 
-    test('isValidSqliteFile returns true for file with SQLite magic header', () async {
+    test('isValidSqliteFile returns true for file with SQLite magic header',
+        () async {
       final tempDir = await Directory.systemTemp.createTemp('fuelman_test_');
       final validFile = File('${tempDir.path}/valid.db');
 
@@ -352,7 +357,8 @@ void main() {
       final maliciousFile = File('${tempDir.path}/malicious.txt');
       await maliciousFile.writeAsString('malicious payload');
 
-      final imported = await fuelDatabase.importBackup(pickedFilePath: maliciousFile.path);
+      final imported =
+          await fuelDatabase.importBackup(pickedFilePath: maliciousFile.path);
       expect(imported, isFalse);
 
       await tempDir.delete(recursive: true);

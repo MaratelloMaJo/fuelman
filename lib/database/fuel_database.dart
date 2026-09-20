@@ -522,15 +522,30 @@ class FuelDatabase {
         );
       }
     } catch (e, stack) {
-      developer.log('Ошибка при экспорте бэкапа', error: e, stackTrace: stack, name: 'FuelDatabase');
+      developer.log('Ошибка при экспорте бэкапа',
+          error: e, stackTrace: stack, name: 'FuelDatabase');
       // Ignored: handle file system or sharing errors gracefully
     }
   }
 
   /// SQLite header magic string: "SQLite format 3\x00" (16 bytes)
   static const List<int> sqliteHeaderBytes = [
-    0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66,
-    0x6F, 0x72, 0x6D, 0x61, 0x74, 0x20, 0x33, 0x00,
+    0x53,
+    0x51,
+    0x4C,
+    0x69,
+    0x74,
+    0x65,
+    0x20,
+    0x66,
+    0x6F,
+    0x72,
+    0x6D,
+    0x61,
+    0x74,
+    0x20,
+    0x33,
+    0x00,
   ];
 
   /// Проверяет, является ли файл валидной базой SQLite.
@@ -552,7 +567,8 @@ class FuelDatabase {
         await handle.close();
       }
     } catch (e, stack) {
-      developer.log('Ошибка при валидации SQLite файла', error: e, stackTrace: stack, name: 'FuelDatabase');
+      developer.log('Ошибка при валидации SQLite файла',
+          error: e, stackTrace: stack, name: 'FuelDatabase');
       return false;
     }
   }
@@ -586,7 +602,8 @@ class FuelDatabase {
         return true;
       }
     } catch (e, stack) {
-      developer.log('Ошибка при импорте бэкапа', error: e, stackTrace: stack, name: 'FuelDatabase');
+      developer.log('Ошибка при импорте бэкапа',
+          error: e, stackTrace: stack, name: 'FuelDatabase');
     }
     return false;
   }

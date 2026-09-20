@@ -57,7 +57,8 @@ void main() {
   });
 
   group('CurrencyService fetchRates and Cache', () {
-    test('fetchRates stores rates in memory and SharedPreferences on 200', () async {
+    test('fetchRates stores rates in memory and SharedPreferences on 200',
+        () async {
       final jsonResponse = jsonEncode({
         'result': 'success',
         'rates': {
@@ -82,7 +83,8 @@ void main() {
       expect(prefs.getInt('currency_rates_timestamp'), isNotNull);
     });
 
-    test('fetchRates handles non-200 HTTP response gracefully in catch block', () async {
+    test('fetchRates handles non-200 HTTP response gracefully in catch block',
+        () async {
       when(() => mockClient.get(any())).thenAnswer(
         (_) async => http.Response('Server Error', 500),
       );
@@ -93,7 +95,8 @@ void main() {
       expect(service.rates, isNull);
     });
 
-    test('fetchRates handles network exception gracefully in catch block', () async {
+    test('fetchRates handles network exception gracefully in catch block',
+        () async {
       when(() => mockClient.get(any()))
           .thenThrow(http.ClientException('Network down'));
 
@@ -102,7 +105,8 @@ void main() {
       expect(service.rates, isNull);
     });
 
-    test('fetchRates handles malformed JSON gracefully in catch block', () async {
+    test('fetchRates handles malformed JSON gracefully in catch block',
+        () async {
       when(() => mockClient.get(any())).thenAnswer(
         (_) async => http.Response('<<<not-json>>>', 200),
       );

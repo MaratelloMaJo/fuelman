@@ -9,8 +9,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 /// Уведомления НЕ планируются заранее — проверка происходит при каждом
 /// открытии приложения, что корректно работает для непостоянного режима езды.
 class NotificationService {
-  NotificationService({FlutterLocalNotificationsPlugin? plugin}) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
-  NotificationService._({FlutterLocalNotificationsPlugin? plugin}) : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  NotificationService({FlutterLocalNotificationsPlugin? plugin})
+      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  NotificationService._({FlutterLocalNotificationsPlugin? plugin})
+      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static NotificationService _instance = NotificationService._();
   static NotificationService get instance => _instance;

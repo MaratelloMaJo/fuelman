@@ -26,7 +26,7 @@ void main() {
     }
 
     // Warmup
-    for(int i = 0; i < 50; i++) {
+    for (int i = 0; i < 50; i++) {
       FuelEntryController.calculateOverallStats(entries);
     }
 
@@ -37,6 +37,7 @@ void main() {
     }
     stopwatch.stop();
 
-    debugPrint('Average calculateOverallStats time for 10000 entries: ${stopwatch.elapsedMilliseconds / iterations} ms');
+    debugPrint(
+        'Average calculateOverallStats time for 10000 entries: ${stopwatch.elapsedMilliseconds / iterations} ms');
   });
 }

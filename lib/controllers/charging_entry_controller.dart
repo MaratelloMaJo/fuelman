@@ -160,7 +160,8 @@ class ChargingEntryController extends GetxController {
   void onInit() {
     super.onInit();
     // Перезагружаем данные при смене активного автомобиля.
-    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
+    _workers
+        .add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
@@ -230,7 +231,8 @@ class ChargingEntryController extends GetxController {
     final entry = entries.firstWhereOrNull((e) => e.id == id);
     await FuelDatabase.instance.deleteChargingEntry(id);
 
-    if (entry != null && _vehicleCtrl.selectedVehicle.value?.id == entry.vehicleId) {
+    if (entry != null &&
+        _vehicleCtrl.selectedVehicle.value?.id == entry.vehicleId) {
       entries.removeWhere((e) => e.id == id);
       await _rebuildTimeline(entry.vehicleId);
     }
@@ -262,7 +264,8 @@ class ChargingEntryController extends GetxController {
                   as List<FuelEntry>?) ??
               await FuelDatabase.instance.getEntries(vehicleId);
     } catch (e, stack) {
-      developer.log('Ошибка при получении записей из FuelEntryController', error: e, stackTrace: stack, name: 'ChargingEntryController');
+      developer.log('Ошибка при получении записей из FuelEntryController',
+          error: e, stackTrace: stack, name: 'ChargingEntryController');
       fuelEntries = await FuelDatabase.instance.getEntries(vehicleId);
     }
 

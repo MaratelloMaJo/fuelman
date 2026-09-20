@@ -76,7 +76,8 @@ void main() {
       expect(controller.expenseStats, isEmpty);
     });
 
-    test('Loads expenses and calculates stats when vehicle is selected', () async {
+    test('Loads expenses and calculates stats when vehicle is selected',
+        () async {
       final expenseMap = {
         'id': 10,
         'vehicle_id': 1,
@@ -232,7 +233,9 @@ void main() {
       expect(result, equals(mockMonthly));
     });
 
-    test('addExpense ignores state reload if active vehicle changes during DB insert', () async {
+    test(
+        'addExpense ignores state reload if active vehicle changes during DB insert',
+        () async {
       final controller = Get.put(CarExpenseController());
       vehicleController.selectedVehicle.value = testVehicle;
 
@@ -258,7 +261,10 @@ void main() {
 
       await controller.addExpense(newExpense);
 
-      verifyNever(() => mockDb.query('car_expenses', where: 'vehicle_id = ?', whereArgs: [1], orderBy: any(named: 'orderBy')));
+      verifyNever(() => mockDb.query('car_expenses',
+          where: 'vehicle_id = ?',
+          whereArgs: [1],
+          orderBy: any(named: 'orderBy')));
     });
   });
 }
