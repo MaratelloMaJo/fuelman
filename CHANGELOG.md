@@ -10,6 +10,8 @@
 - **Fix**: Prevented UI state race conditions by enforcing early return blocking double-taps on save buttons across all data entry screens.
 - **Fix**: Prevented saving records with a date in the future to maintain data integrity.
 - **Fix**: Improved error logging by replacing silent swallowing and `debugPrint` with proper stack trace logging via `dart:developer`.
+- **Fix**: Prevented state race conditions in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` where switching the active vehicle during an async save operation could cause the UI to load data for the wrong vehicle.
+- **Fix**: Added strict validation in `FuelEntryController.validateOdometer` to explicitly reject negative odometer values.
 - **Test**: Expanded `test/chaos/chaos_test.dart` to simulate and guard against Fuzzing and chaos-engineering edge-case inputs (overflows, negatives, 0-distance wrapping, and future date bypass structures).
 
 # Changelog

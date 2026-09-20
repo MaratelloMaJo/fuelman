@@ -154,16 +154,24 @@ class ChargingEntryController extends GetxController {
 
   final _vehicleCtrl = Get.find<VehicleController>();
 
+  final _workers = <Worker>[];
 
   @override
   void onInit() {
     super.onInit();
     // Перезагружаем данные при смене активного автомобиля.
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
-
+  @override
+  void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    _workers.clear();
+    super.onClose();
+  }
 
   void _onVehicleChanged() {
     final v = _vehicleCtrl.selectedVehicle.value;
@@ -196,6 +204,9 @@ class ChargingEntryController extends GetxController {
   /// Добавляет новую сессию зарядки и обновляет состояние.
   Future<ChargingEntry> addEntry(ChargingEntry entry) async {
     final saved = await FuelDatabase.instance.insertChargingEntry(entry);
+
+    if (_vehicleCtrl.selectedVehicle.value?.id != saved.vehicleId) return saved;
+
     entries.add(saved);
     _sortEntries();
     await _rebuildTimeline(saved.vehicleId);
@@ -205,6 +216,9 @@ class ChargingEntryController extends GetxController {
   /// Обновляет существующую сессию зарядки.
   Future<void> updateEntry(ChargingEntry entry) async {
     await FuelDatabase.instance.updateChargingEntry(entry);
+
+    if (_vehicleCtrl.selectedVehicle.value?.id != entry.vehicleId) return;
+
     final idx = entries.indexWhere((e) => e.id == entry.id);
     if (idx != -1) entries[idx] = entry;
     _sortEntries();
@@ -215,8 +229,9 @@ class ChargingEntryController extends GetxController {
   Future<void> deleteEntry(int id) async {
     final entry = entries.firstWhereOrNull((e) => e.id == id);
     await FuelDatabase.instance.deleteChargingEntry(id);
-    entries.removeWhere((e) => e.id == id);
-    if (entry != null) {
+
+    if (entry != null && _vehicleCtrl.selectedVehicle.value?.id == entry.vehicleId) {
+      entries.removeWhere((e) => e.id == id);
       await _rebuildTimeline(entry.vehicleId);
     }
   }

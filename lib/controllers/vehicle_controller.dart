@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 
 import '../database/fuel_database.dart';
 import '../models/vehicle.dart';
+import 'car_expense_controller.dart';
+import 'charging_entry_controller.dart';
+import 'fuel_entry_controller.dart';
 
 /// Управляет списком автомобилей и выбором активного авто.
 class VehicleController extends GetxController {
@@ -60,6 +63,26 @@ class VehicleController extends GetxController {
     vehicles.removeWhere((v) => v.id == id);
     if (selectedVehicle.value?.id == id) {
       selectedVehicle.value = vehicles.isNotEmpty ? vehicles.first : null;
+      _clearRelatedControllersState();
+    }
+  }
+
+  void _clearRelatedControllersState() {
+    if (Get.isRegistered<FuelEntryController>()) {
+      final ctrl = Get.find<FuelEntryController>();
+      ctrl.entries.clear();
+      ctrl.stats.clear();
+      ctrl.anomalousIds.clear();
+    }
+    if (Get.isRegistered<ChargingEntryController>()) {
+      final ctrl = Get.find<ChargingEntryController>();
+      ctrl.entries.clear();
+      ctrl.timeline.clear();
+    }
+    if (Get.isRegistered<CarExpenseController>()) {
+      final ctrl = Get.find<CarExpenseController>();
+      ctrl.expenses.clear();
+      ctrl.expenseStats.clear();
     }
   }
 

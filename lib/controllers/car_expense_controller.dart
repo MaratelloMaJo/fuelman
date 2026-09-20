@@ -19,14 +19,23 @@ class CarExpenseController extends GetxController {
   final _vehicleCtrl = Get.find<VehicleController>();
 
 
+  final _workers = <Worker>[];
+
   @override
   void onInit() {
     super.onInit();
-    ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged());
+    _workers.add(ever(_vehicleCtrl.selectedVehicle, (_) => _onVehicleChanged()));
     _onVehicleChanged();
   }
 
-
+  @override
+  void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    _workers.clear();
+    super.onClose();
+  }
 
   void _onVehicleChanged() {
     final v = _vehicleCtrl.selectedVehicle.value;
@@ -70,20 +79,28 @@ class CarExpenseController extends GetxController {
   Future<void> addExpense(CarExpense expense) async {
     await FuelDatabase.instance.insertExpense(expense);
     final v = _vehicleCtrl.selectedVehicle.value;
-    if (v != null) await loadExpenses(v.id!);
+    if (v != null && v.id == expense.vehicleId) {
+      await loadExpenses(v.id!);
+    }
   }
 
   Future<void> updateExpense(CarExpense expense) async {
     await FuelDatabase.instance.updateExpense(expense);
     final v = _vehicleCtrl.selectedVehicle.value;
-    if (v != null) await loadExpenses(v.id!);
+    if (v != null && v.id == expense.vehicleId) {
+      await loadExpenses(v.id!);
+    }
   }
 
   Future<void> deleteExpense(int expenseId) async {
+    final entry = expenses.firstWhereOrNull((e) => e.id == expenseId);
     await FuelDatabase.instance.deleteExpense(expenseId);
-    expenses.removeWhere((e) => e.id == expenseId);
+
     final v = _vehicleCtrl.selectedVehicle.value;
-    if (v != null) await _loadStats(v.id!);
+    if (entry != null && v != null && v.id == entry.vehicleId) {
+      expenses.removeWhere((e) => e.id == expenseId);
+      await _loadStats(v.id!);
+    }
   }
 
   // ─────────────────────────── Monthly Stats ──

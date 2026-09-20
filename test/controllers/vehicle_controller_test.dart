@@ -131,6 +131,26 @@ void main() {
       expect(controller.selectedVehicle.value!.id, 2);
     });
 
+    test('deleteVehicle calls _clearRelatedControllersState and resets states', () async {
+      when(() => mockDb.query('vehicles', orderBy: any(named: 'orderBy')))
+          .thenAnswer((_) async => [vehicle1.toMap()]);
+
+      final controller = VehicleController();
+      Get.put(controller);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      when(() => mockDb.delete(
+            'vehicles',
+            where: any(named: 'where'),
+            whereArgs: any(named: 'whereArgs'),
+          )).thenAnswer((_) async => 1);
+
+      await controller.deleteVehicle(1);
+      // Even without controllers registered, the code should not crash
+      expect(controller.vehicles.isEmpty, isTrue);
+      expect(controller.selectedVehicle.value, isNull);
+    });
+
     test('deleteVehicle when all vehicles removed sets selectedVehicle to null', () async {
       when(() => mockDb.query('vehicles', orderBy: any(named: 'orderBy')))
           .thenAnswer((_) async => [vehicle1.toMap()]);

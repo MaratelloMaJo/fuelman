@@ -3,6 +3,7 @@ import 'package:fuelman/controllers/fuel_entry_controller.dart';
 import 'package:fuelman/controllers/settings_controller.dart';
 import 'package:fuelman/controllers/vehicle_controller.dart';
 import 'package:fuelman/database/fuel_database.dart';
+import 'package:fuelman/models/fuel_entry.dart';
 import 'package:fuelman/models/vehicle.dart';
 import 'package:fuelman/services/notification_service.dart';
 import 'package:get/get.dart';
@@ -246,6 +247,45 @@ void main() {
             daysSinceLastEntry: any(named: 'daysSinceLastEntry'),
           ));
       verifyNever(() => mockNotifications.cancel(any()));
+    });
+  });
+
+  group('Concurrency / State Race Conditions', () {
+    test('addEntry ignores state reload if active vehicle changes during DB insert', () async {
+      vehicleController.vehicles.assignAll([vehicleWithReminder, vehicleWithoutReminder]);
+      vehicleController.selectedVehicle.value = vehicleWithReminder;
+
+      final controller = FuelEntryController();
+      Get.put<FuelEntryController>(controller);
+
+      when(() => mockDb.rawQuery('SELECT COUNT(*) FROM fuel_entries')).thenAnswer((_) async => [{'COUNT(*)': 1}]);
+      when(() => mockDb.insert('fuel_entries', any())).thenAnswer((_) async {
+        // Simulate user clicking on a different vehicle while insert is in flight
+        vehicleController.selectedVehicle.value = vehicleWithoutReminder;
+        return 10;
+      });
+
+      final entry = FuelEntry(
+        vehicleId: 1, // For the first vehicle
+        date: DateTime.now(),
+        odometer: 1000,
+        volume: 40,
+        isFullTank: true,
+        entryType: 'fuel'
+      );
+
+      // Allow internal setup queries to complete before executing addEntry
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // clear mock invocations before the action to avoid false positives from initialization
+      clearInteractions(mockDb);
+
+      await controller.addEntry(entry);
+
+      // Because selectedVehicle changed to vehicle 2 during insert, it should NOT reload entries for vehicle 1.
+      // Note: the controller's internal _onVehicleChanged will have triggered a loadEntries(2), but
+      // the addEntry itself should not call loadEntries(1).
+      verifyNever(() => mockDb.query('fuel_entries', where: 'vehicle_id = ?', whereArgs: [1], orderBy: any(named: 'orderBy')));
     });
   });
 }

@@ -52,5 +52,10 @@ void main() {
       final futureDate = DateTime.now().add(const Duration(days: 1));
       expect(futureDate.isAfter(DateTime.now()), isTrue);
     });
+
+    test('Odometer validation catches negative values', () {
+      final err = FuelEntryController.validateOdometer(odometer: -5, lastOdometer: null);
+      expect(err, 'Одометр не может быть отрицательным');
+    });
   });
 }

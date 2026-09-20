@@ -128,14 +128,14 @@ class FuelEntryController extends GetxController {
       ? Get.find<VehicleController>()
       : null;
 
-
+  final _workers = <Worker>[];
 
   @override
   void onInit() {
     super.onInit();
     final vc = _vehicleCtrl;
     if (vc != null) {
-      ever(vc.selectedVehicle, (_) => _onVehicleChanged());
+      _workers.add(ever(vc.selectedVehicle, (_) => _onVehicleChanged()));
       _onVehicleChanged();
     }
 
@@ -146,6 +146,15 @@ class FuelEntryController extends GetxController {
       _workers
           .add(ever(settings.volumeUnit, (_) => _recalcStatsCurrentVehicle()));
     }
+  }
+
+  @override
+  void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    _workers.clear();
+    super.onClose();
   }
 
   void _recalcStatsCurrentVehicle() {
@@ -434,6 +443,9 @@ class FuelEntryController extends GetxController {
         await FuelDatabase.instance.getAllEntriesCount() == 0;
 
     final saved = await FuelDatabase.instance.insertEntry(entry);
+
+    if (_vehicleCtrl?.selectedVehicle.value?.id != entry.vehicleId) return;
+
     entries.add(saved);
 
     if (isFirstEntryGlobally) {
@@ -441,23 +453,35 @@ class FuelEntryController extends GetxController {
     }
 
     await _recalculateConsumption(entry.vehicleId);
-    await loadEntries(entry.vehicleId);
+    if (_vehicleCtrl?.selectedVehicle.value?.id == entry.vehicleId) {
+      await loadEntries(entry.vehicleId);
+    }
     await _checkReminder(entry.vehicleId);
   }
 
   Future<void> updateEntry(FuelEntry entry) async {
     await FuelDatabase.instance.updateEntry(entry);
+
+    if (_vehicleCtrl?.selectedVehicle.value?.id != entry.vehicleId) return;
+
     await _recalculateConsumption(entry.vehicleId);
-    await loadEntries(entry.vehicleId);
+    if (_vehicleCtrl?.selectedVehicle.value?.id == entry.vehicleId) {
+      await loadEntries(entry.vehicleId);
+    }
     await _checkReminder(entry.vehicleId);
   }
 
   Future<void> deleteEntry(int entryId, int vehicleId) async {
     await FuelDatabase.instance.deleteEntry(entryId);
+
+    if (_vehicleCtrl?.selectedVehicle.value?.id != vehicleId) return;
+
     entries.removeWhere((e) => e.id == entryId);
 
     await _recalculateConsumption(vehicleId);
-    await loadEntries(vehicleId);
+    if (_vehicleCtrl?.selectedVehicle.value?.id == vehicleId) {
+      await loadEntries(vehicleId);
+    }
   }
 
   // ─────────────────────────────── Consumption Algorithm ──
@@ -737,11 +761,14 @@ class FuelEntryController extends GetxController {
   }
 
   /// Валидация показаний одометра.
-  /// Запрещает ввод одометра строго меньше последнего зафиксированного значения по данному авто.
+  /// Запрещает ввод отрицательного одометра и одометра строго меньше последнего зафиксированного значения по данному авто.
   static String? validateOdometer({
     required double odometer,
     required double? lastOdometer,
   }) {
+    if (odometer < 0) {
+      return 'Одометр не может быть отрицательным';
+    }
     if (lastOdometer != null && odometer < lastOdometer) {
       final odoStr = lastOdometer.toStringAsFixed(0);
       return 'Одометр не может быть меньше последнего зафиксированного значения ($odoStr км)';

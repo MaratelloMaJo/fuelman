@@ -231,5 +231,34 @@ void main() {
       final result = await controller.getMonthlyExpenses(1);
       expect(result, equals(mockMonthly));
     });
+
+    test('addExpense ignores state reload if active vehicle changes during DB insert', () async {
+      final controller = Get.put(CarExpenseController());
+      vehicleController.selectedVehicle.value = testVehicle;
+
+      // Allow internal setup query to complete
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      when(() => mockDb.insert('car_expenses', any())).thenAnswer((_) async {
+        // Simulate user clicking on a different vehicle (nullifying selection) while insert is in flight
+        vehicleController.selectedVehicle.value = null;
+        return 101;
+      });
+
+      final newExpense = CarExpense(
+        vehicleId: 1,
+        category: 'repair',
+        title: 'Brake replacement',
+        amount: 50.0,
+        currency: 'USD',
+        date: DateTime.parse('2025-02-01T10:00:00.000'),
+      );
+
+      clearInteractions(mockDb);
+
+      await controller.addExpense(newExpense);
+
+      verifyNever(() => mockDb.query('car_expenses', where: 'vehicle_id = ?', whereArgs: [1], orderBy: any(named: 'orderBy')));
+    });
   });
 }
