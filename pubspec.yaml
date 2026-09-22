@@ -38,7 +38,7 @@ dependencies:
   shared_preferences: ^2.3.3
 
   # Optional local notifications (fuel reminders)
-  flutter_local_notifications: ^22.3.0
+  flutter_local_notifications: ^22.3.1
   file_picker: ^12.2.0
   http: ^1.6.0
   package_info_plus: ^10.2.1
