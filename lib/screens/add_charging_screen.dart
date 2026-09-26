@@ -261,7 +261,7 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
       ),
       validator: (v) {
         if (v == null || v.trim().isEmpty) return 'odometer_required'.tr;
-        final val = double.tryParse(v);
+        final val = double.tryParse(v.replaceAll(',', '.'));
         if (val == null || val < 0) return 'odometer_invalid'.tr;
         return null;
       },
@@ -283,7 +283,7 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
       // EV-одометр необязателен
       validator: (v) {
         if (v == null || v.trim().isEmpty) return null;
-        final val = double.tryParse(v);
+        final val = double.tryParse(v.replaceAll(',', '.'));
         if (val == null || val < 0) return 'odometer_invalid'.tr;
         return null;
       },
@@ -590,7 +590,7 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
       double totalCost = 0.0;
       final rawCost = _totalCostCtrl.text.replaceAll(',', '.');
       if (rawCost.isNotEmpty) {
-        totalCost = double.tryParse(rawCost) ?? 0.0;
+        totalCost = double.tryParse(rawCost.replaceAll(',', '.')) ?? 0.0;
       }
 
       final startSoc = _socStartCtrl.text.isNotEmpty

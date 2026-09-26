@@ -1,3 +1,9 @@
+## [Unreleased]
+### Security & Reliability (Chaos Hardening)
+- Fixed NaN and Infinity calculation crashes in `FuelEntryController.calculateOverallStats` during fuzzing.
+- Fixed a bug where a zero total distance would cause a division by zero error calculating cost per km.
+- Sanitized number inputs with `.replaceAll(',', '.')` across entry screens to safely handle numeric input across different locales.
+
 
 ## [Unreleased]
 ### Security & Hardening
