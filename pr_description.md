@@ -1,12 +1,21 @@
-## 💡 What
-Modified `FuelEntryController._recalculateConsumption` to use a batch database update operation rather than an individual update for each entry in a `for` loop.
+**Summary**: This PR addresses chaos engineering edge cases and localization bugs found during fuzzing and aggressive boundary testing of the `FuelMan` application.
 
-## 🎯 Why
-When recalculating fuel consumption (e.g. after editing an entry), the algorithm previously iterated over the recalculated entries and fired a separate SQL `UPDATE` for each modified entry. This created a classic N+1 query problem, which severely degraded performance as the number of fuel entries grew. By accumulating the entries that need an update into a list and calling `FuelDatabase.instance.updateEntriesBatch(entriesToUpdate)`, we execute a single SQL transaction using `batch.update()`.
+**Vulnerabilities & Edge Cases Discovered**:
+| Vulnerability | Attack Vector | Risk |
+| --- | --- | --- |
+| Fuzzing crashes (NaN / Infinity) | Extreme values like 0 for distance, or NaN values injected into calculation flow. | Unhandled exceptions in `calculateOverallStats` crash the statistics view. |
+| Division by zero | Start and end odometer are the exact same for all entries. | Yields `Infinity` for cost per km, distorting graphs. |
+| Locale numeric parsing | Passing string numbers like `12,5` (Russian locale) to `double.tryParse`. | Fails silently and yields 0 or throws `null`, losing user input for fuel consumption. |
 
-## 📊 Measured Improvement
-A benchmark was run inserting 1000 fuel entries and attempting to update all of them.
+**Fixes & Hardening**:
+- Updated `FuelEntryController.calculateOverallStats` to check `isNaN` and `isInfinite` for intermediate math components and filter bad data.
+- Added `isFinite` and zero checks before doing division calculation on metrics.
+- Hardened all data-entry forms by appending `.replaceAll(',', '.')` before calling `double.tryParse` across `add_charging_screen.dart` and `add_vehicle_screen.dart` to handle locale decimal commas cleanly.
+- `_date.isAfter(DateTime.now())` guards exist across data entry views.
 
-- **Baseline (N+1 Update):** 3406 ms
-- **Optimized (Batch Update):** 63 ms
-- **Change:** ~54x faster (98.15% improvement in execution time)
+**Tests Added**:
+- Fuzzing & Chaos tests (`test/chaos/fuzzing_test.dart`) for testing `calculateOverallStats` with NaN, Infinity, and division-by-zero states.
+- Locale number parsing tests (`test/chaos/locale_test.dart`) for numeric input handling.
+
+**Documentation Updates**:
+- `CHANGELOG.md` updated with hardening fixes.

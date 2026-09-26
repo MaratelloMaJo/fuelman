@@ -308,14 +308,14 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         if (text.isEmpty) {
                           return 'Укажите объем топливного бака';
                         }
-                        final val = double.tryParse(text);
+                        final val = double.tryParse(text.replaceAll(',', '.'));
                         if (val == null || val <= 0) {
                           return 'Объем бака должен быть больше 0';
                         }
                         return null;
                       } else {
                         if (text.isEmpty) return null;
-                        final val = double.tryParse(text);
+                        final val = double.tryParse(text.replaceAll(',', '.'));
                         if (val == null || val <= 0) {
                           return 'Объем бака должен быть больше 0';
                         }
@@ -353,14 +353,14 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         if (text.isEmpty) {
                           return 'Укажите емкость аккумулятора';
                         }
-                        final val = double.tryParse(text);
+                        final val = double.tryParse(text.replaceAll(',', '.'));
                         if (val == null || val <= 0) {
                           return 'Емкость аккумулятора должна быть больше 0';
                         }
                         return null;
                       } else {
                         if (text.isEmpty) return null;
-                        final val = double.tryParse(text);
+                        final val = double.tryParse(text.replaceAll(',', '.'));
                         if (val == null || val <= 0) {
                           return 'Емкость аккумулятора должна быть больше 0';
                         }

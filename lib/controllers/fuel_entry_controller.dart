@@ -265,8 +265,10 @@ class FuelEntryController extends GetxController {
     for (final e in all) {
       if (firstDate == null || e.date.isBefore(firstDate)) firstDate = e.date;
       if (lastDate == null || e.date.isAfter(lastDate)) lastDate = e.date;
-      if (e.odometer < minOdo) minOdo = e.odometer;
-      if (e.odometer > maxOdo) maxOdo = e.odometer;
+      if (!e.odometer.isNaN && !e.odometer.isInfinite) {
+        if (e.odometer < minOdo) minOdo = e.odometer;
+        if (e.odometer > maxOdo) maxOdo = e.odometer;
+      }
 
       if (e.entryType == 'fuel') {
         double vol = e.volume;
@@ -274,14 +276,14 @@ class FuelEntryController extends GetxController {
           vol = settings.convertVolume(
               e.volume, e.volumeUnit, settings.volumeUnit.value);
         }
-        totalFuelVolume += vol;
+        if (!vol.isNaN && !vol.isInfinite) totalFuelVolume += vol;
       } else if (e.entryType == 'charge') {
-        totalEvVolume += e.volume;
+        if (!e.volume.isNaN && !e.volume.isInfinite) totalEvVolume += e.volume;
       }
 
       final cost = e.totalCost ?? 0.0;
       final convertedCost = cSvc.convert(cost, e.currency, targetCurrency);
-      totalCost += convertedCost;
+      if (!convertedCost.isNaN && !convertedCost.isInfinite) totalCost += convertedCost;
 
       if (e.consumption != null) {
         final isAnomaly = isAnomalousValue(e.consumption!, e.entryType);
@@ -292,13 +294,17 @@ class FuelEntryController extends GetxController {
               cons = settings.convertVolume(
                   e.consumption!, e.volumeUnit, settings.volumeUnit.value);
             }
-            if (cons < minFuelCons) minFuelCons = cons;
-            if (cons > maxFuelCons) maxFuelCons = cons;
-            sumFuelCons += cons;
-            calcFuelEntries++;
+            if (!cons.isNaN && !cons.isInfinite) {
+              if (cons < minFuelCons) minFuelCons = cons;
+              if (cons > maxFuelCons) maxFuelCons = cons;
+              sumFuelCons += cons;
+              calcFuelEntries++;
+            }
           } else if (e.entryType == 'charge') {
-            sumEvCons += e.consumption!;
-            calcEvEntries++;
+            if (!e.consumption!.isNaN && !e.consumption!.isInfinite) {
+              sumEvCons += e.consumption!;
+              calcEvEntries++;
+            }
           }
         }
       }
@@ -315,7 +321,10 @@ class FuelEntryController extends GetxController {
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
       if (distance > 0 && distance.isFinite) {
-        costPerKm = totalCost / distance;
+        final calcCostPerKm = totalCost / distance;
+        if (!calcCostPerKm.isNaN && !calcCostPerKm.isInfinite) {
+            costPerKm = calcCostPerKm;
+        }
         totalDistance = distance;
       }
       if (firstDate != null && lastDate != null) {
@@ -359,8 +368,10 @@ class FuelEntryController extends GetxController {
     double maxOdo = 0.0;
 
     for (final e in entries) {
-      if (e.odometer < minOdo) minOdo = e.odometer;
-      if (e.odometer > maxOdo) maxOdo = e.odometer;
+      if (!e.odometer.isNaN && !e.odometer.isInfinite) {
+        if (e.odometer < minOdo) minOdo = e.odometer;
+        if (e.odometer > maxOdo) maxOdo = e.odometer;
+      }
       final cost = e.totalCost ?? 0.0;
       totalCost += cSvc.convert(cost, e.currency, targetCurrency);
     }
