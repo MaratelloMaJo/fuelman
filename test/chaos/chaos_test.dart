@@ -128,5 +128,67 @@ void main() {
           odometer: -5, lastOdometer: null);
       expect(err, 'Одометр не может быть отрицательным');
     });
+
+    test('PHEV Collisions: simultaneous fuel and charging entry handling', () {
+      final entries = [
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 1),
+            odometer: 1000.0,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel'),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 2),
+            odometer: 1500.0,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel'),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 2),
+            odometer: 1500.0,
+            volume: 20.0,
+            isFullTank: true,
+            entryType: 'charge'),
+      ];
+
+      final calculated = FuelEntryController.computeEntriesWithConsumption(entries);
+      expect(calculated.length, 3);
+      final stats = FuelEntryController.calculateOverallStats(calculated);
+      // Ensure we don't crash and PHEV combined logic works.
+      expect(stats.costPerKm?.isNaN ?? false, isFalse);
+    });
+
+    test('Time manipulation: Out-of-order dates in statistics aggregation', () {
+      final entries = [
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2026, 1, 1), // Later date
+            odometer: 1000.0,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 1000),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 1), // Earlier date
+            odometer: 1500.0,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 1000),
+      ];
+      final calculated = FuelEntryController.computeEntriesWithConsumption(entries);
+      final stats = FuelEntryController.calculateOverallStats(calculated);
+
+      // Since firstDate is 2025 and lastDate is 2026, days is > 0
+      // but if the dates were swapped completely, or min/max odo mismatched date orders,
+      // it should never crash.
+      expect(stats.costPerKm?.isNaN ?? false, isFalse);
+      expect(stats.kmPerDay?.isNaN ?? false, isFalse);
+      expect(stats.costPerDay?.isNaN ?? false, isFalse);
+    });
   });
 }
