@@ -1,4 +1,10 @@
 
+## [1.1.1]
+### Security & Hardening
+- **Fix**: Hardened mathematical calculations to prevent crashes on edge cases like division-by-zero, NaN, and Infinity in `calculateOverallStats`, `_processIndexedChain` and `checkAnomalyWarning`. Added `isFinite` and `isNaN` checks.
+- **Fix**: Added protection against out-of-order dates during statistics aggregation (`kmPerDay` and `costPerDay` calculation) protecting against possible time manipulation resulting in crash/exception.
+- **Test**: Added new Chaos Engineering test cases for PHEV collisions and time manipulation/out-of-order dates in `chaos_test.dart`.
+
 ## [Unreleased]
 ### Security & Hardening
 - **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.

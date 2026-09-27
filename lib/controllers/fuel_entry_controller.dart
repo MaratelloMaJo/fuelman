@@ -316,13 +316,20 @@ class FuelEntryController extends GetxController {
       final distance = maxOdo - minOdo;
       if (distance > 0 && distance.isFinite) {
         costPerKm = totalCost / distance;
+        if (costPerKm.isNaN || !costPerKm.isFinite) {
+          costPerKm = null;
+        }
         totalDistance = distance;
       }
       if (firstDate != null && lastDate != null) {
         int days = lastDate.difference(firstDate).inDays;
-        if (days == 0) days = 1;
+        // Защита от отрицательного количества дней (out-of-order dates)
+        if (days <= 0) days = 1;
         kmPerDay = distance / days;
+        if (kmPerDay.isNaN || !kmPerDay.isFinite) kmPerDay = null;
+
         costPerDay = totalCost / days;
+        if (costPerDay.isNaN || !costPerDay.isFinite) costPerDay = null;
       }
     }
 
@@ -594,7 +601,12 @@ class FuelEntryController extends GetxController {
           if (deltaDistance <= 0 || deltaDistance < kMinDistanceKm) {
             consumptions[idx] = null;
           } else {
-            consumptions[idx] = (totalFuel / deltaDistance) * 100.0;
+            final cons = (totalFuel / deltaDistance) * 100.0;
+            if (cons.isNaN || !cons.isFinite) {
+              consumptions[idx] = null;
+            } else {
+              consumptions[idx] = cons;
+            }
           }
 
           prevFullIdx = idx;
@@ -881,6 +893,10 @@ class FuelEntryController extends GetxController {
       final distance = odometer - prevOdometer;
       if (distance >= kMinDistanceKm) {
         final cons = (volume / distance) * 100;
+        if (cons.isNaN || !cons.isFinite) {
+            return AnomalyWarning.consumptionAnomalous;
+        }
+
         if (entryType == 'charge') {
           if (cons > kMaxReasonableConsumptionEv ||
               cons < kMinReasonableConsumptionEv) {
