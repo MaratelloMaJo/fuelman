@@ -118,6 +118,54 @@ void main() {
               "Max and Min odometer are the same, should not crash or return Infinity");
     });
 
+    test('calculateCostPerKm: Infinity distance check', () {
+      final entries = [
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 1),
+            odometer: 0,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 100),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 2),
+            odometer: double.infinity,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 100),
+      ];
+      final costPerKm = FuelEntryController.calculateCostPerKm(entries);
+      expect(costPerKm, isNull);
+    });
+
+    test('calculateOverallStats: Infinity consumption check', () {
+      final entries = [
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 1),
+            odometer: 1000.0,
+            volume: 40.0,
+            consumption: double.infinity,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 100),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 2),
+            odometer: 1000.0,
+            volume: 40.0,
+            consumption: double.infinity,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 100),
+      ];
+      final stats = FuelEntryController.calculateOverallStats(entries);
+      expect(stats.avgFuelConsumption, isNull);
+    });
+
     test('Date Validation: Future dates are blocked', () {
       final futureDate = DateTime.now().add(const Duration(days: 1));
       expect(futureDate.isAfter(DateTime.now()), isTrue);

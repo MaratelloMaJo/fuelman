@@ -304,8 +304,11 @@ class FuelEntryController extends GetxController {
       }
     }
 
-    final avgFuel = calcFuelEntries > 0 ? sumFuelCons / calcFuelEntries : null;
-    final avgEv = calcEvEntries > 0 ? sumEvCons / calcEvEntries : null;
+    final avgFuelRaw = calcFuelEntries > 0 ? sumFuelCons / calcFuelEntries : null;
+    final avgFuel = (avgFuelRaw != null && avgFuelRaw.isFinite) ? avgFuelRaw : null;
+
+    final avgEvRaw = calcEvEntries > 0 ? sumEvCons / calcEvEntries : null;
+    final avgEv = (avgEvRaw != null && avgEvRaw.isFinite) ? avgEvRaw : null;
 
     double? costPerKm;
     double? kmPerDay;
@@ -366,7 +369,7 @@ class FuelEntryController extends GetxController {
     }
 
     final distance = maxOdo - minOdo;
-    if (distance <= 0) return null;
+    if (distance <= 0 || !distance.isFinite) return null;
     return totalCost / distance;
   }
 
