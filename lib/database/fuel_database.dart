@@ -233,6 +233,7 @@ class FuelDatabase {
 
   Future<void> deleteVehicle(int id) async {
     final db = await database;
+    // SQLite ON DELETE CASCADE takes care of child records
     await db.delete('vehicles', where: 'id = ?', whereArgs: [id]);
   }
 
