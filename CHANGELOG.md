@@ -1,3 +1,11 @@
+## [1.2.0] - Security & Chaos Hardening Suite
+### Added
+- Added comprehensive Chaos Engineering tests (`test/chaos/hard_chaos_test.dart`, `vehicle_controller_delete_test.dart`) for stress-testing math edge cases and state management.
+
+### Fixed
+- Replaced dangerous `double.parse()` with `double.tryParse()` in `add_entry_screen.dart`, `add_charging_screen.dart`, and `add_expense_screen.dart` to prevent FormatExceptions on invalid number strings.
+- Added explicit state cleanup for `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` when a vehicle is deleted in `VehicleController`.
+
 
 ## [Unreleased]
 ### Security & Hardening
