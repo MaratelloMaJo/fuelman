@@ -129,13 +129,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     setState(() => _isSaving = true);
 
+    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
+    if (amount == null) {
+      setState(() => _isSaving = false);
+      Get.snackbar('Ошибка', 'Неверный формат суммы', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
     final expense = CarExpense(
       id: widget.editExpense?.id,
       vehicleId: vehicle.id!,
       date: _date,
       category: _category,
       title: _titleCtrl.text.trim(),
-      amount: double.parse(_amountCtrl.text.replaceAll(',', '.')),
+      amount: amount,
       currency: _currency,
       odometer: _odometerCtrl.text.isEmpty
           ? null

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -34,28 +35,28 @@ Future<void> _initServices() async {
     await initializeDateFormatting('en', null);
     await initializeDateFormatting('kk', null);
   } catch (e, stack) {
-    debugPrint('Ошибка инициализации локализации: $e\n$stack');
+    developer.log('Ошибка инициализации локализации', error: e, stackTrace: stack, name: 'Main');
   }
 
   try {
     // 2. Прогрев базы данных SQLite
     await FuelDatabase.instance.database;
   } catch (e, stack) {
-    debugPrint('Ошибка инициализации базы данных: $e\n$stack');
+    developer.log('Ошибка инициализации базы данных', error: e, stackTrace: stack, name: 'Main');
   }
 
   try {
     // 3. Сервис напоминаний о заправках
     await NotificationService.instance.init();
   } catch (e, stack) {
-    debugPrint('Ошибка инициализации сервиса уведомлений: $e\n$stack');
+    developer.log('Ошибка инициализации сервиса уведомлений', error: e, stackTrace: stack, name: 'Main');
   }
 
   try {
     // 4. Сервис валютных курсов
     await CurrencyService.instance.init();
   } catch (e, stack) {
-    debugPrint('Ошибка инициализации валютного сервиса: $e\n$stack');
+    developer.log('Ошибка инициализации валютного сервиса', error: e, stackTrace: stack, name: 'Main');
   }
 
   try {
@@ -65,7 +66,7 @@ Future<void> _initServices() async {
       DeviceOrientation.portraitDown,
     ]);
   } catch (e, stack) {
-    debugPrint('Ошибка настройки ориентации: $e\n$stack');
+    developer.log('Ошибка настройки ориентации', error: e, stackTrace: stack, name: 'Main');
   }
 
   try {
@@ -77,6 +78,6 @@ Future<void> _initServices() async {
       ),
     );
   } catch (e, stack) {
-    debugPrint('Ошибка настройки стилей системы: $e\n$stack');
+    developer.log('Ошибка настройки стилей системы', error: e, stackTrace: stack, name: 'Main');
   }
 }
