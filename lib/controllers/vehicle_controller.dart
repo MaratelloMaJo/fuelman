@@ -58,13 +58,16 @@ class VehicleController extends GetxController {
     }
   }
 
+  /// Удаляет автомобиль и все связанные с ним записи через SQLite ON DELETE CASCADE.
+  /// Также всегда очищает кэши контроллеров записей, чтобы предотвратить появление
+  /// "сиротских" состояний, даже если удаляемый автомобиль не был выбран как активный.
   Future<void> deleteVehicle(int id) async {
     await FuelDatabase.instance.deleteVehicle(id);
     vehicles.removeWhere((v) => v.id == id);
     if (selectedVehicle.value?.id == id) {
       selectedVehicle.value = vehicles.isNotEmpty ? vehicles.first : null;
-      _clearRelatedControllersState();
     }
+    _clearRelatedControllersState();
   }
 
   void _clearRelatedControllersState() {

@@ -1,6 +1,9 @@
 
 ## [Unreleased]
 ### Security & Hardening
+- **Security & Chaos Hardening:** Replaced fragile `double.parse` calls with safe `double.tryParse` across all UI entry screens to prevent FormatException crashes from invalid strings or locales.
+- **Security & Chaos Hardening:** Fixed Extreme Math issue where subtracting `double.nan` distances would leak NaN into overall statistics and crash UI charts.
+- **Security & Chaos Hardening:** Enforced explicit GetX state clearing in `VehicleController.deleteVehicle` cascade delete to prevent orphaned controller caches.
 - **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.
 - **Fix**: Prevented double-tap race conditions in all save screens, stopping duplicate database entries.
 - **Fix**: Blocked time manipulation attacks by rejecting future dates during entry saves.

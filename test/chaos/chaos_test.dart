@@ -128,5 +128,44 @@ void main() {
           odometer: -5, lastOdometer: null);
       expect(err, 'Одометр не может быть отрицательным');
     });
+
+    test('Extreme Math: NaN distance calculation handling', () {
+      final entries = [
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 1),
+            odometer: double.nan,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 100),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 2),
+            odometer: double.nan,
+            volume: 40.0,
+            isFullTank: true,
+            entryType: 'fuel',
+            storedTotalCost: 100),
+      ];
+      final calculated = FuelEntryController.computeEntriesWithConsumption(entries);
+      final stats = FuelEntryController.calculateOverallStats(calculated);
+      expect(stats.costPerKm, isNull, reason: 'NaN distance should not leak into stats');
+      expect(stats.totalDistance, isNull, reason: 'NaN distance should not be set');
+    });
+
+    test('Extreme Math: Invalid Double Parsing', () {
+      final invalidStrings = ['abc', '12.3.4', '1,000,00', '1..0', 'emoji🤔', ' '];
+      for (final str in invalidStrings) {
+        final val = double.tryParse(str.replaceAll(',', '.'));
+        expect(val, isNull, reason: 'Invalid string "$str" should parse to null');
+      }
+
+      final validStrings = ['12.5', '12,5', '0.0001', '1000'];
+      for (final str in validStrings) {
+        final val = double.tryParse(str.replaceAll(',', '.'));
+        expect(val, isNotNull, reason: 'Valid string "$str" should not be null');
+      }
+    });
   });
 }
