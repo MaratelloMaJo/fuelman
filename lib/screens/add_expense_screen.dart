@@ -135,7 +135,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       date: _date,
       category: _category,
       title: _titleCtrl.text.trim(),
-      amount: double.parse(_amountCtrl.text.replaceAll(',', '.')),
+      amount: (double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0),
       currency: _currency,
       odometer: _odometerCtrl.text.isEmpty
           ? null

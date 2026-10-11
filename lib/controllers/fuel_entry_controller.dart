@@ -314,7 +314,7 @@ class FuelEntryController extends GetxController {
 
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
-      if (distance > 0 && distance.isFinite) {
+      if (distance > 0 && distance.isFinite && !distance.isNaN) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }
