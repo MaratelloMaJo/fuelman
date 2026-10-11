@@ -61,9 +61,9 @@ class VehicleController extends GetxController {
   Future<void> deleteVehicle(int id) async {
     await FuelDatabase.instance.deleteVehicle(id);
     vehicles.removeWhere((v) => v.id == id);
+    _clearRelatedControllersState(); // Always clear state on vehicle deletion
     if (selectedVehicle.value?.id == id) {
       selectedVehicle.value = vehicles.isNotEmpty ? vehicles.first : null;
-      _clearRelatedControllersState();
     }
   }
 

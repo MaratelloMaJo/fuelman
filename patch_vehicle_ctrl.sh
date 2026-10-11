@@ -1,0 +1,94 @@
+cat << 'INNER_EOF' > lib/controllers/vehicle_controller.dart
+import 'package:get/get.dart';
+
+import '../database/fuel_database.dart';
+import '../models/vehicle.dart';
+import 'car_expense_controller.dart';
+import 'charging_entry_controller.dart';
+import 'fuel_entry_controller.dart';
+
+/// Управляет списком автомобилей и выбором активного авто.
+class VehicleController extends GetxController {
+  final vehicles = <Vehicle>[].obs;
+  final selectedVehicle = Rx<Vehicle?>(null);
+  final isLoading = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadVehicles();
+  }
+
+  Future<void> loadVehicles() async {
+    isLoading.value = true;
+    try {
+      final list = await FuelDatabase.instance.getVehicles();
+      vehicles.assignAll(list);
+
+      // Восстанавливаем выбранное авто или выбираем первое.
+      if (selectedVehicle.value == null && list.isNotEmpty) {
+        selectedVehicle.value = list.first;
+      } else if (selectedVehicle.value != null) {
+        // Обновляем данные выбранного авто (мог измениться).
+        final updated = list.firstWhereOrNull(
+          (v) => v.id == selectedVehicle.value!.id,
+        );
+        selectedVehicle.value =
+            updated ?? (list.isNotEmpty ? list.first : null);
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<Vehicle> addVehicle(Vehicle vehicle) async {
+    final saved = await FuelDatabase.instance.insertVehicle(vehicle);
+    vehicles.add(saved);
+    vehicles.sort((a, b) => a.name.compareTo(b.name));
+    // Автоматически выбираем только что добавленный автомобиль.
+    selectedVehicle.value = saved;
+    return saved;
+  }
+
+  Future<void> updateVehicle(Vehicle vehicle) async {
+    await FuelDatabase.instance.updateVehicle(vehicle);
+    final index = vehicles.indexWhere((v) => v.id == vehicle.id);
+    if (index != -1) vehicles[index] = vehicle;
+    if (selectedVehicle.value?.id == vehicle.id) {
+      selectedVehicle.value = vehicle;
+    }
+  }
+
+  Future<void> deleteVehicle(int id) async {
+    await FuelDatabase.instance.deleteVehicle(id);
+    vehicles.removeWhere((v) => v.id == id);
+    _clearRelatedControllersState(); // Always clear state on vehicle deletion
+    if (selectedVehicle.value?.id == id) {
+      selectedVehicle.value = vehicles.isNotEmpty ? vehicles.first : null;
+    }
+  }
+
+  void _clearRelatedControllersState() {
+    if (Get.isRegistered<FuelEntryController>()) {
+      final ctrl = Get.find<FuelEntryController>();
+      ctrl.entries.clear();
+      ctrl.stats.clear();
+      ctrl.anomalousIds.clear();
+    }
+    if (Get.isRegistered<ChargingEntryController>()) {
+      final ctrl = Get.find<ChargingEntryController>();
+      ctrl.entries.clear();
+      ctrl.timeline.clear();
+    }
+    if (Get.isRegistered<CarExpenseController>()) {
+      final ctrl = Get.find<CarExpenseController>();
+      ctrl.expenses.clear();
+      ctrl.expenseStats.clear();
+    }
+  }
+
+  void selectVehicle(Vehicle vehicle) {
+    selectedVehicle.value = vehicle;
+  }
+}
+INNER_EOF
