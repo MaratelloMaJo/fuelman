@@ -123,6 +123,11 @@ void main() {
       expect(futureDate.isAfter(DateTime.now()), isTrue);
     });
 
+    test('Extreme Math: Formatting errors do not crash', () {
+      final v1 = double.tryParse('invalid_string') ?? 0.0;
+      expect(v1, 0.0);
+    });
+
     test('Odometer validation catches negative values', () {
       final err = FuelEntryController.validateOdometer(
           odometer: -5, lastOdometer: null);

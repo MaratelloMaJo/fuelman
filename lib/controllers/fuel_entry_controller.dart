@@ -314,7 +314,7 @@ class FuelEntryController extends GetxController {
 
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
-      if (distance > 0 && distance.isFinite) {
+      if (distance > 0 && distance.isFinite && !distance.isNaN) {
         costPerKm = totalCost / distance;
         totalDistance = distance;
       }
@@ -591,7 +591,10 @@ class FuelEntryController extends GetxController {
           final totalFuel = e.volume + accumulatedIntermediate;
 
           // Zero & Micro-delta guard (< 15 км или <= 0)
-          if (deltaDistance <= 0 || deltaDistance < kMinDistanceKm) {
+          if (deltaDistance <= 0 ||
+              deltaDistance < kMinDistanceKm ||
+              !deltaDistance.isFinite ||
+              deltaDistance.isNaN) {
             consumptions[idx] = null;
           } else {
             consumptions[idx] = (totalFuel / deltaDistance) * 100.0;
@@ -716,10 +719,10 @@ class FuelEntryController extends GetxController {
     final nominal = getNominalCapacity(entryType, vehicle: vehicle);
     if (nominal != null && nominal > 0) {
       if (entryType == 'charge') {
-        final val = double.parse((nominal * 1.20).toStringAsFixed(2));
+        final val = double.tryParse((nominal * 1.20).toStringAsFixed(2)) ?? 0.0;
         return val.ceilToDouble(); // +20% потери
       } else {
-        final val = double.parse((nominal * 1.10).toStringAsFixed(2));
+        final val = double.tryParse((nominal * 1.10).toStringAsFixed(2)) ?? 0.0;
         return val.ceilToDouble(); // +10% горловина
       }
     }
