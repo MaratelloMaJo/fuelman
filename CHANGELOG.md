@@ -1,6 +1,7 @@
 
 ## [Unreleased]
 ### Security & Hardening
+- **Fix**: Fixed crash bugs by replacing unsafe `double.parse` calls with safe `double.tryParse` across all input fields.
 - **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.
 - **Fix**: Prevented double-tap race conditions in all save screens, stopping duplicate database entries.
 - **Fix**: Blocked time manipulation attacks by rejecting future dates during entry saves.
