@@ -315,7 +315,8 @@ class FuelEntryController extends GetxController {
     if (all.length >= 2 && minOdo < double.infinity && maxOdo > 0) {
       final distance = maxOdo - minOdo;
       if (distance > 0 && distance.isFinite) {
-        costPerKm = totalCost / distance;
+        final cost = totalCost / distance;
+        costPerKm = (cost.isNaN || !cost.isFinite) ? null : cost;
         totalDistance = distance;
       }
       if (firstDate != null && lastDate != null) {
@@ -594,7 +595,8 @@ class FuelEntryController extends GetxController {
           if (deltaDistance <= 0 || deltaDistance < kMinDistanceKm) {
             consumptions[idx] = null;
           } else {
-            consumptions[idx] = (totalFuel / deltaDistance) * 100.0;
+            final cons = (totalFuel / deltaDistance) * 100.0;
+            consumptions[idx] = (cons.isNaN || !cons.isFinite) ? null : cons;
           }
 
           prevFullIdx = idx;

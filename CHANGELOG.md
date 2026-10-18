@@ -1,6 +1,9 @@
 
 ## [Unreleased]
 ### Security & Hardening
+- **Fix**: Replaced all instances of `double.parse` with `double.tryParse(...) ?? 0.0` in `add_charging_screen.dart`, `add_expense_screen.dart`, and `add_entry_screen.dart` to prevent `FormatException` crashes from invalid user inputs.
+- **Fix**: Hardened mathematical calculations in `FuelEntryController` by explicitly checking and filtering out `NaN` and `Infinity` results to prevent app crashes and UI rendering errors from divide-by-zero or double overflow situations.
+- **Test**: Added PHEV collision fuzzing test for zero fuel consumption on 100% electric drives in `test/chaos/chaos_test.dart`.
 - **Fix**: Mitigated memory leaks in `FuelEntryController`, `ChargingEntryController`, and `CarExpenseController` by properly disposing `Worker` stream subscriptions on close.
 - **Fix**: Prevented double-tap race conditions in all save screens, stopping duplicate database entries.
 - **Fix**: Blocked time manipulation attacks by rejecting future dates during entry saves.
