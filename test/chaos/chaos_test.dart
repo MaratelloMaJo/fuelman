@@ -128,5 +128,28 @@ void main() {
           odometer: -5, lastOdometer: null);
       expect(err, 'Одометр не может быть отрицательным');
     });
+
+    test('PHEV Collision: Zero fuel consumption on 100% electric drive', () {
+      final entries = [
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 1),
+            odometer: 1000.0,
+            volume: 40.0, // Initial fill
+            isFullTank: true,
+            entryType: 'fuel'),
+        FuelEntry(
+            vehicleId: 1,
+            date: DateTime(2025, 1, 2),
+            odometer: 1100.0,
+            volume: 0.0, // 0 fuel used, driven 100km on electric
+            isFullTank: true,
+            entryType: 'fuel'),
+      ];
+      final result = FuelEntryController.computeEntriesWithConsumption(entries);
+      expect(result.length, 2);
+      expect(result[1].consumption, equals(0.0),
+          reason: 'Should safely compute 0.0 L/100km without NaN or crash');
+    });
   });
 }
