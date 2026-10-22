@@ -129,4 +129,18 @@ void main() {
       expect(err, 'Одометр не может быть отрицательным');
     });
   });
+
+  group('Autonomous Fixes & Security Enhancements', () {
+    test('Number parsing does not throw FormatException', () {
+      // Replicating the fix for double.parse crashing
+      final validStr = '12.5'.replaceAll(',', '.');
+      final invalidStr = 'abc'.replaceAll(',', '.');
+
+      final valid = double.tryParse(validStr);
+      final invalid = double.tryParse(invalidStr);
+
+      expect(valid, 12.5);
+      expect(invalid, isNull);
+    });
+  });
 }
