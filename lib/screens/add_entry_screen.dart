@@ -317,7 +317,13 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
     setState(() => _isSaving = true);
 
-    final volume = double.parse(_volumeCtrl.text.replaceAll(',', '.'));
+    final volume = double.tryParse(_volumeCtrl.text.replaceAll(',', '.'));
+    if (volume == null) {
+      setState(() => _isSaving = false);
+      Get.snackbar('Ошибка', 'Некорректный формат объема', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
     final volumeErr = FuelEntryController.validateEntryVolume(
       volume: volume,
       entryType: _entryType,
@@ -329,7 +335,13 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       return;
     }
 
-    final odometer = double.parse(_odometerCtrl.text.replaceAll(',', '.'));
+    final odometer = double.tryParse(_odometerCtrl.text.replaceAll(',', '.'));
+    if (odometer == null) {
+      setState(() => _isSaving = false);
+      Get.snackbar('Ошибка', 'Некорректный формат одометра', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
     final odoErr = FuelEntryController.validateOdometer(
       odometer: odometer,
       lastOdometer: _lastRecordedOdometer,
@@ -361,7 +373,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       id: widget.editEntry?.id,
       vehicleId: vehicle.id!,
       date: _date,
-      odometer: double.parse(_odometerCtrl.text.replaceAll(',', '.')),
+      odometer: odometer,
       volume: volume,
       isFullTank: _isFullTank,
       pricePerLiter: unitPrice,

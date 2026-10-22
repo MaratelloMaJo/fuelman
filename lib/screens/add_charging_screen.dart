@@ -580,11 +580,21 @@ class _AddChargingScreenState extends State<AddChargingScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final odometer = double.parse(_odometerCtrl.text.replaceAll(',', '.'));
+      final odometer = double.tryParse(_odometerCtrl.text.replaceAll(',', '.'));
+      if (odometer == null) {
+        setState(() => _isSaving = false);
+        Get.snackbar('Ошибка', 'Некорректный формат одометра', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
       final evOdo = _evOdometerCtrl.text.isNotEmpty
           ? double.tryParse(_evOdometerCtrl.text.replaceAll(',', '.'))
           : null;
-      final kwh = double.parse(_kwhCtrl.text.replaceAll(',', '.'));
+      final kwh = double.tryParse(_kwhCtrl.text.replaceAll(',', '.'));
+      if (kwh == null) {
+        setState(() => _isSaving = false);
+        Get.snackbar('Ошибка', 'Некорректный формат энергии', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
 
       // Определяем итоговую стоимость
       double totalCost = 0.0;
